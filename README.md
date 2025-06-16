@@ -9,7 +9,7 @@ This tool is WORK-IN-PROGRESS
 ## Filter lib Wishlist / Goals
 
  - [x] Filter a data set and output a new dataset
-   - [ ] Filter stops using a bounding box (coordinates)
+   - [ ] Filter StopPlaces by coordinates using a polygon (geojson file)
    - [ ] Filter entities on ids
      - [x] Lines [Pri 2]
      - [x] ServiceJournies [Pri 2]

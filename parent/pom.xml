@@ -20,8 +20,8 @@
 
         <!-- Other properties -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kotlin.version>1.9.23</kotlin.version>
-        <kotlinx.serialization.version>1.6.3</kotlinx.serialization.version>
+        <kotlin.version>2.1.21</kotlin.version>
+        <kotlinx.serialization.version>1.8.1</kotlinx.serialization.version>
 
         <!-- Test lib versions -->
         <junit.version>5.10.2</junit.version>
@@ -95,8 +95,9 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <jvmTarget>17</jvmTarget>
-                    <plugin>kotlinx-serialization</plugin>
+                    <compilerPlugins>
+                        <plugin>kotlinx-serialization</plugin>
+                    </compilerPlugins>
                 </configuration>
                 <dependencies>
                     <dependency>
