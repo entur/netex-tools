@@ -11,11 +11,11 @@ data class CliConfig(
     var rmUnusedQuays : Boolean = false,
     var area : String? = null,
     var period : TimePeriod? = null,
-    var lines : Array<String> = arrayOf(),
-    var flexLines : Array<String> = arrayOf(),
-    var serviceJourneys : Array<String> = arrayOf(),
-    var skipElements : Array<String> = arrayOf(),
-    var alias : Array<String> = arrayOf()
+    var lines : List<String> = listOf(),
+    var flexLines : List<String> = listOf(),
+    var serviceJourneys : List<String> = listOf(),
+    var skipElements : List<String> = listOf(),
+    var alias : Map<String, String> = mapOf()
 ) {
     fun alias()  = Alias.of(alias)
 }

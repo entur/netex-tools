@@ -54,11 +54,11 @@ class EntitySelectionTest {
             assertSelected()
 
             // Select e, but not ea[wrong type] -> An error is printed, but not aborted
-            select(PARENT_TYPE,  arrayOf(e.id, ea.id))
+            select(PARENT_TYPE,  listOf(e.id, ea.id))
             assertSelected(e)
 
             // Select multiple
-            select(CHILD_TYPE,  arrayOf(eb.id, eaa.id))
+            select(CHILD_TYPE,  listOf(eb.id, eaa.id))
             assertSelected(e, eb, eaa)
         }
     }

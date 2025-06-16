@@ -23,7 +23,7 @@ class EntitySelection(val model : EntityModel) {
         return res == null
     }
 
-    fun select(type : String, ids : Array<String>) {
+    fun select(type : String, ids : List<String>) {
         ids.forEach {
             val e = model.getEntity(it)
             if(type == e?.type) {

@@ -35,14 +35,14 @@
     "TariffZoneRef",
     "ToPointRef"
   ],
-  "alias" : [
-    "CompositeFrame CF",
-    "ResourceFrame RF",
-    "ServiceCalendarFrame SCF",
-    "ServiceFrame SF",
-    "Network NW",
-    "TimetableFrame TTF",
-    "SiteFrame SF",
-    "StopPointInJourneyPattern SPInJP"
-  ]
+  "alias" : {
+    "CompositeFrame" : "CF",
+    "ResourceFrame" : "RF",
+    "ServiceCalendarFrame" : "SCF",
+    "ServiceFrame" : "SF",
+    "Network" : "NW",
+    "TimetableFrame" : "TTF",
+    "SiteFrame" : "SF",
+    "StopPointInJourneyPattern" : "SPInJP"
+  }
 }

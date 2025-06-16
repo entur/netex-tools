@@ -118,7 +118,7 @@ data class FilterNetexApp(
     println("Filter NeTEx files done in ${(System.currentTimeMillis() - startTime)/1000.0} seconds.")
   }
 
-  private fun selectAll(type : String, ids : Array<String>) {
+  private fun selectAll(type : String, ids : List<String>) {
     selection.select(type, ids)
   }
 
