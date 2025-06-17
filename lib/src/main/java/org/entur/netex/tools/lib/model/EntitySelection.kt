@@ -4,6 +4,7 @@ import org.entur.netex.tools.lib.utils.Log
 
 class EntitySelection(val model : EntityModel) {
 
+    // mapping from type -> (id, entity)
     private val selection = mutableMapOf<String, MutableMap<String, Entity>>()
 
     fun isSelected(e : Entity?) : Boolean {
@@ -88,4 +89,7 @@ class EntitySelection(val model : EntityModel) {
 
 
     fun selectType(type : String) = SelectByType(this, type)
+    fun includeAll() {
+        model.listAllEntities().forEach { select(it) }
+    }
 }

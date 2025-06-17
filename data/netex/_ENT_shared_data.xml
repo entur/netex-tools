@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PublicationDelivery version="1.13:NO-NeTEx-networktimetable:1.3" xmlns="http://www.netex.org.uk/netex">
+    <PublicationTimestamp>2025-01-17T04:12:58.585</PublicationTimestamp>
+    <ParticipantRef>ENT</ParticipantRef>
+    <Description>Shared data used across line files</Description>
+    <dataObjects>
+        <CompositeFrame created="2025-01-17T04:12:58.585" version="1" id="ENT:CompositeFrame:2">
+            <validityConditions>
+                <AvailabilityCondition version="1" id="ENT:AvailabilityCondition:2">
+                    <!-- Validity span of the dataset. Not critical. -->
+                    <FromDate>2025-01-28T00:00:00</FromDate>
+                    <ToDate>2026-04-19T00:00:00</ToDate>
+                </AvailabilityCondition>
+            </validityConditions>
+            <codespaces>
+                <!-- Declare the codespace of this dataset -->
+                <Codespace id="ent">
+                    <Xmlns>ENT</Xmlns>
+                    <XmlnsUrl>http://www.rutebanken.org/ns/ent</XmlnsUrl>
+                </Codespace>
+                <Codespace id="nsr">
+                    <Xmlns>NSR</Xmlns>
+                    <XmlnsUrl>http://www.rutebanken.org/ns/nsr</XmlnsUrl>
+                </Codespace>
+            </codespaces>
+            <FrameDefaults>
+                <DefaultLocale>
+                    <TimeZone>Europe/Oslo</TimeZone>
+                    <DefaultLanguage>no</DefaultLanguage>
+                </DefaultLocale>
+                <!-- Sets the default unit of measurement to meters. -->
+                <DefaultSystemOfUnits>SiMetres</DefaultSystemOfUnits>
+            </FrameDefaults>
+            <frames>
+                <ResourceFrame version="1" id="ENT:ResourceFrame:1">
+                    <typesOfValue>
+                        <!-- Branding is optional but it can be used to apply unique desecriptions of a Line, i.e. marketing names -->
+                        <Branding version="1" id="ENT:Branding:1">
+                            <Name>Enturs Danish Express</Name>
+                            <Url>https://entur.no</Url>
+                        </Branding>
+                    </typesOfValue>
+                    <organisations>
+                        <!-- Describe the organisations. Authority and Operator have to be created separately even if they are the same company. -->
+                        <!-- In the future this section can be removed. AuthorityRef and OperatorRef will
+                            instead point to a National Organisation registry [only Norway exports]. -->
+                        <Authority version="1" id="ENT:Authority:ENT">
+                            <CompanyNumber>917422575</CompanyNumber>
+                            <Name>Entur</Name>
+                            <LegalName>Entur AS</LegalName>
+                            <ContactDetails>
+                                <Url>https://entur.no/</Url>
+                            </ContactDetails>
+                            <OrganisationType>authority</OrganisationType>
+                        </Authority>
+                        <Operator version="1" id="ENT:Operator:ENT">
+                            <CompanyNumber>917422575</CompanyNumber>
+                            <Name>Entur</Name>
+                            <LegalName>Entur AS</LegalName>
+                            <ContactDetails>
+                                <Url>https://entur.no/</Url>
+                            </ContactDetails>
+                            <OrganisationType>operator</OrganisationType>
+                            <CustomerServiceContactDetails>
+                                <Email>kollektivdata@entur.org</Email>
+                                <Url>https://developer.entur.org/</Url>
+                            </CustomerServiceContactDetails>
+                        </Operator>
+                    </organisations>
+                    <!-- The concept VEHICLE is used, but can be used for any type of transport, including ships. -->
+                    <vehicleTypes>
+                        <!-- Vehicle types are templates for unique Vehicles and contain most of the technical data about the vehicle. -->
+                        <VehicleType id="ENT:VehicleType:1" version="1">
+                            <Name>Ship Type 1</Name>
+                            <TypeOfFuel>diesel</TypeOfFuel>
+                            <capacities>
+                                <PassengerCapacity id="ENT:PassengerCapacity:1" version="1">
+                                    <TotalCapacity>1400</TotalCapacity>
+                                </PassengerCapacity>
+                            </capacities>
+                            <Length>136</Length>
+                            <Width>22.4</Width>
+                            <Height>20</Height>
+                            <Weight>22256352</Weight>
+                        </VehicleType>
+                        <VehicleType id="ENT:VehicleType:2" version="1">
+                            <Name>Ship Type 2</Name>
+                            <TypeOfFuel>biodiesel</TypeOfFuel>
+                            <capacities>
+                                <PassengerCapacity id="ENT:PassengerCapacity:2" version="1">
+                                    <TotalCapacity>1600</TotalCapacity>
+                                </PassengerCapacity>
+                            </capacities>
+                            <Length>149</Length>
+                            <Width>26.5</Width>
+                            <Height>21</Height>
+                            <Weight>25226413</Weight>
+                        </VehicleType>
+                    </vehicleTypes>
+                    <vehicles>
+                        <!-- This is where unique individual vehicles are described with a reference to the VehicleType it uses. -->
+                        <Vehicle id="ENT:Vehicle:1" version="1">
+                            <Name>MS Arial</Name>
+                            <!-- IMO-number -->
+                            <OperationalNumber>8814275</OperationalNumber>
+                            <VehicleTypeRef ref="ENT:VehicleType:1" version="1">
+                            </VehicleTypeRef>
+                        </Vehicle>
+                        <Vehicle id="ENT:Vehicle:2" version="1">
+                            <Name>MS Calibri</Name>
+                            <!-- IMO-number -->
+                            <OperationalNumber>9176187</OperationalNumber>
+                            <VehicleTypeRef ref="ENT:VehicleType:2" version="1">
+                            </VehicleTypeRef>
+                        </Vehicle>
+                    </vehicles>
+                </ResourceFrame>
+                <ServiceFrame version="1" id="ENT:ServiceFrame:1">
+                    <!-- The Network is a clustering feature for Lines -->
+                    <Network version="1" id="ENT:Network:1">
+                        <Name>ENT</Name>
+                        <!-- This is where the Authority of a Line is defined. -->
+                        <AuthorityRef ref="ENT:Authority:ENT" version="1"/>
+                    </Network>
+                    <destinationDisplays>
+                        <!-- Core use is the text displayed on the front of the bus or train.
+                            In general the content should be the ultimate, and or intermediate stops.
+                            Only the most important intermediate stops are listed. -->
+                        <!-- In this example the text should be "Hirtshals via Horten" which changes to "Hirtshals" once Horten is passed. -->
+                        <!-- Vias use a nesting method. -->
+                        <DestinationDisplay version="1" id="ENT:DestinationDisplay:1">
+                            <Name>Hirtshals</Name>
+                            <FrontText>Hirtshals</FrontText>
+                            <variants>
+                                <DestinationDisplayVariant>
+                                    <DestinationDisplayVariantMediaType>web</DestinationDisplayVariantMediaType>
+                                    <FrontText>Hirtshals</FrontText>
+                                </DestinationDisplayVariant>
+                            </variants>
+                        </DestinationDisplay>
+                        <DestinationDisplay version="1" id="ENT:DestinationDisplay:1-via">
+                            <Name>Hirtshals via Horten</Name>
+                            <FrontText>Hirtshals</FrontText>
+                            <vias>
+                                <Via>
+                                    <!-- via Horten -->
+                                    <DestinationDisplayRef ref="ENT:DestinationDisplay:2" version="1"/>
+                                </Via>
+                            </vias>
+                            <variants>
+                                <DestinationDisplayVariant>
+                                    <DestinationDisplayVariantMediaType>web</DestinationDisplayVariantMediaType>
+                                    <FrontText>Hirtshals</FrontText>
+                                    <vias>
+                                        <Via>
+                                            <!-- via Horten -->
+                                            <DestinationDisplayRef ref="ENT:DestinationDisplay:2" version="1"/>
+                                        </Via>
+                                    </vias>
+                                </DestinationDisplayVariant>
+                            </variants>
+                        </DestinationDisplay>
+                        <DestinationDisplay version="1" id="ENT:DestinationDisplay:2">
+                            <Name>Horten</Name>
+                            <FrontText>Horten</FrontText>
+                            <variants>
+                                <DestinationDisplayVariant>
+                                    <DestinationDisplayVariantMediaType>web</DestinationDisplayVariantMediaType>
+                                    <FrontText>Horten</FrontText>
+                                </DestinationDisplayVariant>
+                            </variants>
+                        </DestinationDisplay>
+                    </destinationDisplays>
+                    <scheduledStopPoints>
+                        <!-- Create ID's for ScheduledStopPoints to be used in JourneyPatterns. -->
+                        <ScheduledStopPoint version="1" id="ENT:ScheduledStopPoint:1"/>
+                        <ScheduledStopPoint version="1" id="ENT:ScheduledStopPoint:2"/>
+                        <ScheduledStopPoint version="1" id="ENT:ScheduledStopPoint:3"/>
+                    </scheduledStopPoints>
+                    <stopAssignments>
+                        <!-- Stop assignments connect ScheduledStopPoint with Quay -->
+                        <!-- Order is required, but has no actual function. -->
+                        <PassengerStopAssignment version="1" id="ENT:PassengerStopAssignment:1"
+                                                 order="1">
+                            <ScheduledStopPointRef version="1" ref="ENT:ScheduledStopPoint:1"/>
+                            <!-- Critical link to the Stop Place Registry https://stoppested.entur.org/ -->
+                            <!-- Referenced ID must be valid. -->
+                            <QuayRef ref="NSR:Quay:99323"/>
+                        </PassengerStopAssignment>
+                        <PassengerStopAssignment version="1" id="ENT:PassengerStopAssignment:2"
+                                                 order="2">
+                            <ScheduledStopPointRef version="1" ref="ENT:ScheduledStopPoint:2"/>
+                            <QuayRef ref="NSR:Quay:99767"/>
+                        </PassengerStopAssignment>
+                        <PassengerStopAssignment version="1" id="ENT:PassengerStopAssignment:3"
+                                                 order="3">
+                            <ScheduledStopPointRef version="1" ref="ENT:ScheduledStopPoint:3"/>
+                            <QuayRef ref="NSR:Quay:99329"/>
+                        </PassengerStopAssignment>
+                    </stopAssignments>
+                </ServiceFrame>
+                <ServiceCalendarFrame version="1" id="ENT:ServiceCalendarFrame:1">
+                    <operatingDays>
+                        <OperatingDay id="ENT:OperatingDay:2025-01-29" version="1">
+                            <CalendarDate>2025-01-29</CalendarDate>
+                        </OperatingDay>
+                        <OperatingDay id="ENT:OperatingDay:2025-01-30" version="1">
+                            <CalendarDate>2025-01-30</CalendarDate>
+                        </OperatingDay>
+                        <OperatingDay id="ENT:OperatingDay:2025-04-02" version="1">
+                            <CalendarDate>2025-04-02</CalendarDate>
+                        </OperatingDay>
+                    </operatingDays>
+                    <operatingPeriods>
+                        <OperatingPeriod version="1" id="ENT:OperatingPeriod:1">
+                            <FromDate>2025-03-11T00:00:00</FromDate>
+                            <ToDate>2025-06-22T00:00:00</ToDate>
+                        </OperatingPeriod>
+                    </operatingPeriods>
+                    <dayTypeAssignments>
+                        <DayTypeAssignment order="1" version="1" id="ENT:DayTypeAssignment:1">
+                            <Date>2025-05-02</Date>
+                            <DayTypeRef ref="ENT:DayType:1" version="1"/>
+                        </DayTypeAssignment>
+                        <DayTypeAssignment order="2" version="1" id="ENT:DayTypeAssignment:2">
+                            <OperatingPeriodRef ref="ENT:OperatingPeriod:1" version="1"/>
+                            <DayTypeRef ref="ENT:DayType:2" version="1"/>
+                        </DayTypeAssignment>
+                        <DayTypeAssignment order="2" version="1" id="ENT:DayTypeAssignment:3">
+                            <OperatingDayRef ref="ENT:OperatingDay:2025-04-02" version="1"/>
+                            <DayTypeRef ref="ENT:DayType:3" version="1"/>
+                        </DayTypeAssignment>
+                    </dayTypeAssignments>
+                    <dayTypes>
+                        <DayType version="1" id="ENT:DayType:1"/>
+                        <DayType version="1" id="ENT:DayType:2">
+                            <properties>
+                                <PropertyOfDay>
+                                    <DaysOfWeek>Monday Tuesday Wednesday Thursday</DaysOfWeek>
+                                </PropertyOfDay>
+                            </properties>
+                        </DayType>
+                        <DayType version="1" id="ENT:DayType:3"/>
+                    </dayTypes>
+                </ServiceCalendarFrame>
+            </frames>
+        </CompositeFrame>
+    </dataObjects>
+</PublicationDelivery>

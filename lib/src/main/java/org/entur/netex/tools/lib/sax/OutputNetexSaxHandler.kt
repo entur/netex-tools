@@ -27,9 +27,9 @@ class OutputNetexSaxHandler(
         output.flush()
         output.close()
 
-        if(empty) {
-            outFile.delete()
-        }
+//        if(empty) {
+//            outFile.delete()
+//        }
     }
 
     override fun startPrefixMapping(prefix: String?, uri: String?) {

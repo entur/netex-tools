@@ -1,0 +1,48 @@
+{
+  "logLevel" : "INFO",
+  "printReport" : true,
+  "rmUnusedQuays" : true,
+  "x-area" : "60.0 10.0 60.0 10.0",
+  "x-period" : {
+    "start" : "2024-01-01",
+    "end" : "2024-12-31"
+  },
+  "lines" : [
+    "X-ATB:Line:2_310"
+  ],
+  "serviceJourneys" : [
+    "ATB:ServiceJourney:310_230228101525749_16"
+  ],
+  "flexLines" : [
+    "ATB:FlexLine:1"
+  ],
+  "skipElements" : [
+    "AccessibilityAssessment",
+    "AlternativeName",
+    "keyList",
+    "FromPointRef",
+    "GroupOfStopPlaces",
+    "NoticeAssignment",
+    "NoticeRef",
+    "NoticedObjectRef",
+    "Parking",
+    "ParkingProperties",
+    "placeEquipments",
+    "ServiceLink",
+    "TopographicPlace",
+    "TopographicPlaceRef",
+    "TariffZone",
+    "TariffZoneRef",
+    "ToPointRef"
+  ],
+  "alias" : {
+    "CompositeFrame" : "CF",
+    "ResourceFrame" : "RF",
+    "ServiceCalendarFrame" : "SCF",
+    "ServiceFrame" : "SF",
+    "Network" : "NW",
+    "TimetableFrame" : "TTF",
+    "SiteFrame" : "SF",
+    "StopPointInJourneyPattern" : "SPInJP"
+  }
+}

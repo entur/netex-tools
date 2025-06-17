@@ -1,0 +1,21 @@
+{
+  "logLevel": "INFO",
+  "printReport": true,
+  "xperiod": {
+    "start": "2024-01-01",
+    "end": "2024-12-31"
+  },
+  "skipElements": [
+    "VehicleScheduleFrame"
+  ],
+  "alias": {
+    "CompositeFrame": "CF",
+    "ResourceFrame": "RF",
+    "ServiceCalendarFrame": "SCF",
+    "ServiceFrame": "SF",
+    "Network": "NW",
+    "TimetableFrame ": "TF",
+    "SiteFrame": "SF",
+    "StopPointInJourneyPattern": "SPInJP"
+  }
+}

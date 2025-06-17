@@ -44,4 +44,5 @@ class EntityModel(private val alias: Alias) {
         ).print()
     }
     private fun refStr(ref : Ref) : String = ref.toString { entities.get(it)?.fullPath() ?: EMPTY }
+    fun listAllEntities() = entities.listAll()
 }

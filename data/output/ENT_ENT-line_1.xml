@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PublicationDelivery xmlns:siri="http://www.siri.org.uk/siri" xmlns:gis="http://www.opengis.net/gml/3.2" version="1.13:NO-NeTEx-networktimetable:1.3" xmlns="http://www.netex.org.uk/netex">
+    <PublicationTimestamp>2025-01-17T04:12:58.585</PublicationTimestamp>
+    <ParticipantRef>ENT</ParticipantRef>
+    <Description>Description of the XML file</Description>
+    <dataObjects>
+        <CompositeFrame created="2025-01-17T04:12:58.585" version="1" id="ENT:CompositeFrame:199">
+            <validityConditions>
+                <AvailabilityCondition version="1" id="ENT:AvailabilityCondition:199">
+                    <FromDate>2025-01-28T00:00:00</FromDate>
+                    <ToDate>2026-04-19T00:00:00</ToDate>
+                </AvailabilityCondition>
+            </validityConditions>
+            <codespaces>
+                <Codespace id="ent">
+                    <Xmlns>ENT</Xmlns>
+                    <XmlnsUrl>http://www.rutebanken.org/ns/ent</XmlnsUrl>
+                </Codespace>
+                <Codespace id="nsr">
+                    <Xmlns>NSR</Xmlns>
+                    <XmlnsUrl>http://www.rutebanken.org/ns/nsr</XmlnsUrl>
+                </Codespace>
+            </codespaces>
+            <FrameDefaults>
+                <DefaultLocale>
+                    <TimeZone>Europe/Oslo</TimeZone>
+                    <DefaultLanguage>no</DefaultLanguage>
+                </DefaultLocale>
+                <DefaultSystemOfUnits>SiMetres</DefaultSystemOfUnits>
+            </FrameDefaults>
+            <frames>
+
+                <ServiceFrame version="1" id="ENT:ServiceFrame:199">
+                    <routePoints>
+                        <RoutePoint id="ENT:RoutePoint:1" version="1">
+                            <projections>
+                                <PointProjection version="1" id="ENT:PointProjection:1">
+                                    <ProjectedPointRef ref="ENT:ScheduledStopPoint:1" version="1"></ProjectedPointRef>
+                                </PointProjection>
+                            </projections>
+                        </RoutePoint>
+                        <RoutePoint id="ENT:RoutePoint:2" version="1">
+                            <projections>
+                                <PointProjection version="1" id="ENT:PointProjection:2">
+                                    <ProjectedPointRef ref="ENT:ScheduledStopPoint:2" version="1"></ProjectedPointRef>
+                                </PointProjection>
+                            </projections>
+                        </RoutePoint>
+                        <RoutePoint id="ENT:RoutePoint:3" version="1">
+                            <projections>
+                                <PointProjection version="1" id="ENT:PointProjection:3">
+                                    <ProjectedPointRef ref="ENT:ScheduledStopPoint:3" version="1"></ProjectedPointRef>
+                                </PointProjection>
+                            </projections>
+                        </RoutePoint>
+                    </routePoints>
+                    <routes>
+                        <Route id="ENT:Route:1" version="1">
+                            <Name>1</Name>
+                            <LineRef ref="ENT:Line:1" version="1"></LineRef>
+                            <pointsInSequence>
+                                <PointOnRoute order="1" id="ENT:PointOnRoute:1" version="1">
+                                    <RoutePointRef ref="ENT:RoutePoint:1" version="1"></RoutePointRef>
+                                </PointOnRoute>
+                                <PointOnRoute order="2" id="ENT:PointOnRoute:2" version="1">
+                                    <RoutePointRef ref="ENT:RoutePoint:1" version="1"></RoutePointRef>
+                                </PointOnRoute>
+                                <PointOnRoute order="3" id="ENT:PointOnRoute:3" version="1">
+                                    <RoutePointRef ref="ENT:RoutePoint:3" version="1"></RoutePointRef>
+                                </PointOnRoute>
+                            </pointsInSequence>
+                        </Route>
+                    </routes>
+                    <lines>
+                        <Line version="1" id="ENT:Line:1">
+                            <BrandingRef ref="ENT:Branding:1"></BrandingRef>
+                            <Name>Oslo-Horten-Hirtshals</Name>
+                            <ShortName>OSL-HOR-HIR</ShortName>
+                            <TransportMode>water</TransportMode>
+                            <TransportSubmode>
+                                <WaterSubmode>internationalCarFerry</WaterSubmode>
+                            </TransportSubmode>
+                            <PublicCode>1</PublicCode>
+                            <PrivateCode>1</PrivateCode>
+                            <OperatorRef ref="ENT:Operator:ENT"></OperatorRef>
+                            <RepresentedByGroupRef ref="ENT:Network:1"></RepresentedByGroupRef>
+                            <Presentation>
+                                <Colour>181c56</Colour>
+                                <TextColour>ffffff</TextColour>
+                            </Presentation>
+                        </Line>
+                    </lines>
+                    <journeyPatterns>
+                        <JourneyPattern version="1" id="ENT:JourneyPattern:1">
+                            <RouteRef ref="ENT:Route:1" version="1"></RouteRef>
+                            <DirectionType>outbound</DirectionType>
+                            <pointsInSequence>
+                                <StopPointInJourneyPattern order="1" version="1" id="ENT:StopPointInJourneyPattern:1">
+                                    <ScheduledStopPointRef ref="ENT:ScheduledStopPoint:1"></ScheduledStopPointRef>
+                                    <ForAlighting>false</ForAlighting>
+                                    <DestinationDisplayRef ref="ENT:DestinationDisplay:1-via"></DestinationDisplayRef>
+                                </StopPointInJourneyPattern>
+                                <StopPointInJourneyPattern order="2" version="1" id="ENT:StopPointInJourneyPattern:2">
+                                    <ScheduledStopPointRef ref="ENT:ScheduledStopPoint:2"></ScheduledStopPointRef>
+                                    <ForAlighting>true</ForAlighting>
+                                    <ForBoarding>true</ForBoarding>
+                                    <DestinationDisplayRef ref="ENT:DestinationDisplay:1"></DestinationDisplayRef>
+                                </StopPointInJourneyPattern>
+                                <StopPointInJourneyPattern order="3" version="1" id="ENT:StopPointInJourneyPattern:3">
+                                    <ScheduledStopPointRef ref="ENT:ScheduledStopPoint:3"></ScheduledStopPointRef>
+                                    <ForBoarding>false</ForBoarding>
+                                </StopPointInJourneyPattern>
+                            </pointsInSequence>
+                        </JourneyPattern>
+                    </journeyPatterns>
+                </ServiceFrame>
+                <TimetableFrame id="ENT:TimetableFrame:1" version="1">
+                    <vehicleJourneys>
+                        <DeadRun version="1" id="ENT:DeadRun:1">
+                            <JourneyDuration>PT2H</JourneyDuration>
+                            <dayTypes>
+                                <DayTypeRef version="1" ref="ENT:DayType:ukedag"></DayTypeRef>
+                            </dayTypes>
+                            <JourneyPatternRef ref="ENT:JourneyPattern:1"></JourneyPatternRef>
+                            <VehicleTypeRef ref="ENT:VehicleType:1"></VehicleTypeRef>
+                            <passingTimes>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:1">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:1"></StopPointInJourneyPatternRef>
+                                    <DepartureTime>05:30:00</DepartureTime>
+                                </TimetabledPassingTime>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:2">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:2"></StopPointInJourneyPatternRef>
+                                    <ArrivalTime>05:45:00</ArrivalTime>
+                                </TimetabledPassingTime>
+                            </passingTimes>
+                            <OperatorRef version="1" ref="ENT:Operator:1"></OperatorRef>
+                            <DeadRunType>garageRunOut</DeadRunType>
+                        </DeadRun>
+                        <ServiceJourney version="1" id="ENT:ServiceJourney:1">
+                            <PrivateCode>87654321</PrivateCode>
+                            <JourneyPatternRef ref="ENT:JourneyPattern:1" version="1"></JourneyPatternRef>
+                            <LineRef ref="ENT:Line:1" version="1"></LineRef>
+                            <passingTimes>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:1">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:1" version="1"></StopPointInJourneyPatternRef>
+                                    <DepartureTime>11:30:00</DepartureTime>
+                                </TimetabledPassingTime>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:2">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:2" version="1"></StopPointInJourneyPatternRef>
+                                    <DepartureTime>13:00:00</DepartureTime>
+                                </TimetabledPassingTime>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:3">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:3" version="1"></StopPointInJourneyPatternRef>
+                                    <ArrivalTime>00:30:00</ArrivalTime>
+                                    <ArrivalDayOffset>1</ArrivalDayOffset>
+                                </TimetabledPassingTime>
+                            </passingTimes>
+                        </ServiceJourney>
+                        <ServiceJourney version="1" id="ENT:ServiceJourney:2">
+                            <PrivateCode>87654321</PrivateCode>
+                            <JourneyPatternRef ref="ENT:JourneyPattern:1" version="1"></JourneyPatternRef>
+                            <dayTypes>
+                                <DayTypeRef ref="ENT:DayType:1"></DayTypeRef>
+                            </dayTypes>
+                            <LineRef ref="ENT:Line:1" version="1"></LineRef>
+                            <passingTimes>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:1">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:1" version="1"></StopPointInJourneyPatternRef>
+                                    <DepartureTime>11:30:00</DepartureTime>
+                                </TimetabledPassingTime>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:2">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:2" version="1"></StopPointInJourneyPatternRef>
+                                    <DepartureTime>13:00:00</DepartureTime>
+                                </TimetabledPassingTime>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:3">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:3" version="1"></StopPointInJourneyPatternRef>
+                                    <ArrivalTime>00:30:00</ArrivalTime>
+                                    <ArrivalDayOffset>1</ArrivalDayOffset>
+                                </TimetabledPassingTime>
+                            </passingTimes>
+                        </ServiceJourney>
+                        <ServiceJourney version="1" id="ENT:ServiceJourney:3">
+                            <PrivateCode>87654321</PrivateCode>
+                            <JourneyPatternRef ref="ENT:JourneyPattern:1" version="1"></JourneyPatternRef>
+                            <dayTypes>
+                                <DayTypeRef ref="ENT:DayType:2"></DayTypeRef>
+                            </dayTypes>
+                            <LineRef ref="ENT:Line:1" version="1"></LineRef>
+                            <passingTimes>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:1">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:1" version="1"></StopPointInJourneyPatternRef>
+                                    <DepartureTime>11:30:00</DepartureTime>
+                                </TimetabledPassingTime>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:2">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:2" version="1"></StopPointInJourneyPatternRef>
+                                    <DepartureTime>13:00:00</DepartureTime>
+                                </TimetabledPassingTime>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:3">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:3" version="1"></StopPointInJourneyPatternRef>
+                                    <ArrivalTime>00:30:00</ArrivalTime>
+                                    <ArrivalDayOffset>1</ArrivalDayOffset>
+                                </TimetabledPassingTime>
+                            </passingTimes>
+                        </ServiceJourney>
+                        <ServiceJourney version="1" id="ENT:ServiceJourney:4">
+                            <PrivateCode>87654321</PrivateCode>
+                            <JourneyPatternRef ref="ENT:JourneyPattern:1" version="1"></JourneyPatternRef>
+                            <dayTypes>
+                                <DayTypeRef ref="ENT:DayType:3"></DayTypeRef>
+                            </dayTypes>
+                            <LineRef ref="ENT:Line:1" version="1"></LineRef>
+                            <passingTimes>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:1">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:1" version="1"></StopPointInJourneyPatternRef>
+                                    <DepartureTime>11:30:00</DepartureTime>
+                                </TimetabledPassingTime>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:2">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:2" version="1"></StopPointInJourneyPatternRef>
+                                    <DepartureTime>13:00:00</DepartureTime>
+                                </TimetabledPassingTime>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:3">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:3" version="1"></StopPointInJourneyPatternRef>
+                                    <ArrivalTime>00:30:00</ArrivalTime>
+                                    <ArrivalDayOffset>1</ArrivalDayOffset>
+                                </TimetabledPassingTime>
+                            </passingTimes>
+                        </ServiceJourney>
+                        <DatedServiceJourney id="ENT:DatedServiceJourney:2025-01-29" version="1">
+                            <ServiceJourneyRef ref="ENT:ServiceJourney:1" version="1"></ServiceJourneyRef>
+                            <OperatingDayRef ref="ENT:OperatingDay:2025-01-29"></OperatingDayRef>
+                        </DatedServiceJourney>
+                        <DatedServiceJourney id="ENT:DatedServiceJourney:2025-01-30" version="1">
+                            <ServiceJourneyRef ref="ENT:ServiceJourney:1" version="1"></ServiceJourneyRef>
+                            <OperatingDayRef ref="ENT:OperatingDay:2025-01-30"></OperatingDayRef>
+                        </DatedServiceJourney>
+                    </vehicleJourneys>
+                </TimetableFrame>
+            </frames>
+        </CompositeFrame>
+    </dataObjects>
+</PublicationDelivery>
