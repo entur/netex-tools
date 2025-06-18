@@ -116,26 +116,6 @@
                 </ServiceFrame>
                 <TimetableFrame id="ENT:TimetableFrame:1" version="1">
                     <vehicleJourneys>
-                        <DeadRun version="1" id="ENT:DeadRun:1">
-                            <JourneyDuration>PT2H</JourneyDuration>
-                            <dayTypes>
-                                <DayTypeRef version="1" ref="ENT:DayType:ukedag"></DayTypeRef>
-                            </dayTypes>
-                            <JourneyPatternRef ref="ENT:JourneyPattern:1"></JourneyPatternRef>
-                            <VehicleTypeRef ref="ENT:VehicleType:1"></VehicleTypeRef>
-                            <passingTimes>
-                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:1">
-                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:1"></StopPointInJourneyPatternRef>
-                                    <DepartureTime>05:30:00</DepartureTime>
-                                </TimetabledPassingTime>
-                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:2">
-                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:2"></StopPointInJourneyPatternRef>
-                                    <ArrivalTime>05:45:00</ArrivalTime>
-                                </TimetabledPassingTime>
-                            </passingTimes>
-                            <OperatorRef version="1" ref="ENT:Operator:1"></OperatorRef>
-                            <DeadRunType>garageRunOut</DeadRunType>
-                        </DeadRun>
                         <ServiceJourney version="1" id="ENT:ServiceJourney:1">
                             <PrivateCode>87654321</PrivateCode>
                             <JourneyPatternRef ref="ENT:JourneyPattern:1" version="1"></JourneyPatternRef>
