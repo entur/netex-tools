@@ -16,10 +16,10 @@ class EntitySelectionTest {
     val ebID = "e:b"
     val eaaID = "e:a:a"
 
-    private val e = Entity(eID, PARENT_TYPE)
-    private val ea = Entity(eaID, CHILD_TYPE, e)
-    private val eb = Entity(ebID, CHILD_TYPE, e)
-    private val eaa = Entity(eaaID, CHILD_TYPE, ea)
+    private val e = Entity(eID, PARENT_TYPE, PublicationEnumeration.PUBLIC.value)
+    private val ea = Entity(eaID, CHILD_TYPE, PublicationEnumeration.PUBLIC.value, e)
+    private val eb = Entity(ebID, CHILD_TYPE, PublicationEnumeration.PUBLIC.value, e)
+    private val eaa = Entity(eaaID, CHILD_TYPE, PublicationEnumeration.PUBLIC.value, ea)
 
     private val alias = Alias(mutableMapOf())
     private val model = EntityModel(alias)

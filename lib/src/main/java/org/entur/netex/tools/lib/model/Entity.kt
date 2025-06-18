@@ -3,6 +3,7 @@ package org.entur.netex.tools.lib.model
 data class Entity(
     val id : String,
     val type : String,
+    val publication : String,
     val parent : Entity? = null
 ) {
     companion object {

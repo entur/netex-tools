@@ -45,7 +45,7 @@ data class FilterNetexApp(
   }
 
   private fun selectEntitiesToKeep() {
-    selection.includeAll()
+    selection.includePublicEntities()
   }
 
   private fun exportXmlFiles() {

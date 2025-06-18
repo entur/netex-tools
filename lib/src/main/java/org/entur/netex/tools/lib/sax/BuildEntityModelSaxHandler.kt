@@ -23,8 +23,10 @@ class BuildEntityModelSaxHandler(
 
         // Handle entity
         val id = attributes?.getValue("id")
+        val publication = attributes?.getValue("publication") ?: "public"
+
         if (id != null) {
-            val entity = Entity(id, type, currentEntity)
+            val entity = Entity(id, type, publication, currentEntity)
             currentEntity = entity
             entities.addEntity(entity)
         } else {

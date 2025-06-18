@@ -89,6 +89,11 @@ class EntitySelection(val model : EntityModel) {
 
 
     fun selectType(type : String) = SelectByType(this, type)
+
+    fun includePublicEntities() {
+        model.listAllEntities().filter { entity -> entity.publication == PublicationEnumeration.PUBLIC.value }.forEach(::select)
+    }
+
     fun includeAll() {
         model.listAllEntities().forEach { select(it) }
     }

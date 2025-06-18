@@ -205,13 +205,9 @@
                                 </TimetabledPassingTime>
                             </passingTimes>
                         </ServiceJourney>
-                        <DatedServiceJourney id="ENT:DatedServiceJourney:2025-01-29" version="1">
+                        <DatedServiceJourney id="ENT:DatedServiceJourney:2025-01-29" version="1" publication="public">
                             <ServiceJourneyRef ref="ENT:ServiceJourney:1" version="1"></ServiceJourneyRef>
                             <OperatingDayRef ref="ENT:OperatingDay:2025-01-29"></OperatingDayRef>
-                        </DatedServiceJourney>
-                        <DatedServiceJourney id="ENT:DatedServiceJourney:2025-01-30" version="1">
-                            <ServiceJourneyRef ref="ENT:ServiceJourney:1" version="1"></ServiceJourneyRef>
-                            <OperatingDayRef ref="ENT:OperatingDay:2025-01-30"></OperatingDayRef>
                         </DatedServiceJourney>
                     </vehicleJourneys>
                 </TimetableFrame>

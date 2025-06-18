@@ -10,8 +10,8 @@ class EntityModelTest {
 
     val eID = "e1"
     val fID = "f1"
-    private val e = Entity(eID, "MyType")
-    private val f = Entity(fID, "Other", e)
+    private val e = Entity(eID, "MyType", PublicationEnumeration.PUBLIC.value)
+    private val f = Entity(fID, "Other", PublicationEnumeration.PUBLIC.value, e)
 
     private val subject = EntityModel(Alias(mutableMapOf(Pair("MyType", "MT"))))
 

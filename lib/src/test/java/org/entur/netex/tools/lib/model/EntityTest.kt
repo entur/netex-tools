@@ -10,9 +10,9 @@ class EntityTest {
     val pID = "p"
     val cID = "c"
 
-    val grandparent = Entity(gpID, "GrandParent")
-    val parent = Entity(pID, "Parent", grandparent)
-    val child = Entity(cID, "Child", parent)
+    val grandparent = Entity(gpID, "GrandParent", PublicationEnumeration.PUBLIC.value)
+    val parent = Entity(pID, "Parent", PublicationEnumeration.PUBLIC.value, grandparent)
+    val child = Entity(cID, "Child", PublicationEnumeration.PUBLIC.value, parent)
 
     @Test
     fun testToString() {

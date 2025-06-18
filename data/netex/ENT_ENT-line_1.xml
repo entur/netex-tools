@@ -287,7 +287,7 @@
                         <!-- DatedServiceJourney describes a single unique departure. It combines the
                             template of ServiceJourney+JourneyPattern with an OperatingDay reference.
                            This creates a unique ID per departure, and Vehicles (or ships) can be associated with it. -->
-                        <DatedServiceJourney id="ENT:DatedServiceJourney:2025-01-29" version="1">
+                        <DatedServiceJourney id="ENT:DatedServiceJourney:2025-01-29" version="1" publication="public">
                             <!-- Refers to a the ship used for this departure.-->
                             <!--<VehicleRef ref="ENT:Vehicle:1"/>-->
                             <!-- Link to ServiceJourney -->
@@ -295,7 +295,7 @@
                             <!-- References a date listed in the "_shared"-file. -->
                             <OperatingDayRef ref="ENT:OperatingDay:2025-01-29"/>
                         </DatedServiceJourney>
-                        <DatedServiceJourney id="ENT:DatedServiceJourney:2025-01-30" version="1">
+                        <DatedServiceJourney id="ENT:DatedServiceJourney:2025-01-30" version="1" publication="restricted">
                             <!--<VehicleRef ref="ENT:Vehicle:2"/>-->
                             <ServiceJourneyRef ref="ENT:ServiceJourney:1" version="1"/>
                             <OperatingDayRef ref="ENT:OperatingDay:2025-01-30"/>
