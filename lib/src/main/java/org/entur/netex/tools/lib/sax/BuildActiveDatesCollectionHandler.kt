@@ -9,10 +9,12 @@ class BuildActiveDatesCollectionHandler(
     val addDayTypeRefToDateEntry : (String, LocalDate) -> Unit,
     val addDayTypeRefToOperatingDayRefEntry : (String, String) -> Unit,
     val addDayTypeRefToOperatingPeriodRefEntry : (String, String) -> Unit,
+    val addDayTypeToDaysOfWeekEntry : (String, String) -> Unit
 ) : NetexToolsSaxHandler() {
     val stringBuilder = StringBuilder()
     var isParsingOperatingDays = false
     var isParsingDayTypeAssignments = false
+    var isParsingDayTypes = false
 
     var currentOperatingDayId: String = ""
 
@@ -20,6 +22,8 @@ class BuildActiveDatesCollectionHandler(
     var currentDateInDayTypeAssignment: LocalDate? = null
     var currentOperatingDayRefInDayTypeAssignment: String = ""
     var currentOperatingPeriodRefInDayTypeAssignment: String = ""
+
+    var currentDayTypeId: String = ""
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         // Needs to be reset to avoid concatenating of values from different elements
@@ -64,6 +68,17 @@ class BuildActiveDatesCollectionHandler(
                 currentOperatingDayRefInDayTypeAssignment = operatingDayRef
             }
         }
+
+        if (qName == "dayTypes") {
+            isParsingDayTypes = true
+        } else if (qName == "DayType" && isParsingDayTypes) {
+            val dayTypeId = attributes?.getValue("id")
+            if (dayTypeId == null) {
+                Log.warn("Detected DayType without id")
+            } else {
+                currentDayTypeId = dayTypeId
+            }
+        }
     }
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
@@ -71,11 +86,12 @@ class BuildActiveDatesCollectionHandler(
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
+        val valueOfXmlElement = stringBuilder.toString()
+
         // Parsing of <operatingDays>
         if (isParsingOperatingDays) {
             if (qName == "CalendarDate" && currentOperatingDayId != "") {
-                val dateString = stringBuilder.toString()
-                val calendarDate = LocalDate.parse(dateString)
+                val calendarDate = LocalDate.parse(valueOfXmlElement)
                 addOperatingDayToCalendarDateEntry(currentOperatingDayId, calendarDate)
             }
 
@@ -91,7 +107,6 @@ class BuildActiveDatesCollectionHandler(
         // A <DayTypeAssignment> encapsulates Date, OperatingDayRef and/or OperatingPeriodRef
         // Just one of them, or possible to use e.g. both Date and OperatingDayRef in a single DayTypeAssignment?
         if (isParsingDayTypeAssignments) {
-            val valueOfXmlElement = stringBuilder.toString()
             if (qName == "Date") {
                 currentDateInDayTypeAssignment = LocalDate.parse(valueOfXmlElement)
             }
@@ -120,6 +135,17 @@ class BuildActiveDatesCollectionHandler(
             }
 
             return
+        }
+
+        if (isParsingDayTypes) {
+            // Do we need to support WeeksOfMonth etc?
+            if (qName == "DaysOfWeek") {
+                addDayTypeToDaysOfWeekEntry(currentDayTypeId, valueOfXmlElement)
+            }
+
+            if (qName == "dayTypes") {
+                isParsingDayTypes = false
+            }
         }
     }
 }

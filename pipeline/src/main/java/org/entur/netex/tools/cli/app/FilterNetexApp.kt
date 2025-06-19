@@ -23,6 +23,7 @@ data class FilterNetexApp(
   val dayTypeRefToDateMap = mutableMapOf<String, LocalDate>()
   val dayTypeRefToOperatingDayRefMap = mutableMapOf<String, String>()
   val dayTypeRefToOperatingPeriodRefMap = mutableMapOf<String, String>()
+  val dayTypeToDaysOfWeek = mutableMapOf<String, String>()
 
   fun run() {
     setupAndLogStartupInfo()
@@ -92,6 +93,8 @@ data class FilterNetexApp(
 
   private fun addDayTypeRefToOperatingPeriodRefEntry(dayTypeRef: String, operatingPeriodRef: String) = dayTypeRefToOperatingPeriodRefMap.put(dayTypeRef, operatingPeriodRef)
 
+  private fun addDayTypeToDaysOfWeekEntry(dayTypeId: String, daysOfWeek: String) = dayTypeToDaysOfWeek.put(dayTypeId, daysOfWeek)
+
   private fun createNetexSaxReadHandler() = BuildEntityModelSaxHandler(model, SkipElementHandler(skipElements))
 
   private fun createActiveDatesCollectionHandler() = BuildActiveDatesCollectionHandler(
@@ -99,6 +102,7 @@ data class FilterNetexApp(
     ::addDayTypeRefToDateEntry,
     ::addDayTypeRefToOperatingDayRefEntry,
     ::addDayTypeRefToOperatingPeriodRefEntry,
+    ::addDayTypeToDaysOfWeekEntry
   )
 
   private fun createNetexSaxWriteHandler(file: File) = OutputNetexSaxHandler(file, SkipEntityAndElementHandler(skipElements, selection))
