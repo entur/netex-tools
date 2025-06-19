@@ -143,6 +143,10 @@ class BuildActiveDatesCollectionHandler(
                 addDayTypeToDaysOfWeekEntry(currentDayTypeId, valueOfXmlElement)
             }
 
+            if (qName == "DayType") {
+                currentDayTypeId = ""
+            }
+
             if (qName == "dayTypes") {
                 isParsingDayTypes = false
             }
