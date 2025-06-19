@@ -14,12 +14,12 @@ class BuildActiveDatesCollectionHandler(
     var isParsingOperatingDays = false
     var isParsingDayTypeAssignments = false
 
-    lateinit var currentOperatingDayId: String
+    var currentOperatingDayId: String = ""
 
-    lateinit var currentDayTypeRef: String
-    lateinit var currentDateInDayTypeAssignment: LocalDate
-    lateinit var currentOperatingDayRefInDayTypeAssignment: String
-    lateinit var currentOperatingPeriodRefInDayTypeAssignment: String
+    var currentDayTypeRef: String = ""
+    var currentDateInDayTypeAssignment: LocalDate? = null
+    var currentOperatingDayRefInDayTypeAssignment: String = ""
+    var currentOperatingPeriodRefInDayTypeAssignment: String = ""
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         // Needs to be reset to avoid concatenating of values from different elements
@@ -99,18 +99,18 @@ class BuildActiveDatesCollectionHandler(
             if (qName == "DayTypeAssignment" && currentDayTypeRef != "") {
                 // Adding entries need to be done last for DayTypeAssignment, because DayTypeRef and its "values"
                 // are siblings in the DayTypeAssignment XML
-                if (this::currentDateInDayTypeAssignment.isInitialized && currentDateInDayTypeAssignment > LocalDate.MIN) {
-                    addDayTypeRefToDateEntry(currentDayTypeRef, currentDateInDayTypeAssignment)
+                if (currentDateInDayTypeAssignment != null) {
+                    addDayTypeRefToDateEntry(currentDayTypeRef, currentDateInDayTypeAssignment!!)
                 }
-                if (this::currentOperatingDayRefInDayTypeAssignment.isInitialized && currentOperatingDayRefInDayTypeAssignment != "") {
+                if (currentOperatingDayRefInDayTypeAssignment != "") {
                     addDayTypeRefToOperatingDayRefEntry(currentDayTypeRef, currentOperatingDayRefInDayTypeAssignment)
                 }
-                if (this::currentOperatingPeriodRefInDayTypeAssignment.isInitialized && currentOperatingPeriodRefInDayTypeAssignment != "") {
+                if (currentOperatingPeriodRefInDayTypeAssignment != "") {
                     addDayTypeRefToOperatingPeriodRefEntry(currentDayTypeRef, currentOperatingPeriodRefInDayTypeAssignment)
                 }
 
                 currentDayTypeRef = ""
-                currentDateInDayTypeAssignment = LocalDate.MIN
+                currentDateInDayTypeAssignment = null
                 currentOperatingDayRefInDayTypeAssignment = ""
                 currentOperatingPeriodRefInDayTypeAssignment = ""
             }
