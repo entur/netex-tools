@@ -4,7 +4,7 @@ import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.Entity.Companion.EMPTY
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.sax.handlers.CalendarDateHandler
+import org.entur.netex.tools.lib.sax.handlers.*
 import org.xml.sax.Attributes
 
 class BuildEntityModelSaxHandler(
@@ -18,6 +18,11 @@ class BuildEntityModelSaxHandler(
 
     val handlerMap: Map<String, NetexDataCollector> = mapOf(
         "CalendarDate" to CalendarDateHandler(activeDatesModel),
+        "DayTypeAssignment" to DayTypeAssignmentHandler(activeDatesModel),
+        "OperatingDayRef" to OperatingDayRefHandler(activeDatesModel),
+        "OperatingPeriodRef" to OperatingPeriodRefHandler(activeDatesModel),
+        "Date" to DateCollector(activeDatesModel),
+        "DayTypeRef" to DayTypeRefHandler(activeDatesModel),
     )
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
@@ -41,6 +46,11 @@ class BuildEntityModelSaxHandler(
             if (ref != null) {
                 entities.addRef(nn(type), currentEntity!!, ref)
             }
+        }
+
+        val currentHandler = handlerMap.get(currentElement?.name)
+        if (currentHandler != null && currentEntity != null) {
+            currentHandler.startElement(uri, localName, qName, attributes, currentEntity!!)
         }
     }
 
