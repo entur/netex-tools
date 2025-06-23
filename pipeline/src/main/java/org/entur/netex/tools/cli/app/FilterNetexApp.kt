@@ -7,7 +7,6 @@ import org.entur.netex.tools.lib.model.EntitySelection
 import org.entur.netex.tools.lib.sax.*
 import org.entur.netex.tools.lib.utils.Log
 import java.io.File
-import java.time.LocalDate
 
 data class FilterNetexApp(
   val config : CliConfig,
@@ -18,17 +17,11 @@ data class FilterNetexApp(
   val startTime = System.currentTimeMillis()
   val model = EntityModel(config.alias())
   val selection = EntitySelection(model)
-
-  val operatingDayToCalendarDateMap = mutableMapOf<String, LocalDate>()
-  val dayTypeRefToDateMap = mutableMapOf<String, LocalDate>()
-  val dayTypeRefToOperatingDayRefMap = mutableMapOf<String, String>()
-  val dayTypeRefToOperatingPeriodRefMap = mutableMapOf<String, String>()
-  val dayTypeToDaysOfWeek = mutableMapOf<String, String>()
+  val activeDatesModel: ActiveDatesModel = ActiveDatesModel()
 
   fun run() {
     setupAndLogStartupInfo()
     buildEntityModel()
-    buildActiveDatesModel()
     selectEntitiesToKeep()
     exportXmlFiles()
     printReport()
@@ -46,14 +39,6 @@ data class FilterNetexApp(
     parseXmlDocuments(input) { file ->
       Log.info("  << ${file.absolutePath}")
       createNetexSaxReadHandler()
-    }
-  }
-
-  private fun buildActiveDatesModel() {
-    Log.info("\nLoad xml files for collecting active dates")
-    parseXmlDocuments(input) { file ->
-      Log.info("Collecting operatingDay to calendarDate")
-      createActiveDatesCollectionHandler()
     }
   }
 
@@ -85,25 +70,7 @@ data class FilterNetexApp(
     println("Filter NeTEx files done in ${(System.currentTimeMillis() - startTime)/1000.0} seconds.")
   }
 
-  private fun addOperatingDayToCalendarDateMapEntry(operatingDay: String, calendarDate: LocalDate) = operatingDayToCalendarDateMap.put(operatingDay, calendarDate)
-
-  private fun addDayTypeRefToDateEntry(dayTypeRef: String, date: LocalDate) = dayTypeRefToDateMap.put(dayTypeRef, date)
-
-  private fun addDayTypeRefToOperatingDayRefEntry(dayTypeRef: String, operatingDayRef: String) = dayTypeRefToOperatingDayRefMap.put(dayTypeRef, operatingDayRef)
-
-  private fun addDayTypeRefToOperatingPeriodRefEntry(dayTypeRef: String, operatingPeriodRef: String) = dayTypeRefToOperatingPeriodRefMap.put(dayTypeRef, operatingPeriodRef)
-
-  private fun addDayTypeToDaysOfWeekEntry(dayTypeId: String, daysOfWeek: String) = dayTypeToDaysOfWeek.put(dayTypeId, daysOfWeek)
-
-  private fun createNetexSaxReadHandler() = BuildEntityModelSaxHandler(model, SkipElementHandler(skipElements))
-
-  private fun createActiveDatesCollectionHandler() = BuildActiveDatesCollectionHandler(
-    ::addOperatingDayToCalendarDateMapEntry,
-    ::addDayTypeRefToDateEntry,
-    ::addDayTypeRefToOperatingDayRefEntry,
-    ::addDayTypeRefToOperatingPeriodRefEntry,
-    ::addDayTypeToDaysOfWeekEntry
-  )
+  private fun createNetexSaxReadHandler() = BuildEntityModelSaxHandler(model, SkipElementHandler(skipElements), activeDatesModel)
 
   private fun createNetexSaxWriteHandler(file: File) = OutputNetexSaxHandler(file, SkipEntityAndElementHandler(skipElements, selection))
 

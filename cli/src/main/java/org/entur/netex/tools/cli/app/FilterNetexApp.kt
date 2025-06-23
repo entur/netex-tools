@@ -15,6 +15,7 @@ import org.entur.netex.tools.lib.model.NetexTypes.SCHEDULED_STOP_POINT
 import org.entur.netex.tools.lib.model.NetexTypes.SERVICE_JOURNEY
 import org.entur.netex.tools.lib.model.NetexTypes.STOP_POINT_IN_JOURNEY_PATTERN
 import org.entur.netex.tools.lib.model.NetexTypes.TIMETABLED_PASSING_TIME
+import org.entur.netex.tools.lib.sax.ActiveDatesModel
 import org.entur.netex.tools.lib.sax.BuildEntityModelSaxHandler
 import org.entur.netex.tools.lib.sax.OutputNetexSaxHandler
 import org.entur.netex.tools.lib.sax.SkipElementHandler
@@ -122,7 +123,8 @@ data class FilterNetexApp(
     selection.select(type, ids)
   }
 
-  private fun createNetexSaxReadHandler() = BuildEntityModelSaxHandler(model, SkipElementHandler(skipElements))
+  private fun createNetexSaxReadHandler() = BuildEntityModelSaxHandler(model, SkipElementHandler(skipElements),
+    ActiveDatesModel())
 
   private fun createNetexSaxWriteHandler(file: File) = OutputNetexSaxHandler(file, SkipEntityAndElementHandler(skipElements, selection))
 

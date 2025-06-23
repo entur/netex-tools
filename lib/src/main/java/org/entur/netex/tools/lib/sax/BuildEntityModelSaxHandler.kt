@@ -4,14 +4,21 @@ import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.Entity.Companion.EMPTY
 import org.entur.netex.tools.lib.model.EntityModel
+import org.entur.netex.tools.lib.sax.handlers.CalendarDateHandler
 import org.xml.sax.Attributes
 
 class BuildEntityModelSaxHandler(
     val entities : EntityModel,
-    val skipHandler : SkipElementHandler
+    val skipHandler : SkipElementHandler,
+    val activeDatesModel: ActiveDatesModel
+
 ) : NetexToolsSaxHandler() {
     var currentEntity : Entity? = null
     var currentElement : Element? = null
+
+    val handlerMap: Map<String, NetexDataCollector> = mapOf(
+        "CalendarDate" to CalendarDateHandler(activeDatesModel),
+    )
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         val type = qName!!
@@ -37,10 +44,22 @@ class BuildEntityModelSaxHandler(
         }
     }
 
+    override fun characters(ch: CharArray?, start: Int, length: Int) {
+        val currentHandler = handlerMap.get(currentElement?.name)
+
+        if (currentHandler != null && currentEntity != null) {
+            currentHandler.characters(ch, start, length, currentEntity!!)
+        }
+    }
+
     override fun endElement(uri: String?, localName: String?, qName: String?) {
+        val currentHandler = handlerMap.get(currentElement?.name)
+        if (currentHandler != null && currentEntity != null) {
+            currentHandler.endElement(uri, localName, qName, currentEntity!!)
+        }
+
         val c = currentElement
         currentElement = currentElement?.parent
-
         if(skipHandler.endSkip(c)){
             return
         }
