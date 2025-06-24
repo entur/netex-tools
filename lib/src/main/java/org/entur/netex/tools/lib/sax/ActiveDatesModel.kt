@@ -5,7 +5,11 @@ import java.time.LocalDate
 
 data class ActiveDatesModel(
     val operatingDayToCalendarDateMap: MutableMap<String, LocalDate> = mutableMapOf(),
+
+    // operatingPeriods
     val operatingPeriodIdToPeriodMap: MutableMap<String, Period> = mutableMapOf(),
+    val operatingPeriodIdToFromDateRefMap: MutableMap<String, String> = mutableMapOf(),
+    val operatingPeriodIdToToDateRefMap: MutableMap<String, String> = mutableMapOf(),
 
     // DayTypeAssignment
     val dayTypeRefToDateMap: MutableMap<String, MutableList<LocalDate>> = mutableMapOf(),

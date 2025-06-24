@@ -26,6 +26,8 @@ class BuildEntityModelSaxHandler(
         "DaysOfWeek" to DaysOfWeekHandler(activeDatesModel),
         "FromDate" to FromDateHandler(activeDatesModel),
         "ToDate" to ToDateHandler(activeDatesModel),
+        "FromDateRef" to FromDateRefHandler(activeDatesModel),
+        "ToDateRef" to ToDateRefHandler(activeDatesModel),
     )
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
