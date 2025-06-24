@@ -1,5 +1,6 @@
 package org.entur.netex.tools.lib.sax.handlers
 
+import org.entur.netex.tools.lib.extensions.putOrAddToExistingList
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.sax.ActiveDatesModel
 import org.entur.netex.tools.lib.sax.NetexDataCollector
@@ -17,21 +18,21 @@ class DayTypeAssignmentHandler(
             return
         }
         activeDatesModel.currentDayTypeAssignmentOperatingDay?.let {
-            activeDatesModel.dayTypeRefToOperatingDayRefMap.computeIfAbsent(
-                activeDatesModel.currentDayTypeAssignmentDayTypeRef!!
-            ) { mutableListOf() }.add(it)
+            activeDatesModel.dayTypeRefToOperatingDayRefMap.putOrAddToExistingList(
+                activeDatesModel.currentDayTypeAssignmentDayTypeRef!!, it
+            )
         }
 
         activeDatesModel.currentDayTypeAssignmentOperatingPeriod?.let {
-            activeDatesModel.dayTypeRefToOperatingPeriodRefMap.computeIfAbsent(
-                activeDatesModel.currentDayTypeAssignmentDayTypeRef!!
-            ) { mutableListOf() }.add(it)
+            activeDatesModel.dayTypeRefToOperatingPeriodRefMap.putOrAddToExistingList(
+                activeDatesModel.currentDayTypeAssignmentDayTypeRef!!, it
+            )
         }
 
         activeDatesModel.currentDayTypeAssignmentDate?.let {
-            activeDatesModel.dayTypeRefToDateMap.computeIfAbsent(
-                activeDatesModel.currentDayTypeAssignmentDayTypeRef!!
-            ) { mutableListOf() }.add(it)
+            activeDatesModel.dayTypeRefToDateMap.putOrAddToExistingList(
+                activeDatesModel.currentDayTypeAssignmentDayTypeRef!!, it
+            )
         }
         activeDatesModel.currentDayTypeAssignmentDayTypeRef = null
         activeDatesModel.currentDayTypeAssignmentOperatingDay = null
