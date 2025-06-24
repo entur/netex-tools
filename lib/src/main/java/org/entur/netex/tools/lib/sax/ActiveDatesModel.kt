@@ -1,9 +1,11 @@
 package org.entur.netex.tools.lib.sax
 
+import org.entur.netex.tools.lib.sax.model.Period
 import java.time.LocalDate
 
 data class ActiveDatesModel(
     val operatingDayToCalendarDateMap: MutableMap<String, LocalDate> = mutableMapOf(),
+    val operatingPeriodIdToPeriodMap: MutableMap<String, Period> = mutableMapOf(),
 
     // DayTypeAssignment
     val dayTypeRefToDateMap: MutableMap<String, MutableList<LocalDate>> = mutableMapOf(),
