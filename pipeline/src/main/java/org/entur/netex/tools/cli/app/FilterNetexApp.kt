@@ -23,6 +23,7 @@ data class FilterNetexApp(
     setupAndLogStartupInfo()
     buildEntityModel()
     selectEntitiesToKeep()
+    activeDatesModel.findServiceJourneyIdsArrivingNoEarlierThanTwoDaysFromToday()
     exportXmlFiles()
     printReport()
   }
