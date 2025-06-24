@@ -12,6 +12,8 @@ data class ActiveDatesModel(
 
     val dayTypeToDaysOfWeek: MutableMap<String, String> = mutableMapOf(),
 
+    val serviceJourneyToDayTypeRefMap: MutableMap<String, MutableList<String>> = mutableMapOf(),
+
     var currentDayTypeAssignmentDayTypeRef: String? = null,
     var currentDayTypeAssignmentDate: LocalDate? = null,
     var currentDayTypeAssignmentOperatingDay: String? = null,

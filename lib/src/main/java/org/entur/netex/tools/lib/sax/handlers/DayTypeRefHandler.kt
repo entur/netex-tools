@@ -1,5 +1,6 @@
 package org.entur.netex.tools.lib.sax.handlers
 
+import org.entur.netex.tools.lib.extensions.putOrAddToExistingList
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.sax.ActiveDatesModel
 import org.entur.netex.tools.lib.sax.NetexDataCollector
@@ -13,10 +14,16 @@ class DayTypeRefHandler(val activeDatesModel: ActiveDatesModel) : NetexDataColle
         attributes: Attributes?,
         currentEntity: Entity
     ) {
+        val ref = attributes?.getValue("ref")
         if (currentEntity.type == "DayTypeAssignment") {
-            val ref = attributes?.getValue("ref")
             if (ref != null) {
                 activeDatesModel.currentDayTypeAssignmentDayTypeRef = ref
+            }
+        }
+        if (currentEntity.type == "ServiceJourney") {
+            if (ref != null) {
+                val serviceJourneyId = currentEntity.id
+                activeDatesModel.serviceJourneyToDayTypeRefMap.putOrAddToExistingList(serviceJourneyId, ref)
             }
         }
     }
