@@ -16,4 +16,6 @@ data class ActiveDatesModel(
     var currentDayTypeAssignmentDate: LocalDate? = null,
     var currentDayTypeAssignmentOperatingDay: String? = null,
     var currentDayTypeAssignmentOperatingPeriod: String? = null,
-    )
+
+    var currentDayTypeId: String? = null,
+)

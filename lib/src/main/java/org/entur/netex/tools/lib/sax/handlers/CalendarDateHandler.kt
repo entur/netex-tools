@@ -3,10 +3,9 @@ package org.entur.netex.tools.lib.sax.handlers
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.sax.ActiveDatesModel
 import org.entur.netex.tools.lib.sax.NetexDataCollector
-import org.xml.sax.Attributes
 import java.time.LocalDate
 
-class CalendarDateHandler(val activeDatesModel: ActiveDatesModel): NetexDataCollector {
+class CalendarDateHandler(val activeDatesModel: ActiveDatesModel): NetexDataCollector() {
     val stringBuilder = StringBuilder()
 
     override fun characters(ch: CharArray?, start: Int, length: Int, currentEntity: Entity) {
@@ -17,14 +16,5 @@ class CalendarDateHandler(val activeDatesModel: ActiveDatesModel): NetexDataColl
         val calendarDate = LocalDate.parse(stringBuilder.trim().toString())
         activeDatesModel.operatingDayToCalendarDateMap.put(parentEntity.id, calendarDate)
         stringBuilder.setLength(0)
-    }
-
-    override fun startElement(
-        uri: String?,
-        localName: String?,
-        qName: String?,
-        attributes: Attributes?,
-        currentEntity: Entity
-    ) {
     }
 }

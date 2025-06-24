@@ -5,7 +5,18 @@ import org.entur.netex.tools.lib.sax.ActiveDatesModel
 import org.entur.netex.tools.lib.sax.NetexDataCollector
 import org.xml.sax.Attributes
 
-class DayTypeRefHandler(val activeDatesModel: ActiveDatesModel) : NetexDataCollector() {
+class DayTypeHandler(
+    val activeDatesModel: ActiveDatesModel
+): NetexDataCollector() {
+    override fun endElement(
+        uri: String?,
+        localName: String?,
+        qName: String?,
+        currentEntity: Entity
+    ) {
+        activeDatesModel.currentDayTypeId = null
+    }
+
     override fun startElement(
         uri: String?,
         localName: String?,
@@ -13,11 +24,6 @@ class DayTypeRefHandler(val activeDatesModel: ActiveDatesModel) : NetexDataColle
         attributes: Attributes?,
         currentEntity: Entity
     ) {
-        if (currentEntity.type == "DayTypeAssignment") {
-            val ref = attributes?.getValue("ref")
-            if (ref != null) {
-                activeDatesModel.currentDayTypeAssignmentDayTypeRef = ref
-            }
-        }
+        activeDatesModel.currentDayTypeId = attributes?.getValue("id")
     }
 }

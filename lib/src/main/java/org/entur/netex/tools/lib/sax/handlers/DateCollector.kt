@@ -3,10 +3,9 @@ package org.entur.netex.tools.lib.sax.handlers
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.sax.ActiveDatesModel
 import org.entur.netex.tools.lib.sax.NetexDataCollector
-import org.xml.sax.Attributes
 import java.time.LocalDate
 
-class DateCollector(val activeDatesModel: ActiveDatesModel) : NetexDataCollector {
+class DateCollector(val activeDatesModel: ActiveDatesModel) : NetexDataCollector() {
 
     private val stringBuilder = StringBuilder()
 
@@ -20,14 +19,5 @@ class DateCollector(val activeDatesModel: ActiveDatesModel) : NetexDataCollector
         if (parentEntity.type == "DayTypeAssignment") {
             activeDatesModel.currentDayTypeAssignmentDate = calendarDate
         }
-    }
-
-    override fun startElement(
-        uri: String?,
-        localName: String?,
-        qName: String?,
-        attributes: Attributes?,
-        currentEntity: Entity
-    ) {
     }
 }

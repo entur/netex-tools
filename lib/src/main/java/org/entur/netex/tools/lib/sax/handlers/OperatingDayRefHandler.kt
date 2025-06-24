@@ -5,14 +5,7 @@ import org.entur.netex.tools.lib.sax.ActiveDatesModel
 import org.entur.netex.tools.lib.sax.NetexDataCollector
 import org.xml.sax.Attributes
 
-class OperatingDayRefHandler(val activeDatesModel: ActiveDatesModel) : NetexDataCollector {
-
-    override fun characters(ch: CharArray?, start: Int, length: Int, currentEntity: Entity) {
-    }
-
-    override fun endElement(uri: String?, localName: String?, qName: String?, parentEntity: Entity) {
-    }
-
+class OperatingDayRefHandler(val activeDatesModel: ActiveDatesModel) : NetexDataCollector() {
     override fun startElement(
         uri: String?,
         localName: String?,
