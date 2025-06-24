@@ -28,6 +28,8 @@ class BuildEntityModelSaxHandler(
         "ToDate" to ToDateHandler(activeDatesModel),
         "FromDateRef" to FromDateRefHandler(activeDatesModel),
         "ToDateRef" to ToDateRefHandler(activeDatesModel),
+        "DatedServiceJourney" to DatedServiceJourneyHandler(activeDatesModel),
+        "ServiceJourneyRef" to ServiceJourneyRefHandler(activeDatesModel),
     )
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {

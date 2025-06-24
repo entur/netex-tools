@@ -20,6 +20,11 @@ data class ActiveDatesModel(
 
     val serviceJourneyToDayTypeRefMap: MutableMap<String, MutableList<String>> = mutableMapOf(),
 
+    // ServiceJourneyId->OperatingDay[] via DatedServiceJourney
+    val serviceJourneyToOperatingDayRefMap: MutableMap<String, MutableList<String>> = mutableMapOf(),
+    var currentOperatingDayRef: String? = null,
+    var currentServiceJourneyRef: String? = null,
+
     var currentDayTypeAssignmentDayTypeRef: String? = null,
     var currentDayTypeAssignmentDate: LocalDate? = null,
     var currentDayTypeAssignmentOperatingDay: String? = null,

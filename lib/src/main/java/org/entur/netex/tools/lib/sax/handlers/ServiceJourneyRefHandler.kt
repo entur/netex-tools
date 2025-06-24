@@ -5,7 +5,7 @@ import org.entur.netex.tools.lib.sax.ActiveDatesModel
 import org.entur.netex.tools.lib.sax.NetexDataCollector
 import org.xml.sax.Attributes
 
-class OperatingDayRefHandler(val activeDatesModel: ActiveDatesModel) : NetexDataCollector() {
+class ServiceJourneyRefHandler(val activeDatesModel: ActiveDatesModel): NetexDataCollector() {
     override fun startElement(
         uri: String?,
         localName: String?,
@@ -13,14 +13,8 @@ class OperatingDayRefHandler(val activeDatesModel: ActiveDatesModel) : NetexData
         attributes: Attributes?,
         currentEntity: Entity
     ) {
-        if (currentEntity.type == "DayTypeAssignment") {
-            val ref = attributes?.getValue("ref")
-            if (ref != null) {
-                activeDatesModel.currentDayTypeAssignmentOperatingDay = ref
-            }
-        }
         if (currentEntity.type == "DatedServiceJourney") {
-            activeDatesModel.currentOperatingDayRef = attributes?.getValue("ref")
+            activeDatesModel.currentServiceJourneyRef = attributes?.getValue("ref")
         }
     }
 }
