@@ -2,6 +2,7 @@ package org.entur.netex.tools.lib.sax
 
 import org.entur.netex.tools.lib.sax.model.Period
 import java.time.LocalDate
+import java.time.LocalTime
 
 data class ActiveDatesModel(
     val operatingDayToCalendarDateMap: MutableMap<String, LocalDate> = mutableMapOf(),
@@ -24,6 +25,10 @@ data class ActiveDatesModel(
     val serviceJourneyToOperatingDayRefMap: MutableMap<String, MutableList<String>> = mutableMapOf(),
     var currentOperatingDayRef: String? = null,
     var currentServiceJourneyRef: String? = null,
+
+    val serviceJourneyToFinalArrivalTimeMap: MutableMap<String, LocalTime> = mutableMapOf(),
+    val serviceJourneyToFinalArrivalDayOffsetMap: MutableMap<String, Int> = mutableMapOf(),
+    var currentServiceJourneyId: String? = null,
 
     var currentDayTypeAssignmentDayTypeRef: String? = null,
     var currentDayTypeAssignmentDate: LocalDate? = null,
