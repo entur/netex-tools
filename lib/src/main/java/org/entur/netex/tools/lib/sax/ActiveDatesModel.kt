@@ -1,6 +1,5 @@
 package org.entur.netex.tools.lib.sax
 
-import org.entur.netex.tools.lib.extensions.putOrAddToExistingList
 import org.entur.netex.tools.lib.sax.model.Period
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -40,15 +39,25 @@ data class ActiveDatesModel(
     var currentDayTypeId: String? = null,
 ) {
     fun findServiceJourneyIdsArrivingNoEarlierThanTwoDaysFromToday() : Set<String> {
-        val dayTypeRefsToLocalDates = mutableMapOf<String, MutableList<LocalDate>>()
+        // The latest date for every dayType
+        val dayTypeRefToLatestLocalDate = mutableMapOf<String, LocalDate>()
 
         dayTypeRefToDateMap.entries.forEach {
-            dayTypeRefsToLocalDates.putOrAddToExistingList(it.key, it.value)
+            val dayTypeRef = it.key
+            val dates = it.value
+            if (dates.isNotEmpty()) {
+                val latestDate = dates.maxOrNull() ?: LocalDate.MIN
+                dayTypeRefToLatestLocalDate[dayTypeRef] = latestDate
+            }
         }
 
         dayTypeRefToOperatingDayRefMap.entries.forEach {
+            val dayTypeRef = it.key
             val dates = it.value.stream().map({ o -> operatingDayToCalendarDateMap[o]!! }).toList()
-            dayTypeRefsToLocalDates.putOrAddToExistingList(it.key, dates)
+            if (dates.isNotEmpty()) {
+                val latestDate = dates.maxOrNull() ?: LocalDate.MIN
+                dayTypeRefToLatestLocalDate[dayTypeRef] = latestDate
+            }
         }
 
         dayTypeRefToOperatingPeriodRefMap.entries.forEach {
@@ -70,14 +79,73 @@ data class ActiveDatesModel(
                     .takeWhile { it <= toDate }
                     .forEach {
                         if (dayTypeToDaysOfWeek.get(dayTypeRef)!!.contains(it.dayOfWeek)) {
-                            dayTypeRefsToLocalDates.putOrAddToExistingList(dayTypeRef, it)
+                            if (dayTypeRefToLatestLocalDate.containsKey(dayTypeRef)) {
+                                if (it.isAfter(dayTypeRefToLatestLocalDate[dayTypeRef]!!)) {
+                                    dayTypeRefToLatestLocalDate[dayTypeRef] = it
+                                }
+                            } else {
+                                dayTypeRefToLatestLocalDate[dayTypeRef] = it
+                            }
                         }
                     }
-
             }
         }
 
-        return setOf()
-    }
+        val serviceJourneyLastActiveDate = mutableMapOf<String, LocalDate>()
+        serviceJourneyToDayTypeRefMap.forEach {
+            val serviceJourneyId = it.key
+            val dayTypeRefs = it.value
 
+            val sjLastArrivalTime = serviceJourneyToFinalArrivalTimeMap[serviceJourneyId]
+            val sjLastArrivalDayOffset = serviceJourneyToFinalArrivalDayOffsetMap[serviceJourneyId] ?: 0
+
+            dayTypeRefs.forEach { dayTypeRef ->
+                if (dayTypeRefToLatestLocalDate.containsKey(dayTypeRef)) {
+                    val latestDayTypeDate = dayTypeRefToLatestLocalDate[dayTypeRef]!!
+                    val latestDate = if (sjLastArrivalTime != null) {
+                        latestDayTypeDate.plusDays(sjLastArrivalDayOffset.toLong())//.with(sjLastArrivalTime)
+                    } else {
+                        latestDayTypeDate
+                    }
+
+                    if (serviceJourneyLastActiveDate.containsKey(serviceJourneyId)) {
+                        if (latestDate.isAfter(serviceJourneyLastActiveDate[serviceJourneyId]!!)) {
+                            serviceJourneyLastActiveDate[serviceJourneyId] = latestDate
+                        }
+                    } else {
+                        serviceJourneyLastActiveDate[serviceJourneyId] = latestDate
+                    }
+                }
+            }
+
+            serviceJourneyToOperatingDayRefMap.forEach {
+                val serviceJourneyId = it.key
+                val operatingDayRefs = it.value
+                if (operatingDayRefs.isNotEmpty()) {
+                    operatingDayRefs.forEach { operatingDayRef ->
+                        val calendarDate = operatingDayToCalendarDateMap[operatingDayRef]
+                        if (calendarDate != null) {
+                            val latestDate = if (sjLastArrivalTime != null) {
+                                calendarDate.plusDays(sjLastArrivalDayOffset.toLong())//.with(sjLastArrivalTime)
+                            } else {
+                                calendarDate
+                            }
+                            if (serviceJourneyLastActiveDate.containsKey(serviceJourneyId)) {
+                                if (latestDate.isAfter(serviceJourneyLastActiveDate[serviceJourneyId]!!)) {
+                                    serviceJourneyLastActiveDate[serviceJourneyId] = latestDate
+                                }
+                            } else {
+                                serviceJourneyLastActiveDate[serviceJourneyId] = latestDate
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        val twoDaysFromToday = LocalDate.now().minusDays(2)
+        return serviceJourneyLastActiveDate.filter {
+            it.value.isBefore(twoDaysFromToday)
+        }.keys.toSet()
+    }
 }

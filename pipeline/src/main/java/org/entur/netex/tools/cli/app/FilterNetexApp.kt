@@ -23,7 +23,7 @@ data class FilterNetexApp(
     setupAndLogStartupInfo()
     buildEntityModel()
     selectEntitiesToKeep()
-    activeDatesModel.findServiceJourneyIdsArrivingNoEarlierThanTwoDaysFromToday()
+    val serviceJourneysToDelete = activeDatesModel.findServiceJourneyIdsArrivingNoEarlierThanTwoDaysFromToday()
     exportXmlFiles()
     printReport()
   }
