@@ -8,18 +8,18 @@ class EntitySelection(val model : EntityModel) {
     private val selection = mutableMapOf<String, MutableMap<String, Entity>>()
 
     fun isSelected(e : Entity?) : Boolean {
-        if(e == null) { return false }
+        if (e == null) { return false }
         return isSelected(e.type, e.id)
     }
 
     fun isSelected(type : String, id : String?) : Boolean {
-        if(id == null) return false
+        if (id == null) return false
         val m = selection[type]
         return m != null && m.containsKey(id)
     }
 
     fun select(e: Entity?) : Boolean {
-        if(e == null) { return false; }
+        if (e == null) { return false; }
         val res = selection.computeIfAbsent(e.type) { mutableMapOf() }.put(e.id, e)
         return res == null
     }
@@ -27,7 +27,7 @@ class EntitySelection(val model : EntityModel) {
     fun select(type : String, ids : List<String>) {
         ids.forEach {
             val e = model.getEntity(it)
-            if(type == e?.type) {
+            if (type == e?.type) {
                 select(e)
             }
             else {
@@ -86,7 +86,6 @@ class EntitySelection(val model : EntityModel) {
     fun forEachSelected(consumer : (Entity) -> Unit) {
         selection.flatMap { it.value.values }.forEach{e -> consumer(e)}
     }
-
 
     fun selectType(type : String) = SelectByType(this, type)
 

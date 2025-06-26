@@ -23,7 +23,7 @@ class SelectByType(
 
     fun ifRefSourceSelected(sourceType :String) : EntitySelection {
         selection.model.forAllReferences(sourceType) { sourceRef ->
-            if(selection.isSelected(sourceRef.source)) {
+            if (selection.isSelected(sourceRef.source)) {
                 val target = selection.model.getEntity(sourceRef.ref)
                 if (type == target?.type) {
                     selection.select(target)
@@ -36,7 +36,7 @@ class SelectByType(
     fun ifParentSelected(parentType: String) : EntitySelection {
         selection.model.forAllEntities(type) { child ->
             val parent = child.parent!!
-            if(parent.type == parentType && selection.isSelected(parent)) {
+            if (parent.type == parentType && selection.isSelected(parent)) {
                 selection.select(child)
             }
         }
@@ -46,7 +46,7 @@ class SelectByType(
     fun ifChildSelected(childType: String)  : EntitySelection {
         selection.model.forAllEntities(childType) { child ->
             val parent = child.parent
-            if(parent?.type == type && selection.isSelected(child)) {
+            if (parent?.type == type && selection.isSelected(child)) {
                 selection.select(parent)
             }
         }

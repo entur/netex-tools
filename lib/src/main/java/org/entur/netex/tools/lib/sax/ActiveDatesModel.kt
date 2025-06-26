@@ -38,7 +38,7 @@ data class ActiveDatesModel(
 
     var currentDayTypeId: String? = null,
 ) {
-    fun findServiceJourneyIdsArrivingNoEarlierThanTwoDaysFromToday() : Set<String> {
+    fun serviceJourneysToKeep() : List<String> {
         // The latest date for every dayType
         val dayTypeRefToLatestLocalDate = mutableMapOf<String, LocalDate>()
 
@@ -143,9 +143,9 @@ data class ActiveDatesModel(
             }
         }
 
-        val twoDaysFromToday = LocalDate.now().minusDays(2)
+        val twoDaysAgo = LocalDate.now().minusDays(2)
         return serviceJourneyLastActiveDate.filter {
-            it.value.isBefore(twoDaysFromToday)
-        }.keys.toSet()
+            !it.value.isBefore(twoDaysAgo)
+        }.keys.toList()
     }
 }
