@@ -10,7 +10,8 @@ import java.io.File
 
 class OutputNetexSaxHandler(
     private val outFile : File,
-    private val skipHandler : SkipEntityAndElementHandler
+    private val skipHandler : SkipEntityAndElementHandler,
+    private val preserveComments : Boolean = true
 ) : NetexToolsSaxHandler(), LexicalHandler {
     private val output = outFile.bufferedWriter(Charsets.UTF_8)
     private var currentElement : Element? = null
@@ -46,8 +47,8 @@ class OutputNetexSaxHandler(
     }
 
     override fun endDocument() {
-        // Process the buffer to convert empty reference elements to self-closing
-        val processedOutput = convertEmptyReferencesToSelfClosing(outputBuffer.toString())
+        // Process the buffer to convert empty elements to self-closing
+        val processedOutput = convertEmptyElementsToSelfClosing(outputBuffer.toString())
         output.write(processedOutput)
         output.flush()
         output.close()
@@ -195,6 +196,11 @@ class OutputNetexSaxHandler(
         if(skipHandler.inSkipMode()) {
             return
         }
+        
+        if (!preserveComments) {
+            return  // Skip comments when preserveComments is false
+        }
+        
         val commentText = String(ch!!, start, length)
         // Mark any parent collection as having content
         if(collectionElementStack.isNotEmpty()) {
@@ -203,12 +209,12 @@ class OutputNetexSaxHandler(
         write("<!--$commentText-->")
     }
     
-    private fun convertEmptyReferencesToSelfClosing(xmlContent: String): String {
-        // Pattern to match empty reference elements that should be self-closing
-        // Matches elements ending with "Ref" that have only whitespace (including newlines) between opening and closing tags
-        val emptyRefPattern = Regex("""<(\w*Ref)(\s+[^>]*?)>\s*</\1>""", RegexOption.MULTILINE)
+    private fun convertEmptyElementsToSelfClosing(xmlContent: String): String {
+        // Pattern to match all empty elements that should be self-closing
+        // Matches any element that has only whitespace (including newlines) between opening and closing tags
+        val emptyElementPattern = Regex("""<(\w+)(\s+[^>]*?|)>\s*</\1>""", RegexOption.MULTILINE)
         
-        return emptyRefPattern.replace(xmlContent) { matchResult ->
+        return emptyElementPattern.replace(xmlContent) { matchResult ->
             val tagName = matchResult.groupValues[1]
             val attributes = matchResult.groupValues[2]
             "<$tagName$attributes/>"

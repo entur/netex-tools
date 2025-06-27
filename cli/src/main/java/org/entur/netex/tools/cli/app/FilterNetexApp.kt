@@ -126,6 +126,6 @@ data class FilterNetexApp(
   private fun createNetexSaxReadHandler() = BuildEntityModelSaxHandler(model, SkipElementHandler(skipElements),
     ActiveDatesModel())
 
-  private fun createNetexSaxWriteHandler(file: File) = OutputNetexSaxHandler(file, SkipEntityAndElementHandler(skipElements, selection))
+  private fun createNetexSaxWriteHandler(file: File) = OutputNetexSaxHandler(file, SkipEntityAndElementHandler(skipElements, selection), config.preserveComments)
 
 }

@@ -1,6 +1,7 @@
 {
   "logLevel": "INFO",
   "printReport": true,
+  "preserveComments": true,
   "period": {
     "start": "2024-01-01",
     "end": "2025-06-20"
