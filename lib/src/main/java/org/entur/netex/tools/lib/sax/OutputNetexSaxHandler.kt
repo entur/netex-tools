@@ -19,8 +19,26 @@ class OutputNetexSaxHandler(
     private val outputBuffer = StringBuilder()
     private var elementStartPos = 0
     private var hasContentBetweenTags = false
+    
+    // Stack to track potential collection elements and their start positions
+    private val collectionElementStack = mutableListOf<CollectionElementInfo>()
+    
+    // Data class to track collection element information
+    private data class CollectionElementInfo(
+        val element: Element,
+        val startPosition: Int,
+        var hasSelectedChildren: Boolean = false
+    )
 
     override fun setDocumentLocator(locator: Locator?) {
+    }
+    
+    // Check if an element name represents a collection (plural form, lowercase start)
+    private fun isCollectionElement(elementName: String): Boolean {
+        return elementName.length > 1 && 
+               elementName[0].isLowerCase() && 
+               elementName.endsWith("s") &&
+               !elementName.endsWith("ss") // Avoid false positives like "class"
     }
 
     override fun startDocument() {
@@ -58,6 +76,10 @@ class OutputNetexSaxHandler(
         }
         else {
             hasContentBetweenTags = true
+            // Mark any parent collection as having content
+            if(collectionElementStack.isNotEmpty()) {
+                collectionElementStack.last().hasSelectedChildren = true
+            }
             write(StringEscapeUtils.escapeXml11(text))
         }
     }
@@ -77,8 +99,19 @@ class OutputNetexSaxHandler(
         if(skipHandler.startSkip(currentElement!!, id)) {
             return
         }
+        
+        // Check if this is a collection element - track it for potential empty collection removal
+        if(isCollectionElement(qName)) {
+            collectionElementStack.add(CollectionElementInfo(currentElement!!, outputBuffer.length))
+        }
+        
+        // Mark non-collection elements with IDs as having selected children for parent collections
         if(id != null) {
             empty = false
+            // Mark any parent collection as having selected children
+            if(collectionElementStack.isNotEmpty()) {
+                collectionElementStack.last().hasSelectedChildren = true
+            }
         }
         
         // Reset content tracking for this element
@@ -100,6 +133,19 @@ class OutputNetexSaxHandler(
         if(skipHandler.endSkip(c)){
             return
         }
+        
+        // Check if we're ending a collection element
+        if(collectionElementStack.isNotEmpty() && collectionElementStack.last().element === c) {
+            val collectionInfo = collectionElementStack.removeAt(collectionElementStack.size - 1)
+            
+            // If the collection has no selected children, remove it from the output buffer
+            if(!collectionInfo.hasSelectedChildren) {
+                // Remove everything from the collection start position to the current position
+                outputBuffer.delete(collectionInfo.startPosition, outputBuffer.length)
+                return // Don't write the closing tag
+            }
+        }
+        
         write("</$qName>")
     }
 
@@ -150,6 +196,10 @@ class OutputNetexSaxHandler(
             return
         }
         val commentText = String(ch!!, start, length)
+        // Mark any parent collection as having content
+        if(collectionElementStack.isNotEmpty()) {
+            collectionElementStack.last().hasSelectedChildren = true
+        }
         write("<!--$commentText-->")
     }
     
