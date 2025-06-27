@@ -83,15 +83,50 @@ class EntitySelection(val model : EntityModel) {
         }
     }
 
+    /**
+     * Remove entities from this selection based on a map of entity types to sets of entity IDs.
+     */
+    fun removeAll(entitiesToRemove: Map<String, Set<String>>) {
+        entitiesToRemove.forEach { (type, idsToRemove) ->
+            val entitiesOfType = selection[type]
+            if (entitiesOfType != null) {
+                idsToRemove.forEach { id ->
+                    entitiesOfType.remove(id)
+                }
+                // Clean up empty type maps
+                if (entitiesOfType.isEmpty()) {
+                    selection.remove(type)
+                }
+            }
+        }
+    }
+
+    fun remove(consumer : (Entity) -> Boolean) {
+        val toRemove = mutableListOf<Pair<String, String>>()
+
+        selection.forEach { (type, entitiesMap) ->
+            entitiesMap.forEach { (id, entity) ->
+                if (consumer(entity)) {
+                    toRemove.add(Pair(type, id))
+                }
+            }
+        }
+
+        // Remove entities that match the predicate
+        toRemove.forEach { (type, id) ->
+            selection[type]?.remove(id)
+            // Clean up empty type maps
+            if (selection[type]?.isEmpty() == true) {
+                selection.remove(type)
+            }
+        }
+    }
+
     fun forEachSelected(consumer : (Entity) -> Unit) {
         selection.flatMap { it.value.values }.forEach{e -> consumer(e)}
     }
 
     fun selectType(type : String) = SelectByType(this, type)
-
-    fun includePublicEntities() {
-        model.listAllEntities().filter { entity -> entity.publication == PublicationEnumeration.PUBLIC.value }.forEach(::select)
-    }
 
     fun includeAll() {
         model.listAllEntities().forEach { select(it) }

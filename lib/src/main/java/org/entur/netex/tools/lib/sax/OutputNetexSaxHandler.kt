@@ -5,16 +5,20 @@ import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.utils.Log
 import org.xml.sax.Attributes
 import org.xml.sax.Locator
+import org.xml.sax.ext.LexicalHandler
 import java.io.File
 
 class OutputNetexSaxHandler(
     private val outFile : File,
     private val skipHandler : SkipEntityAndElementHandler
-) : NetexToolsSaxHandler() {
+) : NetexToolsSaxHandler(), LexicalHandler {
     private val output = outFile.bufferedWriter(Charsets.UTF_8)
     private var currentElement : Element? = null
     private var whiteSpace : String? = null
     private var empty = true
+    private val outputBuffer = StringBuilder()
+    private var elementStartPos = 0
+    private var hasContentBetweenTags = false
 
     override fun setDocumentLocator(locator: Locator?) {
     }
@@ -24,6 +28,9 @@ class OutputNetexSaxHandler(
     }
 
     override fun endDocument() {
+        // Process the buffer to convert empty reference elements to self-closing
+        val processedOutput = convertEmptyReferencesToSelfClosing(outputBuffer.toString())
+        output.write(processedOutput)
         output.flush()
         output.close()
 
@@ -50,6 +57,7 @@ class OutputNetexSaxHandler(
             whiteSpace = text
         }
         else {
+            hasContentBetweenTags = true
             write(StringEscapeUtils.escapeXml11(text))
         }
     }
@@ -72,6 +80,10 @@ class OutputNetexSaxHandler(
         if(id != null) {
             empty = false
         }
+        
+        // Reset content tracking for this element
+        hasContentBetweenTags = false
+        
         write("<$qName")
         if(attributes != null) {
             for (i in 0..<attributes.length) {
@@ -93,18 +105,63 @@ class OutputNetexSaxHandler(
 
     private fun write(text : CharArray, start : Int, length : Int) {
         printCachedWhiteSpace()
-        output.write(text, start, length)
+        outputBuffer.append(text, start, length)
     }
 
     private fun write(text : String) {
         printCachedWhiteSpace()
-        output.write(text)
+        outputBuffer.append(text)
     }
 
     private fun printCachedWhiteSpace() {
         if(whiteSpace != null) {
-            output.write(whiteSpace!!)
+            outputBuffer.append(whiteSpace!!)
             whiteSpace = null
+        }
+    }
+    
+    // LexicalHandler methods for comment preservation
+    override fun startDTD(name: String?, publicId: String?, systemId: String?) {
+        // Not needed for NeTEx files
+    }
+    
+    override fun endDTD() {
+        // Not needed for NeTEx files
+    }
+    
+    override fun startEntity(name: String?) {
+        // Not needed for NeTEx files
+    }
+    
+    override fun endEntity(name: String?) {
+        // Not needed for NeTEx files
+    }
+    
+    override fun startCDATA() {
+        // Not needed for NeTEx files
+    }
+    
+    override fun endCDATA() {
+        // Not needed for NeTEx files
+    }
+    
+    override fun comment(ch: CharArray?, start: Int, length: Int) {
+        if(skipHandler.inSkipMode()) {
+            return
+        }
+        val commentText = String(ch!!, start, length)
+        write("<!--$commentText-->")
+    }
+    
+    private fun convertEmptyReferencesToSelfClosing(xmlContent: String): String {
+        // Pattern to match empty reference elements that should be self-closing
+        // Matches elements ending with "Ref" that have only whitespace (including newlines) between opening and closing tags
+        val emptyRefPattern = Regex("""<(\w*Ref)(\s+[^>]*?)>\s*</\1>""", RegexOption.MULTILINE)
+        
+        return emptyRefPattern.replace(xmlContent) { matchResult ->
+            val tagName = matchResult.groupValues[1]
+            val attributes = matchResult.groupValues[2]
+            "<$tagName$attributes/>"
         }
     }
 }

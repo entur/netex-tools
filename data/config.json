@@ -1,9 +1,9 @@
 {
   "logLevel": "INFO",
   "printReport": true,
-  "xperiod": {
+  "period": {
     "start": "2024-01-01",
-    "end": "2024-12-31"
+    "end": "2025-06-20"
   },
   "skipElements": [
     "VehicleScheduleFrame",

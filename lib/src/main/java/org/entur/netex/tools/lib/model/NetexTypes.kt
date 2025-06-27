@@ -35,4 +35,6 @@ object NetexTypes {
     const val TOPOGRAPHIC_PLACE_REF = "TopographicPlaceRef"
     const val TIMETABLED_PASSING_TIME = "TimetabledPassingTime"
     const val RESOURCE_FRAME = "ResourceFrame"
+    const val OPERATING_DAY = "OperatingDay"
+    const val DATED_SERVICE_JOURNEY = "DatedServiceJourney"
 }

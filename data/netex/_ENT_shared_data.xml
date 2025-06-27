@@ -216,9 +216,9 @@
                             <FromDate>2025-03-11T00:00:00</FromDate>
                             <ToDate>2025-06-30T00:00:00</ToDate>
                         </OperatingPeriod>
-                        <OperatingPeriod version="1" id="ENT:OperatingPeriod:99">
-                            <FromDateRef ref="FromDateRefTest" />
-                            <ToDateRef ref="ToDateRefTest" />
+                        <OperatingPeriod version="1" id="ENT:OperatingPeriod:2">
+                            <FromDateRef ref="ENT:OperatingDay:2025-01-29" />
+                            <ToDateRef ref="ENT:OperatingDay:2025-04-02" />
                         </OperatingPeriod>
                     </operatingPeriods>
                     <dayTypeAssignments>

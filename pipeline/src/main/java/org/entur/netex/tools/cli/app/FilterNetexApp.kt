@@ -4,7 +4,7 @@ import org.entur.netex.tools.cli.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.model.EntitySelection
-import org.entur.netex.tools.lib.model.NetexTypes
+import org.entur.netex.tools.lib.model.PublicationEnumeration
 import org.entur.netex.tools.lib.sax.*
 import org.entur.netex.tools.lib.utils.Log
 import java.io.File
@@ -44,9 +44,13 @@ data class FilterNetexApp(
   }
 
   private fun selectEntitiesToKeep() {
-    selection.includePublicEntities()
-    val serviceJourneysToKeep = activeDatesModel.serviceJourneysToKeep()
-    selection.select(NetexTypes.SERVICE_JOURNEY, serviceJourneysToKeep)
+    selection.includeAll()
+    selection.remove {
+      it.publication != PublicationEnumeration.PUBLIC.value
+    }
+    config.period?.let {
+      selection.removeAll(activeDatesModel.getEntitiesInactiveAfter(it.end))
+    }
   }
 
   private fun exportXmlFiles() {
