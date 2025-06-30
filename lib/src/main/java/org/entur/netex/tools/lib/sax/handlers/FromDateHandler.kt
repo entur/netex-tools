@@ -19,12 +19,10 @@ class FromDateHandler(
         if (currentEntity.type == "OperatingPeriod") {
             val operatingPeriodId = currentEntity.id
             val existingToDate = activeDatesModel.operatingPeriodIdToPeriodMap[operatingPeriodId]?.toDate
-            activeDatesModel.operatingPeriodIdToPeriodMap.put(
-                operatingPeriodId,
-                Period(
-                    fromDate = LocalDateTime.parse(stringBuilder.toString()).toLocalDate(),
-                    toDate = existingToDate,
-                ))
+            activeDatesModel.operatingPeriodIdToPeriodMap[operatingPeriodId] = Period(
+                fromDate = LocalDateTime.parse(stringBuilder.toString()).toLocalDate(),
+                toDate = existingToDate,
+            )
         }
         stringBuilder.setLength(0)
     }
