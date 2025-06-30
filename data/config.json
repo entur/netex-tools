@@ -4,8 +4,8 @@
   "preserveComments": true,
   "removePrivateData": false,
   "period": {
-    "start": "2024-01-01",
-    "end": "2024-07-20"
+    "start": "2025-06-01",
+    "end": "2025-07-20"
   },
   "xskipElements": [
     "VehicleScheduleFrame",

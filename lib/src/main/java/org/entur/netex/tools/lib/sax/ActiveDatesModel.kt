@@ -41,73 +41,6 @@ data class ActiveDatesModel(
     var currentDayTypeId: String? = null,
 ) {
     /**
-     * Get day types that have dates within the specified range.
-     */
-    fun dayTypesToKeep(startDate: LocalDate, endDate: LocalDate): List<String> {
-        val activeDayTypes = mutableSetOf<String>()
-        
-        // Check DayTypeAssignments with direct dates
-        dayTypeRefToDateMap.forEach { (dayTypeRef, dates) ->
-            if (dates.any { date -> !date.isBefore(startDate) && !date.isAfter(endDate) }) {
-                activeDayTypes.add(dayTypeRef)
-            }
-        }
-        
-        // Check DayTypeAssignments with operating days
-        dayTypeRefToOperatingDayRefMap.forEach { (dayTypeRef, operatingDayRefs) ->
-            val hasActiveDates = operatingDayRefs.any { operatingDayRef ->
-                val calendarDate = operatingDayToCalendarDateMap[operatingDayRef]
-                calendarDate != null && !calendarDate.isBefore(startDate) && !calendarDate.isAfter(endDate)
-            }
-            if (hasActiveDates) {
-                activeDayTypes.add(dayTypeRef)
-            }
-        }
-        
-        // Check DayTypeAssignments with operating periods
-        dayTypeRefToOperatingPeriodRefMap.forEach { (dayTypeRef, operatingPeriodRefs) ->
-            val hasActiveDates = operatingPeriodRefs.any { periodRef ->
-                periodOverlapsDateRange(periodRef, startDate, endDate)
-            }
-            if (hasActiveDates) {
-                activeDayTypes.add(dayTypeRef)
-            }
-        }
-        
-        return activeDayTypes.toList()
-    }
-
-    /**
-     * Get operating periods that overlap with the specified date range.
-     */
-    fun operatingPeriodsToKeep(startDate: LocalDate, endDate: LocalDate): List<String> {
-        return operatingPeriodIdToPeriodMap.keys.filter { periodRef ->
-            periodOverlapsDateRange(periodRef, startDate, endDate)
-        }
-    }
-
-    /**
-     * Get day type assignments that reference active day types or operating periods within the date range.
-     */
-    fun dayTypeAssignmentsToKeep(startDate: LocalDate, endDate: LocalDate): List<String> {
-        val activeDayTypes = dayTypesToKeep(startDate, endDate).toSet()
-        val activeOperatingPeriods = operatingPeriodsToKeep(startDate, endDate).toSet()
-        
-        val activeDayTypeAssignments = mutableSetOf<String>()
-        
-        // Find assignments that reference active day types
-        dayTypeRefToDateMap.keys.forEach { dayTypeRef ->
-            if (activeDayTypes.contains(dayTypeRef)) {
-                // In a real implementation, we'd need to track assignment IDs
-                // For now, we use the dayTypeRef as a proxy
-                activeDayTypeAssignments.add(dayTypeRef)
-            }
-        }
-        
-        return activeDayTypeAssignments.toList()
-    }
-
-    /**
      * Calculate the last active date for each service journey.
      * This is extracted from the existing serviceJourneysToKeep() method for reuse.
      */
@@ -221,26 +154,6 @@ data class ActiveDatesModel(
             }
         }
         return dayTypeRefToLatestLocalDate
-    }
-
-    /**
-     * Check if an operating period overlaps with the specified date range.
-     */
-    private fun periodOverlapsDateRange(periodRef: String, startDate: LocalDate, endDate: LocalDate): Boolean {
-        val fromDate = if (operatingPeriodIdToPeriodMap[periodRef]?.fromDate != null) {
-            operatingPeriodIdToPeriodMap[periodRef]?.fromDate!!
-        } else {
-            operatingDayToCalendarDateMap[operatingPeriodIdToFromDateRefMap[periodRef]]
-        }
-        
-        val toDate = if (operatingPeriodIdToPeriodMap[periodRef]?.toDate != null) {
-            operatingPeriodIdToPeriodMap[periodRef]?.toDate!!
-        } else {
-            operatingDayToCalendarDateMap[operatingPeriodIdToToDateRefMap[periodRef]]
-        }
-        
-        return fromDate != null && toDate != null && 
-               !toDate.isBefore(startDate) && !fromDate.isAfter(endDate)
     }
 
     /**
