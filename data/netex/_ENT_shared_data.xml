@@ -103,15 +103,13 @@
                             <Name>MS Arial</Name>
                             <!-- IMO-number -->
                             <OperationalNumber>8814275</OperationalNumber>
-                            <VehicleTypeRef ref="ENT:VehicleType:1" version="1">
-                            </VehicleTypeRef>
+                            <VehicleTypeRef ref="ENT:VehicleType:1" version="1"/>
                         </Vehicle>
                         <Vehicle id="ENT:Vehicle:2" version="1">
                             <Name>MS Calibri</Name>
                             <!-- IMO-number -->
                             <OperationalNumber>9176187</OperationalNumber>
-                            <VehicleTypeRef ref="ENT:VehicleType:2" version="1">
-                            </VehicleTypeRef>
+                            <VehicleTypeRef ref="ENT:VehicleType:2" version="1"/>
                         </Vehicle>
                     </vehicles>
                 </ResourceFrame>
@@ -217,8 +215,8 @@
                             <ToDate>2025-06-30T00:00:00</ToDate>
                         </OperatingPeriod>
                         <OperatingPeriod version="1" id="ENT:OperatingPeriod:2">
-                            <FromDateRef ref="ENT:OperatingDay:2025-01-29" />
-                            <ToDateRef ref="ENT:OperatingDay:2025-04-02" />
+                            <FromDateRef ref="ENT:OperatingDay:2025-01-29"/>
+                            <ToDateRef ref="ENT:OperatingDay:2025-04-02"/>
                         </OperatingPeriod>
                     </operatingPeriods>
                     <dayTypeAssignments>

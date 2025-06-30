@@ -11,6 +11,9 @@ class SkipEntityAndElementHandler(
     private var skipElement : Element? = null
 
     fun inSkipMode() = skipElement != null
+    
+    // Expose the selection for reference checking
+    fun getSelection() = selection
 
     fun startSkip(currentElement: Element, id : String?): Boolean {
         if(inSkipMode()) {

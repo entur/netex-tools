@@ -10,6 +10,7 @@ data class CliConfig(
     var printReport : Boolean = false,
     var rmUnusedQuays : Boolean = false,
     var preserveComments : Boolean = true,
+    var removePrivateData : Boolean = false,
     var area : String? = null,
     var period : TimePeriod? = null,
     var lines : List<String> = listOf(),

@@ -45,12 +45,35 @@ data class FilterNetexApp(
 
   private fun selectEntitiesToKeep() {
     selection.includeAll()
-    selection.remove {
-      it.publication != PublicationEnumeration.PUBLIC.value
+    if (config.removePrivateData) {
+      selection.remove {
+        it.publication != PublicationEnumeration.PUBLIC.value
+      }
     }
+
     config.period?.let {
       selection.removeAll(activeDatesModel.getEntitiesInactiveAfter(it.end))
     }
+    
+    // Remove unreferenced entities after date-based filtering
+    pruneUnreferencedEntities()
+  }
+  
+  private fun pruneUnreferencedEntities() {
+    // Define entity types that should be removed if not referenced
+    // Order matters: remove from most dependent to least dependent
+    val entityTypesToPrune = listOf(
+      "Route",           // Routes that aren't used by any JourneyPattern
+      "Line",            // Lines that aren't used by any ServiceJourney or Route  
+      "JourneyPattern",  // JourneyPatterns that aren't used by any ServiceJourney
+      "DestinationDisplay", // DestinationDisplays not used by any journey pattern or service journey
+      "RoutePoint",      // RoutePoints not used by any Route
+      "PointOnRoute",    // PointOnRoute not used by any Route
+      "OperatingPeriod"  // OperatingPeriods not used by any DayTypeAssignment
+    )
+    
+    Log.info("Pruning unreferenced entities...")
+    selection.removeUnreferencedEntities(entityTypesToPrune)
   }
 
   private fun exportXmlFiles() {

@@ -40,117 +40,6 @@ data class ActiveDatesModel(
 
     var currentDayTypeId: String? = null,
 ) {
-    fun serviceJourneysToKeep() : List<String> {
-        // The latest date for every dayType
-        val dayTypeRefToLatestLocalDate = mutableMapOf<String, LocalDate>()
-
-        dayTypeRefToDateMap.entries.forEach {
-            val dayTypeRef = it.key
-            val dates = it.value
-            if (dates.isNotEmpty()) {
-                val latestDate = dates.maxOrNull() ?: LocalDate.MIN
-                dayTypeRefToLatestLocalDate[dayTypeRef] = latestDate
-            }
-        }
-
-        dayTypeRefToOperatingDayRefMap.entries.forEach {
-            val dayTypeRef = it.key
-            val dates = it.value.stream().map({ o -> operatingDayToCalendarDateMap[o]!! }).toList()
-            if (dates.isNotEmpty()) {
-                val latestDate = dates.maxOrNull() ?: LocalDate.MIN
-                dayTypeRefToLatestLocalDate[dayTypeRef] = latestDate
-            }
-        }
-
-        dayTypeRefToOperatingPeriodRefMap.entries.forEach {
-            val dayTypeRef = it.key
-            val operatingPeriodRefs = it.value
-            operatingPeriodRefs.forEach { periodRef ->
-                val fromDate = if (operatingPeriodIdToPeriodMap.get(periodRef)?.fromDate != null) {
-                    operatingPeriodIdToPeriodMap.get(periodRef)?.fromDate!!
-                } else {
-                    operatingDayToCalendarDateMap.get(operatingPeriodIdToFromDateRefMap.get(periodRef))
-                }
-                val toDate = if (operatingPeriodIdToPeriodMap.get(periodRef)?.toDate != null) {
-                    operatingPeriodIdToPeriodMap.get(periodRef)?.toDate!!
-                } else {
-                    operatingDayToCalendarDateMap.get(operatingPeriodIdToToDateRefMap.get(periodRef))
-                }
-
-                generateSequence(fromDate) { it.plusDays(1) }
-                    .takeWhile { it <= toDate }
-                    .forEach {
-                        if (dayTypeToDaysOfWeek.get(dayTypeRef)!!.contains(it.dayOfWeek)) {
-                            if (dayTypeRefToLatestLocalDate.containsKey(dayTypeRef)) {
-                                if (it.isAfter(dayTypeRefToLatestLocalDate[dayTypeRef]!!)) {
-                                    dayTypeRefToLatestLocalDate[dayTypeRef] = it
-                                }
-                            } else {
-                                dayTypeRefToLatestLocalDate[dayTypeRef] = it
-                            }
-                        }
-                    }
-            }
-        }
-
-        val serviceJourneyLastActiveDate = mutableMapOf<String, LocalDate>()
-        serviceJourneyToDayTypeRefMap.forEach {
-            val serviceJourneyId = it.key
-            val dayTypeRefs = it.value
-
-            val sjLastArrivalTime = serviceJourneyToFinalArrivalTimeMap[serviceJourneyId]
-            val sjLastArrivalDayOffset = serviceJourneyToFinalArrivalDayOffsetMap[serviceJourneyId] ?: 0
-
-            dayTypeRefs.forEach { dayTypeRef ->
-                if (dayTypeRefToLatestLocalDate.containsKey(dayTypeRef)) {
-                    val latestDayTypeDate = dayTypeRefToLatestLocalDate[dayTypeRef]!!
-                    val latestDate = if (sjLastArrivalTime != null) {
-                        latestDayTypeDate.plusDays(sjLastArrivalDayOffset.toLong())//.with(sjLastArrivalTime)
-                    } else {
-                        latestDayTypeDate
-                    }
-
-                    if (serviceJourneyLastActiveDate.containsKey(serviceJourneyId)) {
-                        if (latestDate.isAfter(serviceJourneyLastActiveDate[serviceJourneyId]!!)) {
-                            serviceJourneyLastActiveDate[serviceJourneyId] = latestDate
-                        }
-                    } else {
-                        serviceJourneyLastActiveDate[serviceJourneyId] = latestDate
-                    }
-                }
-            }
-
-            serviceJourneyToOperatingDayRefMap.forEach {
-                val serviceJourneyId = it.key
-                val operatingDayRefs = it.value
-                if (operatingDayRefs.isNotEmpty()) {
-                    operatingDayRefs.forEach { operatingDayRef ->
-                        val calendarDate = operatingDayToCalendarDateMap[operatingDayRef]
-                        if (calendarDate != null) {
-                            val latestDate = if (sjLastArrivalTime != null) {
-                                calendarDate.plusDays(sjLastArrivalDayOffset.toLong())//.with(sjLastArrivalTime)
-                            } else {
-                                calendarDate
-                            }
-                            if (serviceJourneyLastActiveDate.containsKey(serviceJourneyId)) {
-                                if (latestDate.isAfter(serviceJourneyLastActiveDate[serviceJourneyId]!!)) {
-                                    serviceJourneyLastActiveDate[serviceJourneyId] = latestDate
-                                }
-                            } else {
-                                serviceJourneyLastActiveDate[serviceJourneyId] = latestDate
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        val twoDaysAgo = LocalDate.now().minusDays(2)
-        return serviceJourneyLastActiveDate.filter {
-            !it.value.isBefore(twoDaysAgo)
-        }.keys.toList()
-    }
-
     /**
      * Get day types that have dates within the specified range.
      */
@@ -216,20 +105,6 @@ data class ActiveDatesModel(
         }
         
         return activeDayTypeAssignments.toList()
-    }
-
-    /**
-     * Get all entities (by type and ID) that have dates within the specified range.
-     */
-    fun entitiesWithinDateRange(startDate: LocalDate, endDate: LocalDate): Map<String, List<String>> {
-        return mapOf(
-            NetexTypes.DAY_TYPE to dayTypesToKeep(startDate, endDate),
-            NetexTypes.OPERATING_PERIOD to operatingPeriodsToKeep(startDate, endDate),
-            NetexTypes.DAY_TYPE_ASSIGNMENT to dayTypeAssignmentsToKeep(startDate, endDate),
-            NetexTypes.OPERATING_DAY to operatingDayToCalendarDateMap.filter { (_, date) ->
-                !date.isBefore(startDate) && !date.isAfter(endDate)
-            }.keys.toList()
-        )
     }
 
     /**
@@ -409,16 +284,64 @@ data class ActiveDatesModel(
                     }
                 }
                 NetexTypes.OPERATING_DAY -> {
-                    serviceJourneyToOperatingDayRefMap.any { (sjId, operatingDayRefs) ->
+                    // Check direct references
+                    val directlyReferenced = serviceJourneyToOperatingDayRefMap.any { (sjId, operatingDayRefs) ->
                         allActiveServiceJourneys.contains(sjId) && operatingDayRefs.contains(entityId)
                     }
-                }
-                NetexTypes.OPERATING_PERIOD -> {
-                    dayTypeRefToOperatingPeriodRefMap.any { (dayTypeRef, operatingPeriodRefs) ->
-                        operatingPeriodRefs.contains(entityId) &&
+                    
+                    // Check indirect references through operating periods
+                    val indirectlyReferencedThroughPeriods = if (!directlyReferenced) {
+                        // Find operating periods that reference this operating day
+                        val referencingOperatingPeriods = operatingPeriodIdToFromDateRefMap.filter { (_, fromDateRef) ->
+                            fromDateRef == entityId
+                        }.keys + operatingPeriodIdToToDateRefMap.filter { (_, toDateRef) ->
+                            toDateRef == entityId
+                        }.keys
+                        
+                        // Check if any of these operating periods are referenced by day types of active service journeys
+                        referencingOperatingPeriods.any { operatingPeriodRef ->
+                            dayTypeRefToOperatingPeriodRefMap.any { (dayTypeRef, operatingPeriodRefs) ->
+                                operatingPeriodRefs.contains(operatingPeriodRef) &&
                                 serviceJourneyToDayTypeRefMap.any { (sjId, sjDayTypeRefs) ->
                                     allActiveServiceJourneys.contains(sjId) && sjDayTypeRefs.contains(dayTypeRef)
                                 }
+                            }
+                        }
+                    } else false
+                    
+                    // Check indirect references through day type assignments
+                    val indirectlyReferencedThroughDayTypes = if (!directlyReferenced && !indirectlyReferencedThroughPeriods) {
+                        // Find day types that reference this operating day through day type assignments
+                        val referencingDayTypes = dayTypeRefToOperatingDayRefMap.filter { (_, operatingDayRefs) ->
+                            operatingDayRefs.contains(entityId)
+                        }.keys
+                        
+                        // Check if any of these day types are referenced by active service journeys
+                        referencingDayTypes.any { dayTypeRef ->
+                            serviceJourneyToDayTypeRefMap.any { (sjId, sjDayTypeRefs) ->
+                                allActiveServiceJourneys.contains(sjId) && sjDayTypeRefs.contains(dayTypeRef)
+                            }
+                        }
+                    } else false
+                    
+                    directlyReferenced || indirectlyReferencedThroughPeriods || indirectlyReferencedThroughDayTypes
+                }
+                NetexTypes.OPERATING_PERIOD -> {
+                    // Find day types that reference this operating period
+                    val referencingDayTypes = dayTypeRefToOperatingPeriodRefMap.filter { (_, operatingPeriodRefs) ->
+                        operatingPeriodRefs.contains(entityId)
+                    }.keys
+                    
+                    // If no day types reference this operating period, it's inactive
+                    if (referencingDayTypes.isEmpty()) {
+                        false
+                    } else {
+                        // Check if any of the referencing day types are referenced by active service journeys
+                        referencingDayTypes.any { dayTypeRef ->
+                            serviceJourneyToDayTypeRefMap.any { (sjId, sjDayTypeRefs) ->
+                                allActiveServiceJourneys.contains(sjId) && sjDayTypeRefs.contains(dayTypeRef)
+                            }
+                        }
                     }
                 }
                 // Add other date-related types as needed
@@ -447,8 +370,6 @@ data class ActiveDatesModel(
                 inactiveEntities.computeIfAbsent(NetexTypes.OPERATING_PERIOD) { mutableSetOf() }.add(operatingPeriodRef)
             }
         }
-
-        // TODO: Add logic for DayTypeAssignment if they have their own IDs and need to be removed
 
         return inactiveEntities
     }

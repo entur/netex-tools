@@ -50,15 +50,15 @@
                             <StartTime>05:48:00</StartTime>
                             <EndTime>22:39:00</EndTime>
                             <dayTypes>
-                                <DayTypeRef ref="ENT:DayType:ukedag" version="1"/>
+                                <DayTypeRef ref="ENT:DayType:2" version="1"/>
                             </dayTypes>
                             <!-- NB: 'version' attributs ONLY for references to objects within this file -->
                             <!-- (for validation purposes, MUST be present in proper datasets) -->
                             <StartPointRef ref="ENT:ScheduledStopPoint:1"/>
                             <EndPointRef ref="ENT:ScheduledStopPoint:2"/>
                             <journeys>
-                                <DeadRunRef version="1" ref="ENT:DeadRun:1" />
-                                <VehicleJourneyRef ref="ENT:ServiceJourney:2" />
+                                <DeadRunRef version="1" ref="ENT:DeadRun:1"/>
+                                <VehicleJourneyRef ref="ENT:ServiceJourney:2"/>
                             </journeys>
                         </Block>
                     </blocks>
@@ -165,7 +165,7 @@
                         <DeadRun version="1" id="ENT:DeadRun:1">
                             <JourneyDuration>PT2H</JourneyDuration>
                             <dayTypes>
-                                <DayTypeRef version="1" ref="ENT:DayType:ukedag"/>
+                                <DayTypeRef version="1" ref="ENT:DayType:1"/>
                             </dayTypes>
                             <JourneyPatternRef ref="ENT:JourneyPattern:1"/>
                             <VehicleTypeRef ref="ENT:VehicleType:1"/>
@@ -179,7 +179,7 @@
                                     <ArrivalTime>05:45:00</ArrivalTime>
                                 </TimetabledPassingTime>
                             </passingTimes>
-                            <OperatorRef version="1" ref="ENT:Operator:1"/>
+                            <OperatorRef version="1" ref="ENT:Operator:ENT"/>
                             <DeadRunType>garageRunOut</DeadRunType>
                         </DeadRun>
                         <!-- ServiceJourneys store the passing times corresponding to the JourneyPattern -->

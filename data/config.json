@@ -2,11 +2,12 @@
   "logLevel": "INFO",
   "printReport": true,
   "preserveComments": true,
+  "removePrivateData": false,
   "period": {
     "start": "2024-01-01",
-    "end": "2025-06-20"
+    "end": "2024-07-20"
   },
-  "skipElements": [
+  "xskipElements": [
     "VehicleScheduleFrame",
     "DeadRun"
   ],

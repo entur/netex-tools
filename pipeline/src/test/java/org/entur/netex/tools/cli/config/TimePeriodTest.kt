@@ -1,13 +1,13 @@
 package org.entur.netex.tools.cli.config
 
 import org.junit.jupiter.api.Test
-
 import org.junit.jupiter.api.Assertions.*
+import java.time.LocalDate
 
 class TimePeriodTest {
 
-    val start = "2024-01-01"
-    val end = "2024-02-28"
+    val start = LocalDate.parse("2024-01-01")
+    val end = LocalDate.parse("2024-02-28")
     val subject = TimePeriod(start, end)
 
     @Test
