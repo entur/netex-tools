@@ -11,11 +11,11 @@ import org.entur.netex.tools.lib.sax.NetexDataCollector
 class ArrivalDayOffsetHandler(private val activeDatesModel: ActiveDatesModel) : NetexDataCollector() {
     private val stringBuilder = StringBuilder()
 
-    override fun characters(ch: CharArray?, start: Int, length: Int, currentEntity: Entity) {
+    override fun characters(ch: CharArray?, start: Int, length: Int) {
         stringBuilder.append(ch, start, length)
     }
 
-    override fun endElement(uri: String?, localName: String?, qName: String?, currentEntity: Entity) {
+    override fun endElement(currentEntity: Entity) {
         val arrivalDayOffset = stringBuilder.toString().trim()
         val serviceJourneyId = activeDatesModel.currentServiceJourneyId
         if (serviceJourneyId != null && arrivalDayOffset.isNotEmpty()) {

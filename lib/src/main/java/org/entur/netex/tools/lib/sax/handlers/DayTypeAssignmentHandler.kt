@@ -9,7 +9,7 @@ class DayTypeAssignmentHandler(
     val activeDatesModel: ActiveDatesModel
 ) : NetexDataCollector() {
 
-    override fun endElement(uri: String?, localName: String?, qName: String?, parentEntity: Entity) {
+    override fun endElement(currentEntity: Entity) {
         if (activeDatesModel.currentDayTypeAssignmentDayTypeRef == null) {
             return
         }

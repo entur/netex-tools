@@ -8,13 +8,13 @@ import java.time.LocalDate
 class CalendarDateHandler(val activeDatesModel: ActiveDatesModel): NetexDataCollector() {
     val stringBuilder = StringBuilder()
 
-    override fun characters(ch: CharArray?, start: Int, length: Int, currentEntity: Entity) {
+    override fun characters(ch: CharArray?, start: Int, length: Int) {
         stringBuilder.append(ch, start, length)
     }
 
-    override fun endElement(uri: String?, localName: String?, qName: String?, parentEntity: Entity) {
+    override fun endElement(currentEntity: Entity) {
         val calendarDate = LocalDate.parse(stringBuilder.trim().toString())
-        activeDatesModel.operatingDayToCalendarDateMap.put(parentEntity.id, calendarDate)
+        activeDatesModel.operatingDayToCalendarDateMap.put(currentEntity.id, calendarDate)
         stringBuilder.setLength(0)
     }
 }

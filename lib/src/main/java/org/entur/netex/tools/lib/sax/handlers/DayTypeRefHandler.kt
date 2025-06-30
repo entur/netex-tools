@@ -8,9 +8,6 @@ import org.xml.sax.Attributes
 
 class DayTypeRefHandler(val activeDatesModel: ActiveDatesModel) : NetexDataCollector() {
     override fun startElement(
-        uri: String?,
-        localName: String?,
-        qName: String?,
         attributes: Attributes?,
         currentEntity: Entity
     ) {

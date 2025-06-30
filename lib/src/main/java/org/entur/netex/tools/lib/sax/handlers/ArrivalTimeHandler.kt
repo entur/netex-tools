@@ -12,16 +12,15 @@ import java.time.LocalTime
 class ArrivalTimeHandler(private val activeDatesModel: ActiveDatesModel) : NetexDataCollector() {
     private val stringBuilder = StringBuilder()
 
-    override fun characters(ch: CharArray?, start: Int, length: Int, currentEntity: Entity) {
+    override fun characters(ch: CharArray?, start: Int, length: Int) {
         stringBuilder.append(ch, start, length)
     }
 
-    override fun endElement(uri: String?, localName: String?, qName: String?, currentEntity: Entity) {
-        val arrivalTime = stringBuilder.toString().trim()
+    override fun endElement(currentEntity: Entity) {
+        val arrivalTimeString = stringBuilder.toString().trim()
         val serviceJourneyId = activeDatesModel.currentServiceJourneyId
-        if (serviceJourneyId != null && arrivalTime.isNotEmpty()) {
-            val arrivalTime = LocalTime.parse(arrivalTime)
-            activeDatesModel.serviceJourneyToFinalArrivalTimeMap.put(serviceJourneyId, arrivalTime)
+        if (serviceJourneyId != null && arrivalTimeString.isNotEmpty()) {
+            activeDatesModel.serviceJourneyToFinalArrivalTimeMap.put(serviceJourneyId, LocalTime.parse(arrivalTimeString))
         }
         stringBuilder.clear()
     }

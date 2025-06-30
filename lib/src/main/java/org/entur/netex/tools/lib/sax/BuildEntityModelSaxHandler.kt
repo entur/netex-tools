@@ -60,7 +60,7 @@ class BuildEntityModelSaxHandler(
 
         val currentHandler = handlerMap.get(currentElement?.name)
         if (currentHandler != null && currentEntity != null) {
-            currentHandler.startElement(uri, localName, qName, attributes, currentEntity!!)
+            currentHandler.startElement(attributes, currentEntity!!)
         }
     }
 
@@ -68,14 +68,14 @@ class BuildEntityModelSaxHandler(
         val currentHandler = handlerMap.get(currentElement?.name)
 
         if (currentHandler != null && currentEntity != null) {
-            currentHandler.characters(ch, start, length, currentEntity!!)
+            currentHandler.characters(ch, start, length)
         }
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
         val currentHandler = handlerMap.get(currentElement?.name)
         if (currentHandler != null && currentEntity != null) {
-            currentHandler.endElement(uri, localName, qName, currentEntity!!)
+            currentHandler.endElement(currentEntity!!)
         }
 
         val c = currentElement

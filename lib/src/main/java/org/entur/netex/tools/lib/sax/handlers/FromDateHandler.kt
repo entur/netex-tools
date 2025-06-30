@@ -11,11 +11,11 @@ class FromDateHandler(
 ) : NetexDataCollector() {
     val stringBuilder = StringBuilder()
 
-    override fun characters(ch: CharArray?, start: Int, length: Int, currentEntity: Entity) {
+    override fun characters(ch: CharArray?, start: Int, length: Int) {
         stringBuilder.append(ch, start, length)
     }
 
-    override fun endElement(uri: String?, localName: String?, qName: String?, currentEntity: Entity) {
+    override fun endElement(currentEntity: Entity) {
         if (currentEntity.type == "OperatingPeriod") {
             val operatingPeriodId = currentEntity.id
             val existingToDate = activeDatesModel.operatingPeriodIdToPeriodMap[operatingPeriodId]?.toDate

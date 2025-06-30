@@ -7,7 +7,7 @@ import org.entur.netex.tools.lib.sax.NetexDataCollector
 
 class DatedServiceJourneyHandler(val activeDatesModel: ActiveDatesModel): NetexDataCollector() {
 
-    override fun endElement(uri: String?, localName: String?, qName: String?, currentEntity: Entity) {
+    override fun endElement(currentEntity: Entity) {
         if (activeDatesModel.currentServiceJourneyRef != null && activeDatesModel.currentOperatingDayRef != null) {
             activeDatesModel.serviceJourneyToOperatingDayRefMap.putOrAddToExistingList(
                 activeDatesModel.currentServiceJourneyRef!!,

@@ -9,14 +9,14 @@ class DateCollector(val activeDatesModel: ActiveDatesModel) : NetexDataCollector
 
     private val stringBuilder = StringBuilder()
 
-    override fun characters(ch: CharArray?, start: Int, length: Int, currentEntity: Entity) {
+    override fun characters(ch: CharArray?, start: Int, length: Int) {
         stringBuilder.append(ch, start, length)
     }
 
-    override fun endElement(uri: String?, localName: String?, qName: String?, parentEntity: Entity) {
+    override fun endElement(currentEntity: Entity) {
         val calendarDate = LocalDate.parse(stringBuilder.trim().toString())
 
-        if (parentEntity.type == "DayTypeAssignment") {
+        if (currentEntity.type == "DayTypeAssignment") {
             activeDatesModel.currentDayTypeAssignmentDate = calendarDate
         }
     }

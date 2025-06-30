@@ -9,7 +9,7 @@ import java.util.*
 class DaysOfWeekHandler(val activeDatesModel: ActiveDatesModel): NetexDataCollector() {
     val stringBuilder = StringBuilder()
 
-    override fun characters(ch: CharArray?, start: Int, length: Int, currentEntity: Entity) {
+    override fun characters(ch: CharArray?, start: Int, length: Int) {
         stringBuilder.append(ch, start, length)
     }
 
@@ -58,7 +58,7 @@ class DaysOfWeekHandler(val activeDatesModel: ActiveDatesModel): NetexDataCollec
         return days
     }
 
-    override fun endElement(uri: String?, localName: String?, qName: String?, currentEntity: Entity) {
+    override fun endElement(currentEntity: Entity) {
         activeDatesModel.dayTypeToDaysOfWeek.put(currentEntity.id, parseDaysOfWeek(stringBuilder.toString()))
     }
 }

@@ -7,16 +7,13 @@ import org.xml.sax.Attributes
 
 class ServiceJourneyHandler(val activeDatesModel: ActiveDatesModel): NetexDataCollector() {
     override fun startElement(
-        uri: String?,
-        localName: String?,
-        qName: String?,
         attributes: Attributes?,
         currentEntity: Entity
     ) {
         activeDatesModel.currentServiceJourneyId = currentEntity.id
     }
 
-    override fun endElement(uri: String?, localName: String?, qName: String?, currentEntity: Entity) {
+    override fun endElement(currentEntity: Entity) {
         activeDatesModel.currentServiceJourneyId = null
     }
 }
