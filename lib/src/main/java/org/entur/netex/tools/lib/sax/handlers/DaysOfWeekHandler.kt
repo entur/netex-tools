@@ -7,15 +7,15 @@ import java.time.DayOfWeek
 import java.util.*
 
 class DaysOfWeekHandler(val activeDatesModel: ActiveDatesModel): NetexDataCollector() {
-    val stringBuilder = StringBuilder()
+    private val stringBuilder = StringBuilder()
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
         stringBuilder.append(ch, start, length)
     }
 
-    fun parseDaysOfWeek(daysOfWeekText: String?): MutableSet<DayOfWeek> {
+    private fun parseDaysOfWeek(daysOfWeekText: String?): MutableSet<DayOfWeek> {
         val days: MutableSet<DayOfWeek> = mutableSetOf()
-        if (daysOfWeekText == null || daysOfWeekText.isBlank()) {
+        if (daysOfWeekText.isNullOrBlank()) {
             return days // Return empty set if input is null/blank
         }
 
@@ -47,7 +47,7 @@ class DaysOfWeekHandler(val activeDatesModel: ActiveDatesModel): NetexDataCollec
                 else ->           // Try to parse as integer (1-7, where 1 is Monday)
                     try {
                         val dayNum = trimmedDay.toInt()
-                        if (dayNum >= 1 && dayNum <= 7) {
+                        if (dayNum in 1..7) {
                             days.add(DayOfWeek.of(dayNum))
                         }
                     } catch (e: NumberFormatException) {
@@ -59,6 +59,6 @@ class DaysOfWeekHandler(val activeDatesModel: ActiveDatesModel): NetexDataCollec
     }
 
     override fun endElement(currentEntity: Entity) {
-        activeDatesModel.dayTypeToDaysOfWeek.put(currentEntity.id, parseDaysOfWeek(stringBuilder.toString()))
+        activeDatesModel.dayTypeToDaysOfWeek[currentEntity.id] = parseDaysOfWeek(stringBuilder.toString())
     }
 }

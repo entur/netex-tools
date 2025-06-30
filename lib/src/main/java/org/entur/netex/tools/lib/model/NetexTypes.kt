@@ -37,4 +37,28 @@ object NetexTypes {
     const val RESOURCE_FRAME = "ResourceFrame"
     const val OPERATING_DAY = "OperatingDay"
     const val DATED_SERVICE_JOURNEY = "DatedServiceJourney"
+    
+    // Date and time related entities
+    const val CALENDAR_DATE = "CalendarDate"
+    const val DATE = "Date"
+    const val FROM_DATE = "FromDate"
+    const val TO_DATE = "ToDate"
+    const val DAYS_OF_WEEK = "DaysOfWeek"
+    const val ARRIVAL_TIME = "ArrivalTime"
+    const val ARRIVAL_DAY_OFFSET = "ArrivalDayOffset"
+    
+    // Reference entities
+    const val OPERATING_DAY_REF = "OperatingDayRef"
+    const val OPERATING_PERIOD_REF = "OperatingPeriodRef"
+    const val DAY_TYPE_REF = "DayTypeRef"
+    const val FROM_DATE_REF = "FromDateRef"
+    const val TO_DATE_REF = "ToDateRef"
+    const val SERVICE_JOURNEY_REF = "ServiceJourneyRef"
+    
+    // Additional entity types
+    const val ROUTE = "Route"
+    const val DESTINATION_DISPLAY = "DestinationDisplay"
+    
+    // Common suffixes
+    const val REF_SUFFIX = "Ref"
 }

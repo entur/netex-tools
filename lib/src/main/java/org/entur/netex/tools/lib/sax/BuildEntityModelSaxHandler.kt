@@ -4,6 +4,7 @@ import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.Entity.Companion.EMPTY
 import org.entur.netex.tools.lib.model.EntityModel
+import org.entur.netex.tools.lib.model.NetexTypes
 import org.entur.netex.tools.lib.sax.handlers.*
 import org.xml.sax.Attributes
 
@@ -17,22 +18,22 @@ class BuildEntityModelSaxHandler(
     var currentElement : Element? = null
 
     val handlerMap: Map<String, NetexDataCollector> = mapOf(
-        "CalendarDate" to CalendarDateHandler(activeDatesModel),
-        "DayTypeAssignment" to DayTypeAssignmentHandler(activeDatesModel),
-        "OperatingDayRef" to OperatingDayRefHandler(activeDatesModel),
-        "OperatingPeriodRef" to OperatingPeriodRefHandler(activeDatesModel),
-        "Date" to DateCollector(activeDatesModel),
-        "DayTypeRef" to DayTypeRefHandler(activeDatesModel),
-        "DaysOfWeek" to DaysOfWeekHandler(activeDatesModel),
-        "FromDate" to FromDateHandler(activeDatesModel),
-        "ToDate" to ToDateHandler(activeDatesModel),
-        "FromDateRef" to FromDateRefHandler(activeDatesModel),
-        "ToDateRef" to ToDateRefHandler(activeDatesModel),
-        "DatedServiceJourney" to DatedServiceJourneyHandler(activeDatesModel),
-        "ServiceJourneyRef" to ServiceJourneyRefHandler(activeDatesModel),
-        "ArrivalTime" to ArrivalTimeHandler(activeDatesModel),
-        "ArrivalDayOffset" to ArrivalDayOffsetHandler(activeDatesModel),
-        "ServiceJourney" to ServiceJourneyHandler(activeDatesModel),
+        NetexTypes.CALENDAR_DATE to CalendarDateHandler(activeDatesModel),
+        NetexTypes.DAY_TYPE_ASSIGNMENT to DayTypeAssignmentHandler(activeDatesModel),
+        NetexTypes.OPERATING_DAY_REF to OperatingDayRefHandler(activeDatesModel),
+        NetexTypes.OPERATING_PERIOD_REF to OperatingPeriodRefHandler(activeDatesModel),
+        NetexTypes.DATE to DateCollector(activeDatesModel),
+        NetexTypes.DAY_TYPE_REF to DayTypeRefHandler(activeDatesModel),
+        NetexTypes.DAYS_OF_WEEK to DaysOfWeekHandler(activeDatesModel),
+        NetexTypes.FROM_DATE to FromDateHandler(activeDatesModel),
+        NetexTypes.TO_DATE to ToDateHandler(activeDatesModel),
+        NetexTypes.FROM_DATE_REF to FromDateRefHandler(activeDatesModel),
+        NetexTypes.TO_DATE_REF to ToDateRefHandler(activeDatesModel),
+        NetexTypes.DATED_SERVICE_JOURNEY to DatedServiceJourneyHandler(activeDatesModel),
+        NetexTypes.SERVICE_JOURNEY_REF to ServiceJourneyRefHandler(activeDatesModel),
+        NetexTypes.ARRIVAL_TIME to ArrivalTimeHandler(activeDatesModel),
+        NetexTypes.ARRIVAL_DAY_OFFSET to ArrivalDayOffsetHandler(activeDatesModel),
+        NetexTypes.SERVICE_JOURNEY to ServiceJourneyHandler(activeDatesModel),
     )
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {

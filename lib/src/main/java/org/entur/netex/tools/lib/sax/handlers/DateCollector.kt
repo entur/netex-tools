@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.sax.handlers
 
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.NetexTypes
 import org.entur.netex.tools.lib.sax.ActiveDatesModel
 import org.entur.netex.tools.lib.sax.NetexDataCollector
 import java.time.LocalDate
@@ -16,7 +17,7 @@ class DateCollector(val activeDatesModel: ActiveDatesModel) : NetexDataCollector
     override fun endElement(currentEntity: Entity) {
         val calendarDate = LocalDate.parse(stringBuilder.trim().toString())
 
-        if (currentEntity.type == "DayTypeAssignment") {
+        if (currentEntity.type == NetexTypes.DAY_TYPE_ASSIGNMENT) {
             activeDatesModel.currentDayTypeAssignmentDate = calendarDate
         }
     }

@@ -2,6 +2,7 @@ package org.entur.netex.tools.lib.sax.handlers
 
 import org.entur.netex.tools.lib.extensions.putOrAddToExistingList
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.NetexTypes
 import org.entur.netex.tools.lib.sax.ActiveDatesModel
 import org.entur.netex.tools.lib.sax.NetexDataCollector
 import org.xml.sax.Attributes
@@ -12,12 +13,12 @@ class DayTypeRefHandler(val activeDatesModel: ActiveDatesModel) : NetexDataColle
         currentEntity: Entity
     ) {
         val ref = attributes?.getValue("ref")
-        if (currentEntity.type == "DayTypeAssignment") {
+        if (currentEntity.type == NetexTypes.DAY_TYPE_ASSIGNMENT) {
             if (ref != null) {
                 activeDatesModel.currentDayTypeAssignmentDayTypeRef = ref
             }
         }
-        if (currentEntity.type == "ServiceJourney") {
+        if (currentEntity.type == NetexTypes.SERVICE_JOURNEY) {
             if (ref != null) {
                 val serviceJourneyId = currentEntity.id
                 activeDatesModel.serviceJourneyToDayTypeRefMap.putOrAddToExistingList(serviceJourneyId, ref)

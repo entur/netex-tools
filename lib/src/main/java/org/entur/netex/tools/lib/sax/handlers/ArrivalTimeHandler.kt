@@ -20,7 +20,7 @@ class ArrivalTimeHandler(private val activeDatesModel: ActiveDatesModel) : Netex
         val arrivalTimeString = stringBuilder.toString().trim()
         val serviceJourneyId = activeDatesModel.currentServiceJourneyId
         if (serviceJourneyId != null && arrivalTimeString.isNotEmpty()) {
-            activeDatesModel.serviceJourneyToFinalArrivalTimeMap.put(serviceJourneyId, LocalTime.parse(arrivalTimeString))
+            activeDatesModel.serviceJourneyToFinalArrivalTimeMap[serviceJourneyId] = LocalTime.parse(arrivalTimeString)
         }
         stringBuilder.clear()
     }
