@@ -5,6 +5,8 @@ import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.model.EntitySelection
 import org.entur.netex.tools.lib.model.PublicationEnumeration
+import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
+import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import org.entur.netex.tools.lib.sax.*
 import org.entur.netex.tools.lib.utils.Log
 import java.io.File
@@ -18,7 +20,10 @@ data class FilterNetexApp(
   val startTime = System.currentTimeMillis()
   val model = EntityModel(config.alias())
   val selection = EntitySelection(model)
-  val activeDatesModel: ActiveDatesModel = ActiveDatesModel()
+
+  // Plugin system
+  private val activeDatesPlugin = ActiveDatesPlugin(ActiveDatesRepository())
+  private val plugins = listOf(activeDatesPlugin)
 
   fun run() {
     setupAndLogStartupInfo()
@@ -52,7 +57,7 @@ data class FilterNetexApp(
     }
 
     config.period?.let {
-      selection.removeAll(activeDatesModel.getEntitiesInactiveAfter(it.end))
+      selection.removeAll(activeDatesPlugin.getCollectedData().getEntitiesInactiveAfter(it.end))
     }
     
     // Remove unreferenced entities after date-based filtering
@@ -100,7 +105,11 @@ data class FilterNetexApp(
     println("Filter NeTEx files done in ${(System.currentTimeMillis() - startTime)/1000.0} seconds.")
   }
 
-  private fun createNetexSaxReadHandler() = BuildEntityModelSaxHandler(model, SkipElementHandler(skipElements), activeDatesModel)
+  private fun createNetexSaxReadHandler() = BuildEntityModelSaxHandler(
+    model, 
+    SkipElementHandler(skipElements), 
+    plugins,
+  )
 
   private fun createNetexSaxWriteHandler(file: File) = OutputNetexSaxHandler(file, SkipEntityAndElementHandler(skipElements, selection), config.preserveComments)
 

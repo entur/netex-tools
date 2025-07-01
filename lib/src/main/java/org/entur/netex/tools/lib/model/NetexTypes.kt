@@ -2,7 +2,7 @@ package org.entur.netex.tools.lib.model
 
 
 /**
- * List convenient constants witch can be used when configuring the
+ * List convenient constants which can be used when configuring the
  * library.
  */
 object NetexTypes {

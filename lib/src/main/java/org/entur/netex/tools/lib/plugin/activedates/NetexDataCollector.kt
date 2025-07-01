@@ -1,4 +1,4 @@
-package org.entur.netex.tools.lib.sax
+package org.entur.netex.tools.lib.plugin.activedates
 
 import org.entur.netex.tools.lib.model.Entity
 import org.xml.sax.Attributes

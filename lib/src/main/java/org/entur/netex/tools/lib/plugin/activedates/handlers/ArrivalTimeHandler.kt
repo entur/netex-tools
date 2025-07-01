@@ -1,15 +1,15 @@
-package org.entur.netex.tools.lib.sax.handlers
+package org.entur.netex.tools.lib.plugin.activedates.handlers
 
 import org.entur.netex.tools.lib.model.Entity
-import org.entur.netex.tools.lib.sax.ActiveDatesModel
-import org.entur.netex.tools.lib.sax.NetexDataCollector
+import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
+import org.entur.netex.tools.lib.plugin.activedates.NetexDataCollector
 import java.time.LocalTime
 
 /**
  * Handler to collect ArrivalTime values as they are encountered in the XML.
  * The last value encountered for a ServiceJourney will be stored.
  */
-class ArrivalTimeHandler(private val activeDatesModel: ActiveDatesModel) : NetexDataCollector() {
+class ArrivalTimeHandler(private val activeDatesRepository: ActiveDatesRepository) : NetexDataCollector() {
     private val stringBuilder = StringBuilder()
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
@@ -18,9 +18,9 @@ class ArrivalTimeHandler(private val activeDatesModel: ActiveDatesModel) : Netex
 
     override fun endElement(currentEntity: Entity) {
         val arrivalTimeString = stringBuilder.toString().trim()
-        val serviceJourneyId = activeDatesModel.currentServiceJourneyId
+        val serviceJourneyId = activeDatesRepository.currentServiceJourneyId
         if (serviceJourneyId != null && arrivalTimeString.isNotEmpty()) {
-            activeDatesModel.serviceJourneyToFinalArrivalTimeMap[serviceJourneyId] = LocalTime.parse(arrivalTimeString)
+            activeDatesRepository.serviceJourneyToFinalArrivalTimeMap[serviceJourneyId] = LocalTime.parse(arrivalTimeString)
         }
         stringBuilder.clear()
     }

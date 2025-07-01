@@ -1,13 +1,13 @@
-package org.entur.netex.tools.lib.sax.handlers
+package org.entur.netex.tools.lib.plugin.activedates.handlers
 
 import org.entur.netex.tools.lib.extensions.putOrAddToExistingList
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.NetexTypes
-import org.entur.netex.tools.lib.sax.ActiveDatesModel
-import org.entur.netex.tools.lib.sax.NetexDataCollector
+import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
+import org.entur.netex.tools.lib.plugin.activedates.NetexDataCollector
 import org.xml.sax.Attributes
 
-class DayTypeRefHandler(val activeDatesModel: ActiveDatesModel) : NetexDataCollector() {
+class DayTypeRefHandler(val activeDatesRepository: ActiveDatesRepository) : NetexDataCollector() {
     override fun startElement(
         attributes: Attributes?,
         currentEntity: Entity
@@ -15,13 +15,13 @@ class DayTypeRefHandler(val activeDatesModel: ActiveDatesModel) : NetexDataColle
         val ref = attributes?.getValue("ref")
         if (currentEntity.type == NetexTypes.DAY_TYPE_ASSIGNMENT) {
             if (ref != null) {
-                activeDatesModel.currentDayTypeAssignmentDayTypeRef = ref
+                activeDatesRepository.currentDayTypeAssignmentDayTypeRef = ref
             }
         }
         if (currentEntity.type == NetexTypes.SERVICE_JOURNEY) {
             if (ref != null) {
                 val serviceJourneyId = currentEntity.id
-                activeDatesModel.serviceJourneyToDayTypeRefMap.putOrAddToExistingList(serviceJourneyId, ref)
+                activeDatesRepository.serviceJourneyToDayTypeRefMap.putOrAddToExistingList(serviceJourneyId, ref)
             }
         }
     }

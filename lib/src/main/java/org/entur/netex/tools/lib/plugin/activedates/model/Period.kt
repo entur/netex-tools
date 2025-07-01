@@ -1,4 +1,4 @@
-package org.entur.netex.tools.lib.sax.model
+package org.entur.netex.tools.lib.plugin.activedates.model
 
 import java.time.LocalDate
 

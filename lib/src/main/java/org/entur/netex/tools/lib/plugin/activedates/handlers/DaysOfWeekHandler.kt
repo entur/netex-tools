@@ -1,12 +1,12 @@
-package org.entur.netex.tools.lib.sax.handlers
+package org.entur.netex.tools.lib.plugin.activedates.handlers
 
 import org.entur.netex.tools.lib.model.Entity
-import org.entur.netex.tools.lib.sax.ActiveDatesModel
-import org.entur.netex.tools.lib.sax.NetexDataCollector
+import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
+import org.entur.netex.tools.lib.plugin.activedates.NetexDataCollector
 import java.time.DayOfWeek
 import java.util.*
 
-class DaysOfWeekHandler(val activeDatesModel: ActiveDatesModel): NetexDataCollector() {
+class DaysOfWeekHandler(val activeDatesRepository: ActiveDatesRepository): NetexDataCollector() {
     private val stringBuilder = StringBuilder()
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
@@ -59,6 +59,6 @@ class DaysOfWeekHandler(val activeDatesModel: ActiveDatesModel): NetexDataCollec
     }
 
     override fun endElement(currentEntity: Entity) {
-        activeDatesModel.dayTypeToDaysOfWeek[currentEntity.id] = parseDaysOfWeek(stringBuilder.toString())
+        activeDatesRepository.dayTypeToDaysOfWeek[currentEntity.id] = parseDaysOfWeek(stringBuilder.toString())
     }
 }

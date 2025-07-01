@@ -1,14 +1,14 @@
-package org.entur.netex.tools.lib.sax.handlers
+package org.entur.netex.tools.lib.plugin.activedates.handlers
 
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.NetexTypes
-import org.entur.netex.tools.lib.sax.ActiveDatesModel
-import org.entur.netex.tools.lib.sax.NetexDataCollector
-import org.entur.netex.tools.lib.sax.model.Period
+import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
+import org.entur.netex.tools.lib.plugin.activedates.NetexDataCollector
+import org.entur.netex.tools.lib.plugin.activedates.model.Period
 import java.time.LocalDateTime
 
 class ToDateHandler(
-    val activeDatesModel: ActiveDatesModel
+    val activeDatesRepository: ActiveDatesRepository
 ) : NetexDataCollector() {
     private val stringBuilder = StringBuilder()
 
@@ -19,8 +19,8 @@ class ToDateHandler(
     override fun endElement(currentEntity: Entity) {
         if (currentEntity.type == NetexTypes.OPERATING_PERIOD) {
             val operatingPeriodId = currentEntity.id
-            val existingFromDate = activeDatesModel.operatingPeriodIdToPeriodMap[operatingPeriodId]?.fromDate
-            activeDatesModel.operatingPeriodIdToPeriodMap[operatingPeriodId] = Period(
+            val existingFromDate = activeDatesRepository.operatingPeriodIdToPeriodMap[operatingPeriodId]?.fromDate
+            activeDatesRepository.operatingPeriodIdToPeriodMap[operatingPeriodId] = Period(
                 fromDate = existingFromDate,
                 toDate = LocalDateTime.parse(stringBuilder.toString()).toLocalDate(),
             )

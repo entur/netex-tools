@@ -1,12 +1,12 @@
-package org.entur.netex.tools.lib.sax.handlers
+package org.entur.netex.tools.lib.plugin.activedates.handlers
 
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.NetexTypes
-import org.entur.netex.tools.lib.sax.ActiveDatesModel
-import org.entur.netex.tools.lib.sax.NetexDataCollector
+import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
+import org.entur.netex.tools.lib.plugin.activedates.NetexDataCollector
 import java.time.LocalDate
 
-class DateCollector(val activeDatesModel: ActiveDatesModel) : NetexDataCollector() {
+class DateHandler(val activeDatesRepository: ActiveDatesRepository) : NetexDataCollector() {
 
     private val stringBuilder = StringBuilder()
 
@@ -18,7 +18,7 @@ class DateCollector(val activeDatesModel: ActiveDatesModel) : NetexDataCollector
         val calendarDate = LocalDate.parse(stringBuilder.trim().toString())
 
         if (currentEntity.type == NetexTypes.DAY_TYPE_ASSIGNMENT) {
-            activeDatesModel.currentDayTypeAssignmentDate = calendarDate
+            activeDatesRepository.currentDayTypeAssignmentDate = calendarDate
         }
     }
 }

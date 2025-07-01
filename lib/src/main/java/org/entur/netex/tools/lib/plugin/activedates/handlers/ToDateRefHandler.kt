@@ -1,13 +1,13 @@
-package org.entur.netex.tools.lib.sax.handlers
+package org.entur.netex.tools.lib.plugin.activedates.handlers
 
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.NetexTypes
-import org.entur.netex.tools.lib.sax.ActiveDatesModel
-import org.entur.netex.tools.lib.sax.NetexDataCollector
+import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
+import org.entur.netex.tools.lib.plugin.activedates.NetexDataCollector
 import org.xml.sax.Attributes
 
 class ToDateRefHandler(
-    val activeDatesModel: ActiveDatesModel,
+    val activeDatesRepository: ActiveDatesRepository,
 ): NetexDataCollector(
 ) {
     override fun startElement(
@@ -17,7 +17,7 @@ class ToDateRefHandler(
         if (currentEntity.type == NetexTypes.OPERATING_PERIOD) {
             val operatingPeriodId = currentEntity.id
             val toDateRef = attributes?.getValue("ref")
-            activeDatesModel.operatingPeriodIdToToDateRefMap[operatingPeriodId] = toDateRef.toString()
+            activeDatesRepository.operatingPeriodIdToToDateRefMap[operatingPeriodId] = toDateRef.toString()
         }
     }
 }

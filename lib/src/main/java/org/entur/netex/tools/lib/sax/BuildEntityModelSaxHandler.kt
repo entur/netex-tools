@@ -4,41 +4,33 @@ import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.Entity.Companion.EMPTY
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.model.NetexTypes
-import org.entur.netex.tools.lib.sax.handlers.*
+import org.entur.netex.tools.lib.plugin.NetexPlugin
+import org.entur.netex.tools.lib.plugin.PluginRegistry
 import org.xml.sax.Attributes
 
 class BuildEntityModelSaxHandler(
     val entities : EntityModel,
     val skipHandler : SkipElementHandler,
-    val activeDatesModel: ActiveDatesModel
-
+    plugins: List<NetexPlugin> = emptyList(),
 ) : NetexToolsSaxHandler() {
     var currentEntity : Entity? = null
     var currentElement : Element? = null
-
-    val handlerMap: Map<String, NetexDataCollector> = mapOf(
-        NetexTypes.CALENDAR_DATE to CalendarDateHandler(activeDatesModel),
-        NetexTypes.DAY_TYPE_ASSIGNMENT to DayTypeAssignmentHandler(activeDatesModel),
-        NetexTypes.OPERATING_DAY_REF to OperatingDayRefHandler(activeDatesModel),
-        NetexTypes.OPERATING_PERIOD_REF to OperatingPeriodRefHandler(activeDatesModel),
-        NetexTypes.DATE to DateCollector(activeDatesModel),
-        NetexTypes.DAY_TYPE_REF to DayTypeRefHandler(activeDatesModel),
-        NetexTypes.DAYS_OF_WEEK to DaysOfWeekHandler(activeDatesModel),
-        NetexTypes.FROM_DATE to FromDateHandler(activeDatesModel),
-        NetexTypes.TO_DATE to ToDateHandler(activeDatesModel),
-        NetexTypes.FROM_DATE_REF to FromDateRefHandler(activeDatesModel),
-        NetexTypes.TO_DATE_REF to ToDateRefHandler(activeDatesModel),
-        NetexTypes.DATED_SERVICE_JOURNEY to DatedServiceJourneyHandler(activeDatesModel),
-        NetexTypes.SERVICE_JOURNEY_REF to ServiceJourneyRefHandler(activeDatesModel),
-        NetexTypes.ARRIVAL_TIME to ArrivalTimeHandler(activeDatesModel),
-        NetexTypes.ARRIVAL_DAY_OFFSET to ArrivalDayOffsetHandler(activeDatesModel),
-        NetexTypes.SERVICE_JOURNEY to ServiceJourneyHandler(activeDatesModel),
-    )
+    
+    // Plugin management
+    private val pluginRegistry = PluginRegistry()
+    private val elementPath = mutableListOf<String>()
+    
+    init {
+        // Register and initialize plugins
+        plugins.forEach { plugin ->
+            pluginRegistry.registerPlugin(plugin)
+        }
+    }
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         val type = qName!!
         currentElement = Element(type, currentElement)
+        elementPath.add(type)
 
         if(skipHandler.startSkip(currentElement!!)) {
             return
@@ -58,29 +50,36 @@ class BuildEntityModelSaxHandler(
                 entities.addRef(nn(type), currentEntity!!, ref)
             }
         }
-
-        val currentHandler = handlerMap.get(currentElement?.name)
-        if (currentHandler != null && currentEntity != null) {
-            currentHandler.startElement(attributes, currentEntity!!)
+        
+        // Call plugins
+        pluginRegistry.getPluginsForElement(type).forEach { plugin ->
+            plugin.startElement(type, attributes, currentEntity)
         }
     }
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
-        val currentHandler = handlerMap.get(currentElement?.name)
-
-        if (currentHandler != null && currentEntity != null) {
-            currentHandler.characters(ch, start, length)
+        val currentElementName = currentElement?.name
+        if (currentElementName != null) {
+            pluginRegistry.getPluginsForElement(currentElementName).forEach { plugin ->
+                plugin.characters(currentElementName, ch, start, length)
+            }
         }
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        val currentHandler = handlerMap.get(currentElement?.name)
-        if (currentHandler != null && currentEntity != null) {
-            currentHandler.endElement(currentEntity!!)
+        val currentElementName = currentElement?.name
+        if (currentElementName != null) {
+            pluginRegistry.getPluginsForElement(currentElementName).forEach { plugin ->
+                plugin.endElement(currentElementName, currentEntity)
+            }
         }
 
         val c = currentElement
         currentElement = currentElement?.parent
+        if (elementPath.isNotEmpty()) {
+            elementPath.removeAt(elementPath.size - 1)
+        }
+        
         if(skipHandler.endSkip(c)){
             return
         }
