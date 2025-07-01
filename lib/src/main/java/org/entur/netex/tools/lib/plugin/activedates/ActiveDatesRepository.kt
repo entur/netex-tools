@@ -25,20 +25,10 @@ data class ActiveDatesRepository (
 
     // ServiceJourneyId->OperatingDay[] via DatedServiceJourney
     val serviceJourneyToOperatingDayRefMap: MutableMap<String, MutableList<String>> = mutableMapOf(),
-    var currentOperatingDayRef: String? = null,
-    var currentServiceJourneyRef: String? = null,
     val datedServiceJourneyToOperatingDayRefMap: MutableMap<String, String> = mutableMapOf(),
 
     val serviceJourneyToFinalArrivalTimeMap: MutableMap<String, LocalTime> = mutableMapOf(),
     val serviceJourneyToFinalArrivalDayOffsetMap: MutableMap<String, Int> = mutableMapOf(),
-    var currentServiceJourneyId: String? = null,
-
-    var currentDayTypeAssignmentDayTypeRef: String? = null,
-    var currentDayTypeAssignmentDate: LocalDate? = null,
-    var currentDayTypeAssignmentOperatingDay: String? = null,
-    var currentDayTypeAssignmentOperatingPeriod: String? = null,
-
-    var currentDayTypeId: String? = null,
 ) {
     /**
      * Calculate the last active date for each service journey.

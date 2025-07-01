@@ -14,6 +14,8 @@ import org.xml.sax.Attributes
 class ActiveDatesPlugin (
     val activeDatesRepository : ActiveDatesRepository
 ) : AbstractNetexPlugin() {
+
+    private val parsingContext : ActiveDatesParsingContext = ActiveDatesParsingContext()
     
     // Map of element handlers - delegating to existing collector implementations
     private val elementHandlers: Map<String, NetexDataCollector> by lazy {
@@ -46,17 +48,17 @@ class ActiveDatesPlugin (
     
     override fun startElement(elementName: String, attributes: Attributes?, currentEntity: Entity?) {
         currentEntity?.let { entity ->
-            elementHandlers[elementName]?.startElement(attributes, entity)
+            elementHandlers[elementName]?.startElement(parsingContext, attributes, entity)
         }
     }
     
     override fun characters(elementName: String, ch: CharArray?, start: Int, length: Int) {
-        elementHandlers[elementName]?.characters(ch, start, length)
+        elementHandlers[elementName]?.characters(parsingContext, ch, start, length)
     }
     
     override fun endElement(elementName: String, currentEntity: Entity?) {
         currentEntity?.let { entity ->
-            elementHandlers[elementName]?.endElement(entity)
+            elementHandlers[elementName]?.endElement(parsingContext, entity)
         }
     }
     
