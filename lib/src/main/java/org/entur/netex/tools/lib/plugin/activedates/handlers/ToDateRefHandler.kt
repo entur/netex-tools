@@ -19,7 +19,8 @@ class ToDateRefHandler(
         if (currentEntity.type == NetexTypes.OPERATING_PERIOD) {
             val operatingPeriodId = currentEntity.id
             val toDateRef = attributes?.getValue("ref")
-            activeDatesRepository.operatingPeriodIdToToDateRefMap[operatingPeriodId] = toDateRef.toString()
+            val opPeriodData = activeDatesRepository.getOperatingPeriodData(operatingPeriodId)
+            opPeriodData.toDateId = toDateRef.toString()
         }
     }
 }

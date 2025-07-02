@@ -15,7 +15,7 @@ class CalendarDateHandler(val activeDatesRepository: ActiveDatesRepository): Net
 
     override fun endElement(context: ActiveDatesParsingContext, currentEntity: Entity) {
         val calendarDate = LocalDate.parse(stringBuilder.trim().toString())
-        activeDatesRepository.operatingDayToCalendarDateMap[currentEntity.id] = calendarDate
+        activeDatesRepository.operatingDays[currentEntity.id] = calendarDate
         stringBuilder.setLength(0)
     }
 }

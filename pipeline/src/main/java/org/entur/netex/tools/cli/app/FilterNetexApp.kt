@@ -7,6 +7,7 @@ import org.entur.netex.tools.lib.model.EntitySelection
 import org.entur.netex.tools.lib.model.PublicationEnumeration
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
+import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesCalculator
 import org.entur.netex.tools.lib.sax.*
 import org.entur.netex.tools.lib.utils.Log
 import java.io.File
@@ -57,7 +58,9 @@ data class FilterNetexApp(
     }
 
     config.period?.let {
-      selection.removeAll(activeDatesPlugin.getCollectedData().getEntitiesInactiveAfter(it.end))
+      val calculator = ActiveDatesCalculator(activeDatesPlugin.getCollectedData())
+      val active = calculator.activeDateEntitiesInPeriod(config.period!!.start, config.period!!.end)
+      selection.removeAllNotIn(active)
     }
     
     // Remove unreferenced entities after date-based filtering

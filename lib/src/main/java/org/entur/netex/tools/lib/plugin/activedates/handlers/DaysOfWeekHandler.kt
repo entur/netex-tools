@@ -60,6 +60,6 @@ class DaysOfWeekHandler(val activeDatesRepository: ActiveDatesRepository): Netex
     }
 
     override fun endElement(context: ActiveDatesParsingContext, currentEntity: Entity) {
-        activeDatesRepository.dayTypeToDaysOfWeek[currentEntity.id] = parseDaysOfWeek(stringBuilder.toString())
+        activeDatesRepository.getDayTypeData(currentEntity.id).daysOfWeek.addAll(parseDaysOfWeek(stringBuilder.toString()))
     }
 }

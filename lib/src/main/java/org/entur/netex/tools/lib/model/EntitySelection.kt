@@ -101,6 +101,24 @@ class EntitySelection(val model : EntityModel) {
         }
     }
 
+    fun removeAllNotIn(entitiesToKeep : Map<String, Set<String>>) {
+        for ((type, idsToKeep) in entitiesToKeep) {
+            val entitiesOfType = selection[type]
+            if (entitiesOfType != null) {
+                val entityIds = entitiesOfType.keys.toMutableSet()
+                entityIds.removeAll(idsToKeep)
+                // Remove all entities not in the keep set
+                entityIds.forEach { id ->
+                    entitiesOfType.remove(id)
+                }
+                // Clean up empty type maps
+                if (entitiesOfType.isEmpty()) {
+                    selection.remove(type)
+                }
+            }
+        }
+    }
+
     fun remove(consumer : (Entity) -> Boolean) {
         val toRemove = mutableListOf<Pair<String, String>>()
 

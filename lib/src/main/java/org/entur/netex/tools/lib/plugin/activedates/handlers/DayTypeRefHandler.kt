@@ -1,6 +1,5 @@
 package org.entur.netex.tools.lib.plugin.activedates.handlers
 
-import org.entur.netex.tools.lib.extensions.putOrAddToExistingList
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.NetexTypes
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesParsingContext
@@ -23,7 +22,7 @@ class DayTypeRefHandler(val activeDatesRepository: ActiveDatesRepository) : Nete
         if (currentEntity.type == NetexTypes.SERVICE_JOURNEY) {
             if (ref != null) {
                 val serviceJourneyId = currentEntity.id
-                activeDatesRepository.serviceJourneyToDayTypeRefMap.putOrAddToExistingList(serviceJourneyId, ref)
+                activeDatesRepository.getServiceJourneyData(serviceJourneyId).dayTypes.add(ref)
             }
         }
     }

@@ -20,7 +20,7 @@ class ArrivalDayOffsetHandler(private val activeDatesRepository: ActiveDatesRepo
         val arrivalDayOffset = stringBuilder.toString().trim()
         val serviceJourneyId = context.currentServiceJourneyId
         if (serviceJourneyId != null && arrivalDayOffset.isNotEmpty()) {
-            activeDatesRepository.serviceJourneyToFinalArrivalDayOffsetMap[serviceJourneyId] = arrivalDayOffset.toInt()
+            activeDatesRepository.getServiceJourneyData(serviceJourneyId).finalArrivalDayOffset = arrivalDayOffset.toLong()
         }
         stringBuilder.clear()
     }

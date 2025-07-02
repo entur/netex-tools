@@ -20,8 +20,9 @@ class FromDateHandler(
     override fun endElement(context: ActiveDatesParsingContext, currentEntity: Entity) {
         if (currentEntity.type == NetexTypes.OPERATING_PERIOD) {
             val operatingPeriodId = currentEntity.id
-            val existingToDate = activeDatesRepository.operatingPeriodIdToPeriodMap[operatingPeriodId]?.toDate
-            activeDatesRepository.operatingPeriodIdToPeriodMap[operatingPeriodId] = Period(
+            val opPeriodData = activeDatesRepository.getOperatingPeriodData(operatingPeriodId)
+            val existingToDate = opPeriodData.period?.toDate
+            opPeriodData.period = Period(
                 fromDate = LocalDateTime.parse(stringBuilder.toString()).toLocalDate(),
                 toDate = existingToDate,
             )

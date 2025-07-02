@@ -21,7 +21,7 @@ class ArrivalTimeHandler(private val activeDatesRepository: ActiveDatesRepositor
         val arrivalTimeString = stringBuilder.toString().trim()
         val serviceJourneyId = context.currentServiceJourneyId
         if (serviceJourneyId != null && arrivalTimeString.isNotEmpty()) {
-            activeDatesRepository.serviceJourneyToFinalArrivalTimeMap[serviceJourneyId] = LocalTime.parse(arrivalTimeString)
+            activeDatesRepository.getServiceJourneyData(serviceJourneyId).finalArrivalTime = LocalTime.parse(arrivalTimeString)
         }
         stringBuilder.clear()
     }

@@ -1,6 +1,5 @@
 package org.entur.netex.tools.lib.plugin.activedates.handlers
 
-import org.entur.netex.tools.lib.extensions.putOrAddToExistingList
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesParsingContext
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
@@ -15,21 +14,18 @@ class DayTypeAssignmentHandler(
             return
         }
         context.currentDayTypeAssignmentOperatingDay?.let {
-            activeDatesRepository.dayTypeRefToOperatingDayRefMap.putOrAddToExistingList(
-                context.currentDayTypeAssignmentDayTypeRef!!, it
-            )
+            activeDatesRepository.getDayTypeData(context.currentDayTypeAssignmentDayTypeRef!!)
+                .operatingDays.add(it)
         }
 
         context.currentDayTypeAssignmentOperatingPeriod?.let {
-            activeDatesRepository.dayTypeRefToOperatingPeriodRefMap.putOrAddToExistingList(
-                context.currentDayTypeAssignmentDayTypeRef!!, it
-            )
+            activeDatesRepository.getDayTypeData(context.currentDayTypeAssignmentDayTypeRef!!)
+                .operatingPeriods.add(it)
         }
 
         context.currentDayTypeAssignmentDate?.let {
-            activeDatesRepository.dayTypeRefToDateMap.putOrAddToExistingList(
-                context.currentDayTypeAssignmentDayTypeRef!!, it
-            )
+            activeDatesRepository.getDayTypeData(context.currentDayTypeAssignmentDayTypeRef!!)
+                .dates.add(it)
         }
         context.currentDayTypeAssignmentDayTypeRef = null
         context.currentDayTypeAssignmentOperatingDay = null
