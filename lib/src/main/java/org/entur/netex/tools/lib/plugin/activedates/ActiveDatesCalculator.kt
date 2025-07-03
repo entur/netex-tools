@@ -1,5 +1,7 @@
 package org.entur.netex.tools.lib.plugin.activedates
 
+import org.entur.netex.tools.lib.model.EntityModel
+import org.entur.netex.tools.lib.model.NetexTypes
 import org.entur.netex.tools.lib.plugin.activedates.data.ServiceJourneyData
 import org.entur.netex.tools.lib.plugin.activedates.helper.ActiveEntitiesCollector
 import org.entur.netex.tools.lib.plugin.activedates.model.Period
@@ -8,7 +10,7 @@ import java.time.LocalDate
 
 class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
     
-    fun activeDateEntitiesInPeriod(startDate: LocalDate, endDate: LocalDate): Map<String, MutableSet<String>> {
+    fun activeDateEntitiesInPeriod(startDate: LocalDate, endDate: LocalDate, entityModel: EntityModel): Map<String, Set<String>> {
         val activeEntities = ActiveEntitiesCollector()
         
         repository.serviceJourneys.forEach { (serviceJourneyId, serviceJourneyData) ->
@@ -19,6 +21,40 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
                 endDate, 
                 activeEntities
             )
+        }
+
+        val datedServiceJourneys = entityModel.getEntitiesOfType(NetexTypes.DATED_SERVICE_JOURNEY)
+        datedServiceJourneys.forEach { (datedServiceJourneyId) ->
+            val serviceJourneyRefs = entityModel.getRefsOfTypeFrom(datedServiceJourneyId, NetexTypes.SERVICE_JOURNEY_REF)
+            if (serviceJourneyRefs.size != 1) {
+                // Invalid dated service journey, skip processing
+                return@forEach
+            }
+            val serviceJourneyId = serviceJourneyRefs[0].ref
+            val operatingDayRefs = entityModel.getRefsOfTypeFrom(datedServiceJourneyId, NetexTypes.OPERATING_DAY_REF)
+            if (operatingDayRefs.size != 1) {
+                // Invalid dated service journey, skip processing
+                return@forEach
+            }
+            val operatingDayId = operatingDayRefs[0].ref
+            if (serviceJourneyId in activeEntities.serviceJourneys() && operatingDayId in activeEntities.operatingDays()) {
+                activeEntities.addDatedServiceJourney(datedServiceJourneyId)
+            }
+        }
+
+        val dayTypeAssignments = entityModel.getEntitiesOfType(NetexTypes.DAY_TYPE_ASSIGNMENT)
+        dayTypeAssignments.forEach { (dayTypeAssignmentId) ->
+            val dayTypeRefs = entityModel.getRefsOfTypeFrom(dayTypeAssignmentId, NetexTypes.DAY_TYPE_REF)
+            if (dayTypeRefs.size != 1) {
+                // Invalid day type assignment, skip processing
+                return@forEach
+            }
+            val dayTypeId = dayTypeRefs[0].ref
+
+            // Check if the day type is active in the period
+            if (dayTypeId in activeEntities.dayTypes()) {
+                activeEntities.addDayTypeAssignment(dayTypeAssignmentId)
+            }
         }
         
         return activeEntities.toMap()

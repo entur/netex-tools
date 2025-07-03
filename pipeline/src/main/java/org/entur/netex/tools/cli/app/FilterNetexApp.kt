@@ -59,7 +59,7 @@ data class FilterNetexApp(
 
     config.period?.let {
       val calculator = ActiveDatesCalculator(activeDatesPlugin.getCollectedData())
-      val active = calculator.activeDateEntitiesInPeriod(config.period!!.start, config.period!!.end)
+      val active = calculator.activeDateEntitiesInPeriod(config.period!!.start, config.period!!.end, model)
       selection.removeAllNotIn(active)
     }
     

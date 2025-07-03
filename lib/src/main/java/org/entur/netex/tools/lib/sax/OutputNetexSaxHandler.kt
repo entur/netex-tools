@@ -184,7 +184,6 @@ class OutputNetexSaxHandler(
                 // Remove everything from the reference start position to the current position
                 outputBuffer.delete(referenceInfo.startPosition, outputBuffer.length)
                 Log.info("Removing broken reference: ${qName} -> ${referenceInfo.refTarget}")
-                return
             }
         }
         
@@ -264,48 +263,15 @@ class OutputNetexSaxHandler(
     }
     
     private fun convertEmptyElementsToSelfClosing(xmlContent: String): String {
-        // First remove invalid DayTypeAssignments (those without DayTypeRef)
-        var processedContent = removeInvalidDayTypeAssignments(xmlContent)
-        
         // Then convert empty elements to self-closing
         val emptyElementPattern = Regex("""<(\w+)(\s+[^>]*?|)>\s*</\1>""", RegexOption.MULTILINE)
-        
-        processedContent = emptyElementPattern.replace(processedContent) { matchResult ->
+
+        val processedContent = emptyElementPattern.replace(xmlContent) { matchResult ->
             val tagName = matchResult.groupValues[1]
             val attributes = matchResult.groupValues[2]
             "<$tagName$attributes/>"
         }
         
         return processedContent
-    }
-    
-    private fun removeInvalidDayTypeAssignments(xmlContent: String): String {
-        // Pattern to match DayTypeAssignment elements that don't contain a DayTypeRef
-        // This matches DayTypeAssignments that have other content but no DayTypeRef element
-        val dayTypeAssignmentPattern = Regex(
-            """<DayTypeAssignment\s+[^>]*>.*?</DayTypeAssignment>""", 
-            setOf(RegexOption.MULTILINE, RegexOption.DOT_MATCHES_ALL)
-        )
-        
-        return dayTypeAssignmentPattern.replace(xmlContent) { matchResult ->
-            val dayTypeAssignmentContent = matchResult.value
-            
-            // Check if this DayTypeAssignment contains a DayTypeRef
-            if (dayTypeAssignmentContent.contains("<DayTypeRef")) {
-                // Has DayTypeRef, keep it
-                dayTypeAssignmentContent
-            } else {
-                // No DayTypeRef found, remove this DayTypeAssignment
-                val assignmentId = extractIdFromElement(dayTypeAssignmentContent)
-                Log.info("Removing invalid DayTypeAssignment without DayTypeRef: $assignmentId")
-                "" // Remove the entire element
-            }
-        }
-    }
-    
-    private fun extractIdFromElement(elementContent: String): String {
-        val idPattern = Regex("""id="([^"]+)"""")
-        val matchResult = idPattern.find(elementContent)
-        return matchResult?.groupValues?.get(1) ?: "unknown"
     }
 }
