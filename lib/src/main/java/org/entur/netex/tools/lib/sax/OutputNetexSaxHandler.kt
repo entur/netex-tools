@@ -4,7 +4,6 @@ import org.apache.commons.lang3.StringEscapeUtils
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.utils.Log
 import org.xml.sax.Attributes
-import org.xml.sax.Locator
 import org.xml.sax.ext.LexicalHandler
 import java.io.File
 
@@ -18,14 +17,10 @@ class OutputNetexSaxHandler(
     private var whiteSpace : String? = null
     private var empty = true
     private val outputBuffer = StringBuilder()
-    private var elementStartPos = 0
     private var hasContentBetweenTags = false
     
     // Stack to track potential collection elements and their start positions
     private val collectionElementStack = mutableListOf<CollectionElementInfo>()
-    
-    // Stack to track reference elements that might need to be removed if they point to unselected entities
-    private val referenceElementStack = mutableListOf<ReferenceElementInfo>()
     
     // Data class to track collection element information
     private data class CollectionElementInfo(
@@ -33,43 +28,11 @@ class OutputNetexSaxHandler(
         val startPosition: Int,
         var hasSelectedChildren: Boolean = false
     )
-    
-    // Data class to track reference element information
-    private data class ReferenceElementInfo(
-        val element: Element,
-        val startPosition: Int,
-        val refTarget: String?
-    )
 
-    override fun setDocumentLocator(locator: Locator?) {
-    }
-    
     // Check if an element name represents a collection (plural form, lowercase start)
     private fun isCollectionElement(elementName: String): Boolean {
         return elementName.length > 1 && 
                elementName[0].isLowerCase()
-    }
-    
-    // Check if an element is a reference element (ends with "Ref")
-    private fun isReferenceElement(elementName: String): Boolean {
-        return elementName.endsWith("Ref")
-    }
-    
-    // Extract the target entity ID from a reference element's attributes
-    private fun getRefTarget(attributes: Attributes?): String? {
-        return attributes?.getValue("ref")
-    }
-    
-    // Check if a reference target entity is selected
-    private fun isRefTargetSelected(refTarget: String): Boolean {
-        // We need to determine the entity type from the ID to check if it's selected
-        // Most NeTEx IDs follow the pattern "PREFIX:EntityType:ID"
-        val parts = refTarget.split(":")
-        if (parts.size >= 2) {
-            val entityType = parts[1]
-            return skipHandler.getSelection().isSelected(entityType, refTarget)
-        }
-        return false
     }
 
     override fun startDocument() {
@@ -126,28 +89,21 @@ class OutputNetexSaxHandler(
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         currentElement = Element(qName!!, currentElement)
         val id = attributes?.getValue("id") //?.let { NetexID.netexID(it) }
+        val ref = attributes?.getValue("ref")
 
-        if(skipHandler.startSkip(currentElement!!, id)) {
+        if (id != null && skipHandler.startSkip(currentElement!!, id)) {
+            return
+        } else if (ref != null && skipHandler.skipRef(currentElement!!, ref)) {
             return
         }
         
         // Check if this is a collection element - track it for potential empty collection removal
-        if(isCollectionElement(qName)) {
+        if (isCollectionElement(qName)) {
             collectionElementStack.add(CollectionElementInfo(currentElement!!, outputBuffer.length))
         }
         
-        // Check if this is a reference element - track it for potential broken reference removal
-        if(isReferenceElement(qName)) {
-            val refTarget = getRefTarget(attributes)
-            referenceElementStack.add(ReferenceElementInfo(currentElement!!, outputBuffer.length, refTarget))
-            // Mark any parent collection as having selected children
-            if(collectionElementStack.isNotEmpty()) {
-                collectionElementStack.last().hasSelectedChildren = true
-            }
-        }
-        
         // Mark non-collection elements with IDs as having selected children for parent collections
-        if(id != null) {
+        if (id != null || ref != null) {
             empty = false
             // Mark any parent collection as having selected children
             if(collectionElementStack.isNotEmpty()) {
@@ -173,18 +129,6 @@ class OutputNetexSaxHandler(
 
         if(skipHandler.endSkip(c)){
             return
-        }
-        
-        // Check if we're ending a reference element
-        if(referenceElementStack.isNotEmpty() && referenceElementStack.last().element === c) {
-            val referenceInfo = referenceElementStack.removeAt(referenceElementStack.size - 1)
-            
-            // If the referenced target is null or not selected, remove the reference
-            if(referenceInfo.refTarget != null && !isRefTargetSelected(referenceInfo.refTarget)) {
-                // Remove everything from the reference start position to the current position
-                outputBuffer.delete(referenceInfo.startPosition, outputBuffer.length)
-                Log.info("Removing broken reference: ${qName} -> ${referenceInfo.refTarget}")
-            }
         }
         
         // Check if we're ending a collection element

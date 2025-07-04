@@ -1,7 +1,7 @@
 {
   "logLevel": "INFO",
   "printReport": true,
-  "preserveComments": true,
+  "preserveComments": false,
   "removePrivateData": false,
   "period": {
     "start": "2025-01-31",

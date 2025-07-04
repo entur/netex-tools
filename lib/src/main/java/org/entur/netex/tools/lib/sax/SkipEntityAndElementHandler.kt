@@ -12,9 +12,6 @@ class SkipEntityAndElementHandler(
 
     fun inSkipMode() = skipElement != null
     
-    // Expose the selection for reference checking
-    fun getSelection() = selection
-
     fun startSkip(currentElement: Element, id : String?): Boolean {
         if(inSkipMode()) {
             return true
@@ -28,6 +25,15 @@ class SkipEntityAndElementHandler(
             return true
         }
         return false
+    }
+
+    fun skipRef(currentElement: Element, ref: String): Boolean {
+        if (inSkipMode()) {
+            return true
+        }
+        // The type that the ref points to is the name of the currentElement, up until the Ref suffix.
+        val type = currentElement.name.removeSuffix("Ref")
+        return !selection.isSelected(type, ref)
     }
 
     fun endSkip(currentElement: Element?): Boolean {
