@@ -83,24 +83,6 @@ class EntitySelection(val model : EntityModel) {
         }
     }
 
-    /**
-     * Remove entities from this selection based on a map of entity types to sets of entity IDs.
-     */
-    fun removeAll(entitiesToRemove: Map<String, Set<String>>) {
-        entitiesToRemove.forEach { (type, idsToRemove) ->
-            val entitiesOfType = selection[type]
-            if (entitiesOfType != null) {
-                idsToRemove.forEach { id ->
-                    entitiesOfType.remove(id)
-                }
-                // Clean up empty type maps
-                if (entitiesOfType.isEmpty()) {
-                    selection.remove(type)
-                }
-            }
-        }
-    }
-
     fun removeAllNotIn(entitiesToKeep : Map<String, Set<String>>) {
         for ((type, idsToKeep) in entitiesToKeep) {
             val entitiesOfType = selection[type]
@@ -130,10 +112,8 @@ class EntitySelection(val model : EntityModel) {
             }
         }
 
-        // Remove entities that match the predicate
         toRemove.forEach { (type, id) ->
             selection[type]?.remove(id)
-            // Clean up empty type maps
             if (selection[type]?.isEmpty() == true) {
                 selection.remove(type)
             }

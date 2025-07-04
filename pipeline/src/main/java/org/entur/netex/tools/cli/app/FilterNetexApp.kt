@@ -114,6 +114,8 @@ data class FilterNetexApp(
     plugins,
   )
 
-  private fun createNetexSaxWriteHandler(file: File) = OutputNetexSaxHandler(file, SkipEntityAndElementHandler(skipElements, selection), config.preserveComments)
-
+  private fun createNetexSaxWriteHandler(file: File) = OutputNetexSaxHandler(
+    file,
+    SkipEntityAndElementHandler(skipElements, selection),
+    config.preserveComments)
 }
