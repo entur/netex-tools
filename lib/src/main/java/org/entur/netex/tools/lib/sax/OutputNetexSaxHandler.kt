@@ -17,8 +17,7 @@ class OutputNetexSaxHandler(
     private var whiteSpace : String? = null
     private var empty = true
     private val outputBuffer = StringBuilder()
-    private var hasContentBetweenTags = false
-    
+
     // Stack to track potential collection elements and their start positions
     private val collectionElementStack = mutableListOf<CollectionElementInfo>()
     
@@ -69,7 +68,6 @@ class OutputNetexSaxHandler(
             whiteSpace = text
         }
         else {
-            hasContentBetweenTags = true
             // Mark any parent collection as having content
             if(collectionElementStack.isNotEmpty()) {
                 collectionElementStack.last().hasSelectedChildren = true
@@ -91,6 +89,10 @@ class OutputNetexSaxHandler(
         val id = attributes?.getValue("id") //?.let { NetexID.netexID(it) }
         val ref = attributes?.getValue("ref")
 
+        if (skipHandler.inSkipMode()) {
+            // If we're in skip mode, we don't process this element
+            return
+        }
         if (id != null && skipHandler.startSkip(currentElement!!, id)) {
             return
         } else if (ref != null && skipHandler.skipRef(currentElement!!, ref)) {
@@ -110,9 +112,6 @@ class OutputNetexSaxHandler(
                 collectionElementStack.last().hasSelectedChildren = true
             }
         }
-        
-        // Reset content tracking for this element
-        hasContentBetweenTags = false
         
         write("<$qName")
         if(attributes != null) {
@@ -143,7 +142,7 @@ class OutputNetexSaxHandler(
                 return // Don't write the closing tag
             }
         }
-        
+
         write("</$qName>")
     }
 
