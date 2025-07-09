@@ -33,7 +33,12 @@ class SkipEntityAndElementHandler(
         }
         // The type that the ref points to is the name of the currentElement, up until the Ref suffix.
         val type = currentElement.name.removeSuffix("Ref")
-        return !selection.isSelected(type, ref)
+        val referencedElementNotInSelection = !selection.isSelected(type, ref)
+        if (referencedElementNotInSelection) {
+            skipElement = currentElement
+            return true
+        }
+        return false
     }
 
     fun endSkip(currentElement: Element?): Boolean {
