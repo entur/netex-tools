@@ -8,31 +8,14 @@ import org.xml.sax.ext.LexicalHandler
 import java.io.File
 
 class OutputNetexSaxHandler(
-    private val outFile : File,
+    outFile : File,
     private val skipHandler : SkipEntityAndElementHandler,
     private val preserveComments : Boolean = true
 ) : NetexToolsSaxHandler(), LexicalHandler {
     private val output = outFile.bufferedWriter(Charsets.UTF_8)
     private var currentElement : Element? = null
     private var whiteSpace : String? = null
-    private var empty = true
     private val outputBuffer = StringBuilder()
-
-    // Stack to track potential collection elements and their start positions
-    private val collectionElementStack = mutableListOf<CollectionElementInfo>()
-    
-    // Data class to track collection element information
-    private data class CollectionElementInfo(
-        val element: Element,
-        val startPosition: Int,
-        var hasSelectedChildren: Boolean = false
-    )
-
-    // Check if an element name represents a collection (plural form, lowercase start)
-    private fun isCollectionElement(elementName: String): Boolean {
-        return elementName.length > 1 && 
-               elementName[0].isLowerCase()
-    }
 
     override fun startDocument() {
         write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
@@ -40,15 +23,10 @@ class OutputNetexSaxHandler(
 
     override fun endDocument() {
         // Process the buffer to convert empty elements to self-closing
-        val processedOutput = convertEmptyElementsToSelfClosing(outputBuffer.toString())
+        val processedOutput = removeEmptyCollections(outputBuffer.toString())
         output.write(processedOutput)
         output.flush()
         output.close()
-
-        if(empty) {
-            Log.info("document was empty. deleting outFile")
-            outFile.delete()
-        }
     }
 
     override fun startPrefixMapping(prefix: String?, uri: String?) {
@@ -68,10 +46,6 @@ class OutputNetexSaxHandler(
             whiteSpace = text
         }
         else {
-            // Mark any parent collection as having content
-            if(collectionElementStack.isNotEmpty()) {
-                collectionElementStack.last().hasSelectedChildren = true
-            }
             write(StringEscapeUtils.escapeXml11(text))
         }
     }
@@ -84,33 +58,26 @@ class OutputNetexSaxHandler(
         Log.info("skippedEntity - name: $name")
     }
 
-    override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
-        currentElement = Element(qName!!, currentElement)
-        val id = attributes?.getValue("id") //?.let { NetexID.netexID(it) }
-        val ref = attributes?.getValue("ref")
-
+    private fun shouldSkipElement(element: Element): Boolean {
         if (skipHandler.inSkipMode()) {
-            // If we're in skip mode, we don't process this element
-            return
+            return true
         }
+
+        val id = element.attributes?.getValue("id")
+        val ref = element.attributes?.getValue("ref")
+
         if (id != null && skipHandler.startSkip(currentElement!!, id)) {
-            return
+            return true
         } else if (ref != null && skipHandler.skipRef(currentElement!!, ref)) {
+            return true
+        }
+        return false
+    }
+
+    override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
+        currentElement = Element(qName!!, currentElement, attributes)
+        if (shouldSkipElement(currentElement!!)) {
             return
-        }
-        
-        // Check if this is a collection element - track it for potential empty collection removal
-        if (isCollectionElement(qName)) {
-            collectionElementStack.add(CollectionElementInfo(currentElement!!, outputBuffer.length))
-        }
-        
-        // Mark non-collection elements with IDs as having selected children for parent collections
-        if (id != null || ref != null) {
-            empty = false
-            // Mark any parent collection as having selected children
-            if(collectionElementStack.isNotEmpty()) {
-                collectionElementStack.last().hasSelectedChildren = true
-            }
         }
         
         write("<$qName")
@@ -129,26 +96,8 @@ class OutputNetexSaxHandler(
         if(skipHandler.endSkip(c)){
             return
         }
-        
-        // Check if we're ending a collection element
-        if(collectionElementStack.isNotEmpty() && collectionElementStack.last().element === c) {
-            val collectionInfo = collectionElementStack.removeAt(collectionElementStack.size - 1)
-            
-            // If the collection has no selected children, remove it from the output buffer
-            if(!collectionInfo.hasSelectedChildren) {
-                // Remove everything from the collection start position to the current position
-                outputBuffer.delete(collectionInfo.startPosition, outputBuffer.length)
-                Log.info("Removing empty collection: ${qName}")
-                return // Don't write the closing tag
-            }
-        }
 
         write("</$qName>")
-    }
-
-    private fun write(text : CharArray, start : Int, length : Int) {
-        printCachedWhiteSpace()
-        outputBuffer.append(text, start, length)
     }
 
     private fun write(text : String) {
@@ -163,31 +112,6 @@ class OutputNetexSaxHandler(
         }
     }
     
-    // LexicalHandler methods for comment preservation
-    override fun startDTD(name: String?, publicId: String?, systemId: String?) {
-        // Not needed for NeTEx files
-    }
-    
-    override fun endDTD() {
-        // Not needed for NeTEx files
-    }
-    
-    override fun startEntity(name: String?) {
-        // Not needed for NeTEx files
-    }
-    
-    override fun endEntity(name: String?) {
-        // Not needed for NeTEx files
-    }
-    
-    override fun startCDATA() {
-        // Not needed for NeTEx files
-    }
-    
-    override fun endCDATA() {
-        // Not needed for NeTEx files
-    }
-    
     override fun comment(ch: CharArray?, start: Int, length: Int) {
         if(skipHandler.inSkipMode()) {
             return
@@ -198,23 +122,45 @@ class OutputNetexSaxHandler(
         }
         
         val commentText = String(ch!!, start, length)
-        // Mark any parent collection as having content
-        if(collectionElementStack.isNotEmpty()) {
-            collectionElementStack.last().hasSelectedChildren = true
-        }
         write("<!--$commentText-->")
     }
-    
-    private fun convertEmptyElementsToSelfClosing(xmlContent: String): String {
-        // Then convert empty elements to self-closing
-        val emptyElementPattern = Regex("""<(\w+)(\s+[^>]*?|)>\s*</\1>""", RegexOption.MULTILINE)
 
-        val processedContent = emptyElementPattern.replace(xmlContent) { matchResult ->
+    private fun removeEmptyCollections(xmlContent: String): String {
+        val collectionPattern = Regex("""<(\w+)(\s+[^>]*?|)>\s*</\1>""", RegexOption.MULTILINE)
+
+        return collectionPattern.replace(xmlContent) { matchResult ->
             val tagName = matchResult.groupValues[1]
             val attributes = matchResult.groupValues[2]
-            "<$tagName$attributes/>"
+            if (NetexUtils.isCollectionElement(tagName)) {
+                "<!-- Empty collection element of type $tagName was removed -->"
+            } else {
+                "<$tagName$attributes/>"
+            }
         }
-        
-        return processedContent
+    }
+
+    // LexicalHandler methods for comment preservation
+    override fun startDTD(name: String?, publicId: String?, systemId: String?) {
+        // Not needed for NeTEx files
+    }
+
+    override fun endDTD() {
+        // Not needed for NeTEx files
+    }
+
+    override fun startEntity(name: String?) {
+        // Not needed for NeTEx files
+    }
+
+    override fun endEntity(name: String?) {
+        // Not needed for NeTEx files
+    }
+
+    override fun startCDATA() {
+        // Not needed for NeTEx files
+    }
+
+    override fun endCDATA() {
+        // Not needed for NeTEx files
     }
 }

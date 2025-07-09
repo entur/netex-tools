@@ -29,7 +29,7 @@ class BuildEntityModelSaxHandler(
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         val type = qName!!
-        currentElement = Element(type, currentElement)
+        currentElement = Element(type, currentElement, attributes)
         elementPath.add(type)
 
         if(skipHandler.startSkip(currentElement!!)) {

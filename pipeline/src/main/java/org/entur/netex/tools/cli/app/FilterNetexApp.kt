@@ -28,9 +28,16 @@ data class FilterNetexApp(
 
   fun run() {
     setupAndLogStartupInfo()
+
+    // Step 1: collect data needed for filtering out entities
     buildEntityModel()
+
+    // Step 2: filter data based on configuration and data collected in step 1
     selectEntitiesToKeep()
+
+    // Step 3: export the filtered data to XML files
     exportXmlFiles()
+
     printReport()
   }
 
