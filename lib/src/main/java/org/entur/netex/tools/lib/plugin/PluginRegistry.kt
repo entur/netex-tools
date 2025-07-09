@@ -1,5 +1,7 @@
 package org.entur.netex.tools.lib.plugin
 
+import org.entur.netex.tools.lib.extensions.putOrAddToList
+
 /**
  * Registry for managing NetEx plugins
  */
@@ -15,7 +17,7 @@ class PluginRegistry {
         
         // Update element-to-plugins mapping
         plugin.getSupportedElementTypes().forEach { elementType ->
-            elementToPluginsMap.computeIfAbsent(elementType) { mutableListOf() }.add(plugin)
+            elementToPluginsMap.putOrAddToList(elementType, plugin)
         }
     }
     
