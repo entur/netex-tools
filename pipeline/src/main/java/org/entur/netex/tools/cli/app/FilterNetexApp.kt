@@ -4,13 +4,13 @@ import org.entur.netex.tools.cli.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.model.PublicationEnumeration
 import org.entur.netex.tools.lib.model.SimpleEntitySelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
-import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesCalculator
 import org.entur.netex.tools.lib.sax.*
-import org.entur.netex.tools.lib.utils.EntitySelectionUtils
+import org.entur.netex.tools.lib.selection.ActiveDatesSelector
+import org.entur.netex.tools.lib.selection.PublicEntitiesSelector
+import org.entur.netex.tools.lib.selection.UnreferencedEntityPruningSelector
 import org.entur.netex.tools.lib.utils.Log
 import java.io.File
 
@@ -34,7 +34,12 @@ data class FilterNetexApp(
     buildEntityModel()
 
     // Step 2: filter data based on configuration and data collected in step 1
-    val selection = selectEntitiesToKeep()
+    val selectors = listOf(
+      { entities: Collection<Entity>, entitySelection: SimpleEntitySelection -> PublicEntitiesSelector().selector(entities) },
+      { entities: Collection<Entity>, entitySelection: SimpleEntitySelection -> ActiveDatesSelector(activeDatesPlugin, model, config.period!!.start, config.period!!.end).selector(entitySelection) },
+      { entities: Collection<Entity>, entitySelection: SimpleEntitySelection -> UnreferencedEntityPruningSelector(model = model).selector(entitySelection) }
+    )
+    val selection = selectEntitiesToKeep(selectors)
 
     // Step 3: export the filtered data to XML files
     exportXmlFiles(selection)
@@ -57,70 +62,17 @@ data class FilterNetexApp(
     }
   }
 
-  private fun selectEntitiesToKeep(): SimpleEntitySelection {
+  private fun selectEntitiesToKeep(selectors: List<(Collection<Entity>, SimpleEntitySelection) -> SimpleEntitySelection>): SimpleEntitySelection {
     val allEntities = model.listAllEntities()
-
-    // mapping from type -> (id, entity)
     val allEntitiesMap = mutableMapOf<String, MutableMap<String, Entity>>()
     allEntities.forEach { entity ->
       allEntitiesMap.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
     }
+    val allEntitiesSelection = SimpleEntitySelection(allEntitiesMap)
 
-    // mapping from type -> (id, entity)
-    val publicEntitiesMap = mutableMapOf<String, MutableMap<String, Entity>>()
-    if (config.removePrivateData) {
-      allEntities.filter { it.publication == PublicationEnumeration.PUBLIC.value }.forEach { entity ->
-        publicEntitiesMap.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
-      }
-    } else {
-      publicEntitiesMap.putAll(allEntitiesMap)
-    }
-
-    val activeEntitiesMap = mutableMapOf<String, MutableMap<String, Entity>>()
-    // mapping from type -> Set of IDs to keep
-    val activeEntities = if (config.period != null) {
-      val calculator = ActiveDatesCalculator(activeDatesPlugin.getCollectedData())
-      calculator.activeDateEntitiesInPeriod(config.period!!.start, config.period!!.end, model)
-    } else {
-      // If no period is specified, keep all entities
-      emptyMap()
-    }
-
-    allEntitiesMap.forEach { (type, entities) ->
-      if (activeEntities.containsKey(type)) {
-        val idsOfActiveEntitiesWithType = activeEntities[type]
-        val entitiesToKeep = entities.filter { idsOfActiveEntitiesWithType?.contains(it.key) == true  }
-        if (entitiesToKeep.isNotEmpty()) {
-          activeEntitiesMap.put(type, entitiesToKeep.toMutableMap())
-        }
-      } else {
-        // If no active entities for this type, keep all entities of this type
-        activeEntitiesMap[type] = entities
-      }
-    }
-
-    val activeEntitiesSelection = SimpleEntitySelection(activeEntitiesMap)
-    val publicEntitiesSelection = SimpleEntitySelection(publicEntitiesMap)
-
-    return activeEntitiesSelection.intersectWith(publicEntitiesSelection)
-//    pruneUnreferencedEntities(mergedEntities, model)
-  }
-  
-  private fun pruneUnreferencedEntities(selection: MutableMap<String, MutableMap<String, Entity>>, model: EntityModel) {
-    // Define entity types that should be removed if not referenced
-    // Order matters: remove from most dependent to least dependent
-    val entityTypesToPrune = listOf(
-      "Route",           // Routes that aren't used by any JourneyPattern
-      "Line",            // Lines that aren't used by any ServiceJourney or Route  
-      "JourneyPattern",  // JourneyPatterns that aren't used by any ServiceJourney
-      "DestinationDisplay", // DestinationDisplays not used by any journey pattern or service journey
-      "RoutePoint",      // RoutePoints not used by any Route
-      "PointOnRoute",    // PointOnRoute not used by any Route
-      "OperatingPeriod"  // OperatingPeriods not used by any DayTypeAssignment
-    )
-    
-    Log.info("Pruning unreferenced entities...")
-    EntitySelectionUtils.removeUnreferencedEntities(entityTypesToPrune, selection, model)
+    val result = selectors.map { selector -> selector(allEntities, allEntitiesSelection) }
+      .reduce { acc, selection -> selection.intersectWith(acc) }
+    return result
   }
 
   private fun exportXmlFiles(selection : SimpleEntitySelection) {
