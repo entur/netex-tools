@@ -34,17 +34,37 @@ data class FilterNetexApp(
     buildEntityModel()
 
     // Step 2: filter data based on configuration and data collected in step 1
-    val selectors = listOf(
-      { entities: Collection<Entity>, entitySelection: SimpleEntitySelection -> PublicEntitiesSelector().selector(entities) },
-      { entities: Collection<Entity>, entitySelection: SimpleEntitySelection -> ActiveDatesSelector(activeDatesPlugin, model, config.period!!.start, config.period!!.end).selector(entitySelection) },
-      { entities: Collection<Entity>, entitySelection: SimpleEntitySelection -> UnreferencedEntityPruningSelector(model = model).selector(entitySelection) }
-    )
+    val selectors = setupSelectors()
     val selection = selectEntitiesToKeep(selectors)
 
     // Step 3: export the filtered data to XML files
     exportXmlFiles(selection)
 
     printReport(selection)
+  }
+
+  val publicEntitiesSelector = { entities: Collection<Entity>, _: SimpleEntitySelection ->
+    PublicEntitiesSelector().selector(entities)
+  }
+
+  val activeDatesSelector = { _: Collection<Entity>, selection: SimpleEntitySelection ->
+    ActiveDatesSelector(activeDatesPlugin, model, config.period!!.start, config.period!!.end).selector(selection)
+  }
+
+  val unreferencedEntityPruningSelector = { _: Collection<Entity>, selection: SimpleEntitySelection ->
+    UnreferencedEntityPruningSelector(model = model).selector(selection)
+  }
+
+  private fun setupSelectors(): List<(Collection<Entity>, SimpleEntitySelection) -> SimpleEntitySelection> {
+    val selectors = mutableListOf<(Collection<Entity>, SimpleEntitySelection) -> SimpleEntitySelection>()
+    if (config.removePrivateData) {
+        selectors.add(publicEntitiesSelector)
+    }
+    if (config.period != null) {
+        selectors.add(activeDatesSelector)
+    }
+    selectors.add(unreferencedEntityPruningSelector)
+    return selectors
   }
 
   private fun setupAndLogStartupInfo() {
@@ -70,8 +90,11 @@ data class FilterNetexApp(
     }
     val allEntitiesSelection = SimpleEntitySelection(allEntitiesMap)
 
-    val result = selectors.map { selector -> selector(allEntities, allEntitiesSelection) }
+    // Runs each selector and combines the results by intersecting the selections.
+    val result = selectors
+      .map { selector -> selector(allEntities, allEntitiesSelection) }
       .reduce { acc, selection -> selection.intersectWith(acc) }
+
     return result
   }
 
