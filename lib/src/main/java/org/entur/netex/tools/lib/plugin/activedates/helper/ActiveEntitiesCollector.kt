@@ -23,9 +23,7 @@ class ActiveEntitiesCollector {
     fun addOperatingPeriod(id: String) = add(NetexTypes.OPERATING_PERIOD, id)
     fun addOperatingDay(id: String) = add(NetexTypes.OPERATING_DAY, id)
 
-    private fun add(type: String, id: String) {
-        entities.putOrAddToSet(type, id)
-    }
+    private fun add(type: String, id: String) = entities.putOrAddToSet(type, id)
 
     fun serviceJourneys(): Set<String> = entities[NetexTypes.SERVICE_JOURNEY] ?: mutableSetOf()
     fun dayTypes(): Set<String> = entities[NetexTypes.DAY_TYPE] ?: mutableSetOf()

@@ -2,10 +2,7 @@ package org.entur.netex.tools.lib.model
 
 import org.entur.netex.tools.lib.utils.Log
 
-class EntitySelection(val model : EntityModel) {
-
-    // mapping from type -> (id, entity)
-    private val selection = mutableMapOf<String, MutableMap<String, Entity>>()
+class EntitySelection(val model : EntityModel, val selection: MutableMap<String, MutableMap<String, Entity>>) {
 
     fun isSelected(e : Entity?) : Boolean {
         if (e == null) { return false }
@@ -83,114 +80,9 @@ class EntitySelection(val model : EntityModel) {
         }
     }
 
-    fun removeAllNotIn(entitiesToKeep : Map<String, Set<String>>) {
-        for ((type, idsToKeep) in entitiesToKeep) {
-            val entitiesOfType = selection[type]
-            if (entitiesOfType != null) {
-                val entityIds = entitiesOfType.keys.toMutableSet()
-                entityIds.removeAll(idsToKeep)
-                // Remove all entities not in the keep set
-                entityIds.forEach { id ->
-                    entitiesOfType.remove(id)
-                }
-                // Clean up empty type maps
-                if (entitiesOfType.isEmpty()) {
-                    selection.remove(type)
-                }
-            }
-        }
-    }
-
-    fun remove(consumer : (Entity) -> Boolean) {
-        val toRemove = mutableListOf<Pair<String, String>>()
-
-        selection.forEach { (type, entitiesMap) ->
-            entitiesMap.forEach { (id, entity) ->
-                if (consumer(entity)) {
-                    toRemove.add(Pair(type, id))
-                }
-            }
-        }
-
-        toRemove.forEach { (type, id) ->
-            selection[type]?.remove(id)
-            if (selection[type]?.isEmpty() == true) {
-                selection.remove(type)
-            }
-        }
-    }
-
     fun forEachSelected(consumer : (Entity) -> Unit) {
         selection.flatMap { it.value.values }.forEach{e -> consumer(e)}
     }
 
     fun selectType(type : String) = SelectByType(this, type)
-
-    fun includeAll() {
-        model.listAllEntities().forEach { select(it) }
-    }
-
-    /**
-     * Remove entities of specified types that are not referenced by any selected entities.
-     * This is useful for cleaning up orphaned entities after filtering operations.
-     * Runs multiple passes until no more entities are removed to handle cascading deletions.
-     * 
-     * @param entityTypes List of entity types to check for unreferenced entities
-     */
-    fun removeUnreferencedEntities(entityTypes: List<String>) {
-        var entitiesRemoved: Boolean
-        var pass = 1
-        
-        do {
-            entitiesRemoved = false
-            Log.info("Pruning pass $pass...")
-            
-            entityTypes.forEach { entityType ->
-                if (removeUnreferencedEntitiesOfType(entityType)) {
-                    entitiesRemoved = true
-                }
-            }
-            pass++
-        } while (entitiesRemoved)
-        
-        Log.info("Pruning completed after ${pass - 1} passes")
-    }
-
-    /**
-     * Remove entities of a specific type that are not referenced by any selected entities.
-     * @return true if any entities were removed, false otherwise
-     */
-    private fun removeUnreferencedEntitiesOfType(entityType: String): Boolean {
-        val entitiesOfType = selection[entityType] ?: return false
-        val unreferencedIds = mutableSetOf<String>()
-
-        // Check each entity of the specified type
-        entitiesOfType.keys.forEach { entityId ->
-            if (!isEntityReferenced(entityType, entityId)) {
-                unreferencedIds.add(entityId)
-                Log.info("Removing unreferenced $entityType: $entityId")
-            }
-        }
-
-        // Remove unreferenced entities
-        unreferencedIds.forEach { entityId ->
-            entitiesOfType.remove(entityId)
-        }
-
-        // Clean up empty type maps
-        if (entitiesOfType.isEmpty()) {
-            selection.remove(entityType)
-        }
-        
-        return unreferencedIds.isNotEmpty()
-    }
-
-    /**
-     * Check if an entity is referenced by any other selected entities.
-     */
-    private fun isEntityReferenced(entityType: String, entityId: String): Boolean {
-        return model.listAllRefs().any { ref ->
-            ref.ref == entityId && isSelected(ref.source)
-        }
-    }
 }
