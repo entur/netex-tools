@@ -1,12 +1,11 @@
 package org.entur.netex.tools.cli.app
 
 import org.entur.netex.tools.cli.config.CliConfig
-import org.entur.netex.tools.lib.extensions.intersectWith
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.model.EntitySelection
 import org.entur.netex.tools.lib.model.PublicationEnumeration
+import org.entur.netex.tools.lib.model.SimpleEntitySelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesCalculator
@@ -35,7 +34,7 @@ data class FilterNetexApp(
     buildEntityModel()
 
     // Step 2: filter data based on configuration and data collected in step 1
-    val selection = EntitySelection(model, selectEntitiesToKeep())
+    val selection = selectEntitiesToKeep()
 
     // Step 3: export the filtered data to XML files
     exportXmlFiles(selection)
@@ -58,26 +57,26 @@ data class FilterNetexApp(
     }
   }
 
-  private fun selectEntitiesToKeep(): MutableMap<String, MutableMap<String, Entity>> {
+  private fun selectEntitiesToKeep(): SimpleEntitySelection {
     val allEntities = model.listAllEntities()
 
     // mapping from type -> (id, entity)
-    val allEntitiesSelection = mutableMapOf<String, MutableMap<String, Entity>>()
+    val allEntitiesMap = mutableMapOf<String, MutableMap<String, Entity>>()
     allEntities.forEach { entity ->
-      allEntitiesSelection.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
+      allEntitiesMap.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
     }
 
     // mapping from type -> (id, entity)
-    val publicEntitiesSelection = mutableMapOf<String, MutableMap<String, Entity>>()
+    val publicEntitiesMap = mutableMapOf<String, MutableMap<String, Entity>>()
     if (config.removePrivateData) {
       allEntities.filter { it.publication == PublicationEnumeration.PUBLIC.value }.forEach { entity ->
-        publicEntitiesSelection.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
+        publicEntitiesMap.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
       }
     } else {
-      publicEntitiesSelection.putAll(allEntitiesSelection)
+      publicEntitiesMap.putAll(allEntitiesMap)
     }
 
-    val activeEntitiesSelection = mutableMapOf<String, Map<String, Entity>>()
+    val activeEntitiesMap = mutableMapOf<String, MutableMap<String, Entity>>()
     // mapping from type -> Set of IDs to keep
     val activeEntities = if (config.period != null) {
       val calculator = ActiveDatesCalculator(activeDatesPlugin.getCollectedData())
@@ -87,24 +86,24 @@ data class FilterNetexApp(
       emptyMap()
     }
 
-    allEntitiesSelection.forEach { (type, entities) ->
+    allEntitiesMap.forEach { (type, entities) ->
       if (activeEntities.containsKey(type)) {
         val idsOfActiveEntitiesWithType = activeEntities[type]
         val entitiesToKeep = entities.filter { idsOfActiveEntitiesWithType?.contains(it.key) == true  }
         if (entitiesToKeep.isNotEmpty()) {
-          activeEntitiesSelection.put(type, entitiesToKeep)
+          activeEntitiesMap.put(type, entitiesToKeep.toMutableMap())
         }
       } else {
         // If no active entities for this type, keep all entities of this type
-        activeEntitiesSelection[type] = entities
+        activeEntitiesMap[type] = entities
       }
     }
 
-    val mergedEntities = activeEntitiesSelection.intersectWith(publicEntitiesSelection)
+    val activeEntitiesSelection = SimpleEntitySelection(activeEntitiesMap)
+    val publicEntitiesSelection = SimpleEntitySelection(publicEntitiesMap)
 
-    pruneUnreferencedEntities(mergedEntities, model)
-
-    return mergedEntities
+    return activeEntitiesSelection.intersectWith(publicEntitiesSelection)
+//    pruneUnreferencedEntities(mergedEntities, model)
   }
   
   private fun pruneUnreferencedEntities(selection: MutableMap<String, MutableMap<String, Entity>>, model: EntityModel) {
@@ -124,7 +123,7 @@ data class FilterNetexApp(
     EntitySelectionUtils.removeUnreferencedEntities(entityTypesToPrune, selection, model)
   }
 
-  private fun exportXmlFiles(selection : EntitySelection) {
+  private fun exportXmlFiles(selection : SimpleEntitySelection) {
     Log.info("Save xml files")
     if(!target.exists()) {
       target.mkdirs()
@@ -140,7 +139,7 @@ data class FilterNetexApp(
     }
   }
 
-  private fun printReport(selection: EntitySelection) {
+  private fun printReport(selection: SimpleEntitySelection) {
     if (config.printReport) {
       model.printEntities(selection)
       model.printReferences(selection)
@@ -154,7 +153,7 @@ data class FilterNetexApp(
     plugins,
   )
 
-  private fun createNetexSaxWriteHandler(file: File, selection: EntitySelection) = OutputNetexSaxHandler(
+  private fun createNetexSaxWriteHandler(file: File, selection: SimpleEntitySelection) = OutputNetexSaxHandler(
     file,
     SkipEntityAndElementHandler(skipElements, selection),
     config.preserveComments)

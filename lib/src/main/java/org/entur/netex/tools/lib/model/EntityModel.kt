@@ -32,7 +32,7 @@ class EntityModel(private val alias: Alias) {
 
     fun listAllRefs() : List<Ref> = references.listAll()
 
-    fun printEntities(selection : EntitySelection) {
+    fun printEntities(selection : SimpleEntitySelection) {
         Report(
             "SELECTED ENTITIES",
             entities.listAll(),
@@ -42,7 +42,7 @@ class EntityModel(private val alias: Alias) {
         ).print()
     }
 
-    fun printReferences(selection : EntitySelection) {
+    fun printReferences(selection : SimpleEntitySelection) {
         Report(
             "SELECTED REFERENCES",
             references.listAll(),
