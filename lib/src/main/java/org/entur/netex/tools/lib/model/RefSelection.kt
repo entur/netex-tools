@@ -1,7 +1,9 @@
 package org.entur.netex.tools.lib.model
 
-class RefSelection(val selection: Set<Ref>) {
-    fun includes(element: Element): Boolean {
+import org.entur.netex.tools.lib.selections.Selection
+
+class RefSelection(val selection: Set<Ref>): Selection() {
+    override fun includes(element: Element): Boolean {
         if (!element.isRef()) {
             return false
         }

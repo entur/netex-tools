@@ -1,4 +1,4 @@
-package org.entur.netex.tools.lib.selection
+package org.entur.netex.tools.lib.selectors
 
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.PublicationEnumeration

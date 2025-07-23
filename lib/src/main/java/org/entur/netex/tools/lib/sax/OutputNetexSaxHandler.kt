@@ -10,7 +10,7 @@ import java.io.File
 class OutputNetexSaxHandler(
     outFile : File,
     private val skipHandler : SkipEntityAndElementHandler,
-    private val preserveComments : Boolean = true
+    private val preserveComments : Boolean = true,
 ) : NetexToolsSaxHandler(), LexicalHandler {
     private val output = outFile.bufferedWriter(Charsets.UTF_8)
     private var currentElement : Element? = null
@@ -58,25 +58,10 @@ class OutputNetexSaxHandler(
         Log.info("skippedEntity - name: $name")
     }
 
-    private fun shouldSkipElement(element: Element): Boolean {
-        if (skipHandler.inSkipMode()) {
-            return true
-        }
-
-        val id = element.attributes?.getValue("id")
-        val ref = element.attributes?.getValue("ref")
-
-        if (id != null && skipHandler.startSkip(currentElement!!, id)) {
-            return true
-        } else if (ref != null && skipHandler.skipRef(currentElement!!)) {
-            return true
-        }
-        return false
-    }
-
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         currentElement = Element(qName!!, currentElement, attributes)
-        if (shouldSkipElement(currentElement!!)) {
+        if (skipHandler.shouldSkip(currentElement!!)) {
+            skipHandler.startSkip(currentElement!!)
             return
         }
         

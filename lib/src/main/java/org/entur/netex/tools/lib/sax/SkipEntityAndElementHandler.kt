@@ -7,28 +7,29 @@ import org.entur.netex.tools.lib.model.RefSelection
 class SkipEntityAndElementHandler(
     private val entitySelection : EntitySelection,
     private val refSelection : RefSelection,
-    ) {
+) {
     private var skipElement : Element? = null
 
     fun inSkipMode() = skipElement != null
-    
-    fun startSkip(currentElement: Element, id : String?): Boolean {
+
+    fun shouldSkip(element: Element): Boolean {
+        if (inSkipMode()) {
+            return true;
+        }
+        if (element.isEntity()) {
+            return !entitySelection.includes(element)
+        }
+        if (element.isRef()) {
+            return !refSelection.includes(element)
+        }
+        return false;
+    }
+
+    fun startSkip(currentElement: Element): Boolean {
         if(inSkipMode()) {
             return true
         }
-        if (id != null && !entitySelection.isSelected(currentElement.name, id)) {
-            skipElement = currentElement
-            return true
-        }
-        return false
-    }
-
-    fun skipRef(currentElement: Element): Boolean {
-        if (inSkipMode()) {
-            return true
-        }
-        if (!refSelection.includes(currentElement)) {
-            // If the current element is not in the ref selection, we skip it.
+        if (currentElement.isEntity() || currentElement.isRef()) {
             skipElement = currentElement
             return true
         }

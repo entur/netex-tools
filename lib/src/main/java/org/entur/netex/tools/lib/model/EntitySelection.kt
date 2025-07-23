@@ -1,6 +1,8 @@
 package org.entur.netex.tools.lib.model
 
-class EntitySelection(val selection: MutableMap<String, MutableMap<String, Entity>>) {
+import org.entur.netex.tools.lib.selections.Selection
+
+class EntitySelection(val selection: MutableMap<String, MutableMap<String, Entity>>): Selection() {
     fun isSelected(e : Entity?) : Boolean {
         if (e == null) { return false }
         return isSelected(e.type, e.id)
@@ -12,7 +14,10 @@ class EntitySelection(val selection: MutableMap<String, MutableMap<String, Entit
         return m != null && m.containsKey(id)
     }
 
-    fun includes(element : Element) : Boolean {
+    override fun includes(element : Element) : Boolean {
+        if (!element.isEntity()) {
+            return false
+        }
         val id = element.attributes?.getValue("id")
         if (id == null) return true
         return isSelected(element.name, id)

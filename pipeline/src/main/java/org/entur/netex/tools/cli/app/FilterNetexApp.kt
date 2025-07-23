@@ -9,10 +9,10 @@ import org.entur.netex.tools.lib.model.RefSelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import org.entur.netex.tools.lib.sax.*
-import org.entur.netex.tools.lib.selection.ActiveDatesSelector
-import org.entur.netex.tools.lib.selection.PublicEntitiesSelector
-import org.entur.netex.tools.lib.selection.SkipElementsSelector
-import org.entur.netex.tools.lib.selection.UnreferencedEntityPruningSelector
+import org.entur.netex.tools.lib.selectors.ActiveDatesSelector
+import org.entur.netex.tools.lib.selectors.PublicEntitiesSelector
+import org.entur.netex.tools.lib.selectors.SkipElementsSelector
+import org.entur.netex.tools.lib.selectors.UnreferencedEntityPruningSelector
 import org.entur.netex.tools.lib.utils.Log
 import java.io.File
 
