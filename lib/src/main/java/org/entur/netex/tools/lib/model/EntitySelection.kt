@@ -12,10 +12,24 @@ class EntitySelection(val selection: MutableMap<String, MutableMap<String, Entit
         return m != null && m.containsKey(id)
     }
 
-    private fun findMatchingIdsByType(otherSelection: EntitySelection, type: String): Set<String> {
-        val idsFromSelfMap = selection[type]?.keys ?: emptySet()
-        val idsFromOtherMap = otherSelection.selection[type]?.keys ?: emptySet()
-        return idsFromSelfMap.intersect(idsFromOtherMap)
+    fun includes(element : Element) : Boolean {
+        val id = element.attributes?.getValue("id")
+        if (id == null) return true
+        return isSelected(element.name, id)
+    }
+
+    fun allIds(): Set<String> {
+        return selection.values.flatMap { it.keys }.toHashSet()
+    }
+
+    private fun getIdsByType(type: String): Set<String> {
+        return selection[type]?.keys ?: emptySet()
+    }
+
+    private fun intersectIdsByType(otherSelection: EntitySelection, type: String): Set<String> {
+        val idsFromSelf = getIdsByType(type)
+        val idsFromOther = otherSelection.getIdsByType(type)
+        return idsFromSelf.intersect(idsFromOther)
     }
 
     fun intersectWith(
@@ -25,7 +39,7 @@ class EntitySelection(val selection: MutableMap<String, MutableMap<String, Entit
         val typesInCommon = selection.keys.intersect(otherEntitySelection.selection.keys)
 
         for (commonType in typesInCommon) {
-            val idsInCommon = findMatchingIdsByType(otherEntitySelection, commonType)
+            val idsInCommon = intersectIdsByType(otherEntitySelection, commonType)
             if (idsInCommon.isNotEmpty()) {
                 val entitiesOfType = selection[commonType]!!
                 val commonEntities = entitiesOfType.filter { it.key in idsInCommon }

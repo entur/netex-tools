@@ -2,11 +2,12 @@ package org.entur.netex.tools.lib.sax
 
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.EntitySelection
-
+import org.entur.netex.tools.lib.model.RefSelection
 
 class SkipEntityAndElementHandler(
     private val skipElements : Set<String>,
-    private val selection : EntitySelection
+    private val entitySelection : EntitySelection,
+    private val refSelection : RefSelection,
     ) {
     private var skipElement : Element? = null
 
@@ -20,21 +21,19 @@ class SkipEntityAndElementHandler(
             skipElement = currentElement
             return true
         }
-        if (id != null && !selection.isSelected(currentElement.name, id)) {
+        if (id != null && !entitySelection.isSelected(currentElement.name, id)) {
             skipElement = currentElement
             return true
         }
         return false
     }
 
-    fun skipRef(currentElement: Element, ref: String): Boolean {
+    fun skipRef(currentElement: Element): Boolean {
         if (inSkipMode()) {
             return true
         }
-        // The type that the ref points to is the name of the currentElement, up until the Ref suffix.
-        val type = currentElement.name.removeSuffix("Ref")
-        val referencedElementNotInSelection = !selection.isSelected(type, id = ref)
-        if (referencedElementNotInSelection) {
+        if (!refSelection.includes(currentElement)) {
+            // If the current element is not in the ref selection, we skip it.
             skipElement = currentElement
             return true
         }

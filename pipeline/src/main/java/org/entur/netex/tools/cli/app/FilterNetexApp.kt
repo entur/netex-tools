@@ -5,11 +5,13 @@ import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.model.EntitySelection
+import org.entur.netex.tools.lib.model.RefSelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import org.entur.netex.tools.lib.sax.*
 import org.entur.netex.tools.lib.selection.ActiveDatesSelector
 import org.entur.netex.tools.lib.selection.PublicEntitiesSelector
+import org.entur.netex.tools.lib.selection.SkipElementsSelector
 import org.entur.netex.tools.lib.selection.UnreferencedEntityPruningSelector
 import org.entur.netex.tools.lib.utils.Log
 import java.io.File
@@ -35,12 +37,17 @@ data class FilterNetexApp(
 
     // Step 2: filter data based on configuration and data collected in step 1
     val selectors = setupSelectors()
-    val selection = selectEntitiesToKeep(selectors)
+    val entitySelection = selectEntitiesToKeep(selectors)
+    val refSelection = selectRefsToKeep(entitySelection)
 
     // Step 3: export the filtered data to XML files
-    exportXmlFiles(selection)
+    exportXmlFiles(entitySelection, refSelection)
 
-    printReport(selection)
+    printReport(entitySelection)
+  }
+
+  val skipElementsSelector = { entities: Collection<Entity>, _: EntitySelection ->
+    SkipElementsSelector(skipElements).selector(entities)
   }
 
   val publicEntitiesSelector = { entities: Collection<Entity>, _: EntitySelection ->
@@ -57,6 +64,9 @@ data class FilterNetexApp(
 
   private fun setupSelectors(): List<(Collection<Entity>, EntitySelection) -> EntitySelection> {
     val selectors = mutableListOf<(Collection<Entity>, EntitySelection) -> EntitySelection>()
+    if (config.skipElements.isNotEmpty()) {
+      selectors.add(skipElementsSelector)
+    }
     if (config.removePrivateData) {
         selectors.add(publicEntitiesSelector)
     }
@@ -84,10 +94,13 @@ data class FilterNetexApp(
 
   private fun selectEntitiesToKeep(selectors: List<(Collection<Entity>, EntitySelection) -> EntitySelection>): EntitySelection {
     val allEntities = model.listAllEntities()
+
+    // maps from type -> (id, Entity)
     val allEntitiesMap = mutableMapOf<String, MutableMap<String, Entity>>()
     allEntities.forEach { entity ->
       allEntitiesMap.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
     }
+
     val allEntitiesSelection = EntitySelection(allEntitiesMap)
 
     // Runs each selector and combines the results by intersecting the selections.
@@ -98,7 +111,14 @@ data class FilterNetexApp(
     return result
   }
 
-  private fun exportXmlFiles(selection : EntitySelection) {
+  private fun selectRefsToKeep(entitySelection: EntitySelection): RefSelection {
+    val allRefs = model.listAllRefs()
+    val allEntityIds = entitySelection.allIds()
+    val refsToKeep = allRefs.filter { allEntityIds.contains(it.ref) }.toHashSet()
+    return RefSelection(refsToKeep)
+  }
+
+  private fun exportXmlFiles(entitySelection : EntitySelection, refSelection : RefSelection) {
     Log.info("Save xml files")
     if(!target.exists()) {
       target.mkdirs()
@@ -110,7 +130,7 @@ data class FilterNetexApp(
     parseXmlDocuments(input) { file ->
       val outFile = File(target, file.name)
       Log.info("  >> ${outFile.absolutePath}")
-      createNetexSaxWriteHandler(outFile, selection)
+      createNetexSaxWriteHandler(outFile, entitySelection, refSelection)
     }
   }
 
@@ -128,8 +148,9 @@ data class FilterNetexApp(
     plugins,
   )
 
-  private fun createNetexSaxWriteHandler(file: File, selection: EntitySelection) = OutputNetexSaxHandler(
+  private fun createNetexSaxWriteHandler(file: File, entitySelection: EntitySelection, refSelection: RefSelection) = OutputNetexSaxHandler(
     file,
-    SkipEntityAndElementHandler(skipElements, selection),
-    config.preserveComments)
+    SkipEntityAndElementHandler(skipElements, entitySelection, refSelection),
+    config.preserveComments
+  )
 }

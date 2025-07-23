@@ -68,7 +68,7 @@ class OutputNetexSaxHandler(
 
         if (id != null && skipHandler.startSkip(currentElement!!, id)) {
             return true
-        } else if (ref != null && skipHandler.skipRef(currentElement!!, ref)) {
+        } else if (ref != null && skipHandler.skipRef(currentElement!!)) {
             return true
         }
         return false
