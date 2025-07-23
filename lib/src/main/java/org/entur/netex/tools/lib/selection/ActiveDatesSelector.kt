@@ -2,7 +2,7 @@ package org.entur.netex.tools.lib.selection
 
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.model.SimpleEntitySelection
+import org.entur.netex.tools.lib.model.EntitySelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesCalculator
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import java.time.LocalDate
@@ -10,7 +10,7 @@ import kotlin.collections.forEach
 
 class ActiveDatesSelector(val activeDatesPlugin: ActiveDatesPlugin, val model: EntityModel, val fromDate: LocalDate, val toDate: LocalDate): EntitySelector() {
 
-    override fun selector(entitySelection: SimpleEntitySelection): SimpleEntitySelection {
+    override fun selector(entitySelection: EntitySelection): EntitySelection {
         val calculator = ActiveDatesCalculator(activeDatesPlugin.getCollectedData())
         val activeEntities = calculator.activeDateEntitiesInPeriod(fromDate, toDate, model)
 
@@ -28,6 +28,6 @@ class ActiveDatesSelector(val activeDatesPlugin: ActiveDatesPlugin, val model: E
             }
         }
 
-        return SimpleEntitySelection(activeEntitiesMap)
+        return EntitySelection(activeEntitiesMap)
     }
 }

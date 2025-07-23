@@ -2,7 +2,7 @@ package org.entur.netex.tools.lib.selection
 
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.model.SimpleEntitySelection
+import org.entur.netex.tools.lib.model.EntitySelection
 import org.entur.netex.tools.lib.utils.Log
 
 class UnreferencedEntityPruningSelector(
@@ -18,11 +18,11 @@ class UnreferencedEntityPruningSelector(
     private val model: EntityModel
 ): EntitySelector() {
 
-    override fun selector(entitySelection: SimpleEntitySelection): SimpleEntitySelection {
+    override fun selector(entitySelection: EntitySelection): EntitySelection {
         Log.info("Pruning unreferenced entities...")
         val nonPrunedSelection = entitySelection.selection
         val prunedSelection = removeUnreferencedEntities(nonPrunedSelection)
-        return SimpleEntitySelection(prunedSelection)
+        return EntitySelection(prunedSelection)
     }
 
     /**

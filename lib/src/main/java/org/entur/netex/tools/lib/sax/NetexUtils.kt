@@ -21,7 +21,8 @@ object NetexUtils {
         "dayTypeAssignments",
         "dayTypes",
         "routePoints",
-        "pointsInSequence"
+        "pointsInSequence",
+        "blocks"
     )
 
     fun isCollectionElement(elementName: String): Boolean = elementName in netexCollectionElementNames

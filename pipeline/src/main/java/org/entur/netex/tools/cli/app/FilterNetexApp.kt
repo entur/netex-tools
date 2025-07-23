@@ -4,7 +4,7 @@ import org.entur.netex.tools.cli.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.model.SimpleEntitySelection
+import org.entur.netex.tools.lib.model.EntitySelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import org.entur.netex.tools.lib.sax.*
@@ -43,20 +43,20 @@ data class FilterNetexApp(
     printReport(selection)
   }
 
-  val publicEntitiesSelector = { entities: Collection<Entity>, _: SimpleEntitySelection ->
+  val publicEntitiesSelector = { entities: Collection<Entity>, _: EntitySelection ->
     PublicEntitiesSelector().selector(entities)
   }
 
-  val activeDatesSelector = { _: Collection<Entity>, selection: SimpleEntitySelection ->
+  val activeDatesSelector = { _: Collection<Entity>, selection: EntitySelection ->
     ActiveDatesSelector(activeDatesPlugin, model, config.period!!.start, config.period!!.end).selector(selection)
   }
 
-  val unreferencedEntityPruningSelector = { _: Collection<Entity>, selection: SimpleEntitySelection ->
+  val unreferencedEntityPruningSelector = { _: Collection<Entity>, selection: EntitySelection ->
     UnreferencedEntityPruningSelector(model = model).selector(selection)
   }
 
-  private fun setupSelectors(): List<(Collection<Entity>, SimpleEntitySelection) -> SimpleEntitySelection> {
-    val selectors = mutableListOf<(Collection<Entity>, SimpleEntitySelection) -> SimpleEntitySelection>()
+  private fun setupSelectors(): List<(Collection<Entity>, EntitySelection) -> EntitySelection> {
+    val selectors = mutableListOf<(Collection<Entity>, EntitySelection) -> EntitySelection>()
     if (config.removePrivateData) {
         selectors.add(publicEntitiesSelector)
     }
@@ -82,13 +82,13 @@ data class FilterNetexApp(
     }
   }
 
-  private fun selectEntitiesToKeep(selectors: List<(Collection<Entity>, SimpleEntitySelection) -> SimpleEntitySelection>): SimpleEntitySelection {
+  private fun selectEntitiesToKeep(selectors: List<(Collection<Entity>, EntitySelection) -> EntitySelection>): EntitySelection {
     val allEntities = model.listAllEntities()
     val allEntitiesMap = mutableMapOf<String, MutableMap<String, Entity>>()
     allEntities.forEach { entity ->
       allEntitiesMap.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
     }
-    val allEntitiesSelection = SimpleEntitySelection(allEntitiesMap)
+    val allEntitiesSelection = EntitySelection(allEntitiesMap)
 
     // Runs each selector and combines the results by intersecting the selections.
     val result = selectors
@@ -98,7 +98,7 @@ data class FilterNetexApp(
     return result
   }
 
-  private fun exportXmlFiles(selection : SimpleEntitySelection) {
+  private fun exportXmlFiles(selection : EntitySelection) {
     Log.info("Save xml files")
     if(!target.exists()) {
       target.mkdirs()
@@ -114,7 +114,7 @@ data class FilterNetexApp(
     }
   }
 
-  private fun printReport(selection: SimpleEntitySelection) {
+  private fun printReport(selection: EntitySelection) {
     if (config.printReport) {
       model.printEntities(selection)
       model.printReferences(selection)
@@ -128,7 +128,7 @@ data class FilterNetexApp(
     plugins,
   )
 
-  private fun createNetexSaxWriteHandler(file: File, selection: SimpleEntitySelection) = OutputNetexSaxHandler(
+  private fun createNetexSaxWriteHandler(file: File, selection: EntitySelection) = OutputNetexSaxHandler(
     file,
     SkipEntityAndElementHandler(skipElements, selection),
     config.preserveComments)

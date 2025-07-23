@@ -1,12 +1,12 @@
 package org.entur.netex.tools.lib.sax
 
 import org.entur.netex.tools.lib.model.Element
-import org.entur.netex.tools.lib.model.SimpleEntitySelection
+import org.entur.netex.tools.lib.model.EntitySelection
 
 
 class SkipEntityAndElementHandler(
     private val skipElements : Set<String>,
-    private val selection : SimpleEntitySelection
+    private val selection : EntitySelection
     ) {
     private var skipElement : Element? = null
 

@@ -1,9 +1,6 @@
 package org.entur.netex.tools.lib.model
 
-import org.entur.netex.tools.lib.utils.Log
-
-class EntitySelection(val model : EntityModel, val selection: MutableMap<String, MutableMap<String, Entity>>) {
-
+class EntitySelection(val selection: MutableMap<String, MutableMap<String, Entity>>) {
     fun isSelected(e : Entity?) : Boolean {
         if (e == null) { return false }
         return isSelected(e.type, e.id)
@@ -15,74 +12,27 @@ class EntitySelection(val model : EntityModel, val selection: MutableMap<String,
         return m != null && m.containsKey(id)
     }
 
-    fun select(e: Entity?) : Boolean {
-        if (e == null) { return false; }
-        val res = selection.computeIfAbsent(e.type) { mutableMapOf() }.put(e.id, e)
-        return res == null
+    private fun findMatchingIdsByType(otherSelection: EntitySelection, type: String): Set<String> {
+        val idsFromSelfMap = selection[type]?.keys ?: emptySet()
+        val idsFromOtherMap = otherSelection.selection[type]?.keys ?: emptySet()
+        return idsFromSelfMap.intersect(idsFromOtherMap)
     }
 
-    fun select(type : String, ids : List<String>) {
-        ids.forEach {
-            val e = model.getEntity(it)
-            if (type == e?.type) {
-                select(e)
-            }
-            else {
-                Log.error("Entity not found: $type, $it")
-            }
-        }
-    }
+    fun intersectWith(
+        otherEntitySelection: EntitySelection
+    ): EntitySelection {
+        val resultingMap = mutableMapOf<String, MutableMap<String, Entity>>()
+        val typesInCommon = selection.keys.intersect(otherEntitySelection.selection.keys)
 
-    /**
-     * Propagate selection - if an entity is selected, then select its parent,
-     * its grandparent and so on.
-     */
-    fun selectAllParents() = forEachSelected { selectParents(it) }
-
-    private fun selectParents(e : Entity) {
-        var p = e.parent
-        while (p != null) {
-            select(p)
-            p = p.parent
-        }
-    }
-
-    /**
-     * Select all entities referenced by another selected entity.
-     */
-    fun selectAllReferencedEntities() {
-        // TODO - This is an inefficient implementation. The iteration over references is in
-        //        random order, and we need to repeat the iteration process multiple times to
-        //        ref-chains is complete. If sorted, most references can be iterated over once,
-        //        and to resolve reference cycles, an extra cycle is needed for the "back"
-        //        reference.
-
-        var modified = true
-        var refsNext = model.listAllRefs()
-
-        while (modified) {
-            modified = false
-            val refs = refsNext
-            refsNext = mutableListOf()
-
-            refs.forEach { ref ->
-                val e1 = ref.source
-                if(isSelected(e1)) {
-                    val e2 = model.getEntity(ref.ref)
-                    if (select(e2)) {
-                        modified = true
-                    }
-                }
-                else {
-                    refsNext.add(ref)
-                }
+        for (commonType in typesInCommon) {
+            val idsInCommon = findMatchingIdsByType(otherEntitySelection, commonType)
+            if (idsInCommon.isNotEmpty()) {
+                val entitiesOfType = selection[commonType]!!
+                val commonEntities = entitiesOfType.filter { it.key in idsInCommon }
+                resultingMap.put(commonType, commonEntities.toMutableMap())
             }
         }
-    }
 
-    fun forEachSelected(consumer : (Entity) -> Unit) {
-        selection.flatMap { it.value.values }.forEach{e -> consumer(e)}
+        return EntitySelection(resultingMap)
     }
-
-    fun selectType(type : String) = SelectByType(this, type)
 }
