@@ -78,7 +78,8 @@ class OutputNetexSaxHandler(
         val c = currentElement
         currentElement = currentElement?.parent
 
-        if(skipHandler.endSkip(c)){
+        if(skipHandler.inSkipMode()) {
+            skipHandler.endSkip(c)
             return
         }
 

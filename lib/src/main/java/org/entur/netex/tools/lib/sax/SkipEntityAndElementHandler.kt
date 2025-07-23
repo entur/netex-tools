@@ -14,12 +14,14 @@ class SkipEntityAndElementHandler(
 
     fun shouldSkip(element: Element): Boolean {
         if (inSkipMode()) {
-            return true;
+            return true
         }
         if (element.isEntity()) {
+            // TODO: Selections may be abstracted. Do we want this?
             return !entitySelection.includes(element)
         }
         if (element.isRef()) {
+            // TODO: Selections may be abstracted. Do we want this?
             return !refSelection.includes(element)
         }
         return false;
@@ -36,11 +38,9 @@ class SkipEntityAndElementHandler(
         return false
     }
 
-    fun endSkip(currentElement: Element?): Boolean {
+    fun endSkip(currentElement: Element?) {
         if(skipElement === currentElement) {
             skipElement = null
-            return true
         }
-        return inSkipMode()
     }
 }
