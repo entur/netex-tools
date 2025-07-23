@@ -150,7 +150,7 @@ data class FilterNetexApp(
 
   private fun createNetexSaxWriteHandler(file: File, entitySelection: EntitySelection, refSelection: RefSelection) = OutputNetexSaxHandler(
     file,
-    SkipEntityAndElementHandler(skipElements, entitySelection, refSelection),
+    SkipEntityAndElementHandler(entitySelection, refSelection),
     config.preserveComments
   )
 }

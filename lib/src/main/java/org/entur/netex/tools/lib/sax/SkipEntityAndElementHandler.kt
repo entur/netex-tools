@@ -5,7 +5,6 @@ import org.entur.netex.tools.lib.model.EntitySelection
 import org.entur.netex.tools.lib.model.RefSelection
 
 class SkipEntityAndElementHandler(
-    private val skipElements : Set<String>,
     private val entitySelection : EntitySelection,
     private val refSelection : RefSelection,
     ) {
@@ -15,10 +14,6 @@ class SkipEntityAndElementHandler(
     
     fun startSkip(currentElement: Element, id : String?): Boolean {
         if(inSkipMode()) {
-            return true
-        }
-        if(skipElements.contains(currentElement.name)) {
-            skipElement = currentElement
             return true
         }
         if (id != null && !entitySelection.isSelected(currentElement.name, id)) {
