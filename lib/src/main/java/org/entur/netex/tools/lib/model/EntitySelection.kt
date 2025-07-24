@@ -19,7 +19,6 @@ class EntitySelection(val selection: MutableMap<String, MutableMap<String, Entit
             return false
         }
         val id = element.attributes?.getValue("id")
-        if (id == null) return true
         return isSelected(element.name, id)
     }
 
