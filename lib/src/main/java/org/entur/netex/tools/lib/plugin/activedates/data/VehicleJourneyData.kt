@@ -2,7 +2,7 @@ package org.entur.netex.tools.lib.plugin.activedates.data
 
 import java.time.LocalTime
 
-data class ServiceJourneyData(
+data class VehicleJourneyData(
     val dayTypes: MutableList<String> = mutableListOf(),
     val operatingDays: MutableList<String> = mutableListOf(),
     var finalArrivalTime: LocalTime? = null,

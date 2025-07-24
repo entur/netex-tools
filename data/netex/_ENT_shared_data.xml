@@ -232,6 +232,10 @@
                             <OperatingDayRef ref="ENT:OperatingDay:2025-04-02" version="1"/>
                             <DayTypeRef ref="ENT:DayType:3" version="1"/>
                         </DayTypeAssignment>
+                        <DayTypeAssignment order="2" version="1" id="ENT:DayTypeAssignment:4">
+                            <OperatingDayRef ref="ENT:OperatingDay:2025-01-30" version="1"/>
+                            <DayTypeRef ref="ENT:DayType:4" version="1"/>
+                        </DayTypeAssignment>
                     </dayTypeAssignments>
                     <dayTypes>
                         <DayType version="1" id="ENT:DayType:1"/>
@@ -243,6 +247,7 @@
                             </properties>
                         </DayType>
                         <DayType version="1" id="ENT:DayType:3"/>
+                        <DayType version="1" id="ENT:DayType:4"/>
                     </dayTypes>
                 </ServiceCalendarFrame>
             </frames>

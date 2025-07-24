@@ -25,5 +25,11 @@ class DayTypeRefHandler(val activeDatesRepository: ActiveDatesRepository) : Nete
                 activeDatesRepository.getServiceJourneyData(serviceJourneyId).dayTypes.add(ref)
             }
         }
+        if (currentEntity.type == NetexTypes.DEAD_RUN) {
+            if (ref != null) {
+                val deadRunId = currentEntity.id
+                activeDatesRepository.getDeadRunData(deadRunId).dayTypes.add(ref)
+            }
+        }
     }
 }

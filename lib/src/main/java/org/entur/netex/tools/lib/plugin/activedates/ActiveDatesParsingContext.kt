@@ -4,6 +4,7 @@ import java.time.LocalDate
 
 data class ActiveDatesParsingContext (
     var currentServiceJourneyId: String? = null,
+    var currentDeadRunId: String? = null,
 
     var currentOperatingDayRef: String? = null,
     var currentServiceJourneyRef: String? = null,
@@ -14,5 +15,4 @@ data class ActiveDatesParsingContext (
     var currentDayTypeAssignmentOperatingDay: String? = null,
     var currentDayTypeAssignmentOperatingPeriod: String? = null,
     var currentDayTypeId: String? = null,
-) {
-}
+)

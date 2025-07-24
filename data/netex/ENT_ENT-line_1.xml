@@ -182,6 +182,26 @@
                             <OperatorRef version="1" ref="ENT:Operator:ENT"/>
                             <DeadRunType>garageRunOut</DeadRunType>
                         </DeadRun>
+                        <DeadRun version="1" id="ENT:DeadRun:2">
+                            <JourneyDuration>PT2H</JourneyDuration>
+                            <dayTypes>
+                                <DayTypeRef version="1" ref="ENT:DayType:4"/>
+                            </dayTypes>
+                            <JourneyPatternRef ref="ENT:JourneyPattern:1"/>
+                            <VehicleTypeRef ref="ENT:VehicleType:1"/>
+                            <passingTimes>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:1">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:1"/>
+                                    <DepartureTime>05:30:00</DepartureTime>
+                                </TimetabledPassingTime>
+                                <TimetabledPassingTime version="1" id="ENT:TimetabledPassingTime:2">
+                                    <StopPointInJourneyPatternRef ref="ENT:StopPointInJourneyPattern:2"/>
+                                    <ArrivalTime>05:45:00</ArrivalTime>
+                                </TimetabledPassingTime>
+                            </passingTimes>
+                            <OperatorRef version="1" ref="ENT:Operator:ENT"/>
+                            <DeadRunType>garageRunOut</DeadRunType>
+                        </DeadRun>
                         <!-- ServiceJourneys store the passing times corresponding to the JourneyPattern -->
                         <ServiceJourney version="1" id="ENT:ServiceJourney:1">
                             <!-- Internal departure code or id can be stored here -->

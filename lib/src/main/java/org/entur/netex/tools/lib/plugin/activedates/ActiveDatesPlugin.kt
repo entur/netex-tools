@@ -35,7 +35,8 @@ class ActiveDatesPlugin (
             NetexTypes.ARRIVAL_DAY_OFFSET to ArrivalDayOffsetHandler(activeDatesRepository),
             NetexTypes.SERVICE_JOURNEY to ServiceJourneyHandler(activeDatesRepository),
             NetexTypes.SERVICE_JOURNEY_REF to ServiceJourneyRefHandler(activeDatesRepository),
-            NetexTypes.DATED_SERVICE_JOURNEY to DatedServiceJourneyHandler(activeDatesRepository)
+            NetexTypes.DATED_SERVICE_JOURNEY to DatedServiceJourneyHandler(activeDatesRepository),
+            NetexTypes.DEAD_RUN to DeadRunHandler(activeDatesRepository),
         )
     }
     

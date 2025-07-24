@@ -25,4 +25,8 @@ data class Entity(
         }
         return parent.fullPath() + "/" + type
     }
+
+    fun grandParent(): Entity? {
+        return parent?.parent
+    }
 }

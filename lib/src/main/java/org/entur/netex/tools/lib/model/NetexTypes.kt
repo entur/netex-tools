@@ -11,6 +11,7 @@ object NetexTypes {
     const val ALTERNATIVE_NAME = "AlternativeName"
     const val DAY_TYPE = "DayType"
     const val DAY_TYPE_ASSIGNMENT = "DayTypeAssignment"
+    const val DEAD_RUN = "DeadRun"
     const val FLEX_LINE = "FlexLine"
     const val GROUP_OF_STOP_PLACES = "GroupOfStopPlaces"
     const val JOURNEY_PATTERN = "JourneyPattern"
