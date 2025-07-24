@@ -2,7 +2,7 @@ package org.entur.netex.tools.lib.data
 
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
-import org.entur.netex.tools.lib.model.EntitySelection
+import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.model.PublicationEnumeration
 import org.xml.sax.helpers.AttributesImpl
 

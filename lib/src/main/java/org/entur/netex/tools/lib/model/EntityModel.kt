@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.model
 
 import org.entur.netex.tools.lib.model.Entity.Companion.EMPTY
+import org.entur.netex.tools.lib.selections.EntitySelection
 
 class EntityModel(private val alias: Alias) {
     private val entities = EntityIndex()

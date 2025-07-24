@@ -1,6 +1,7 @@
-package org.entur.netex.tools.lib.model
+package org.entur.netex.tools.lib.selections
 
-import org.entur.netex.tools.lib.selections.Selection
+import org.entur.netex.tools.lib.model.Element
+import org.entur.netex.tools.lib.model.Ref
 
 class RefSelection(val selection: Set<Ref>): Selection() {
     override fun includes(element: Element): Boolean {

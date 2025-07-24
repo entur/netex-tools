@@ -1,5 +1,6 @@
 package org.entur.netex.tools.lib.model
 
+import org.entur.netex.tools.lib.selections.EntitySelection
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals

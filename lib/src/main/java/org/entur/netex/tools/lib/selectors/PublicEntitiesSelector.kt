@@ -2,7 +2,7 @@ package org.entur.netex.tools.lib.selectors
 
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.PublicationEnumeration
-import org.entur.netex.tools.lib.model.EntitySelection
+import org.entur.netex.tools.lib.selections.EntitySelection
 import kotlin.collections.set
 
 class PublicEntitiesSelector: EntitySelector() {

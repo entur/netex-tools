@@ -1,7 +1,7 @@
 package org.entur.netex.tools.lib.selectors
 
 import org.entur.netex.tools.lib.model.Entity
-import org.entur.netex.tools.lib.model.EntitySelection
+import org.entur.netex.tools.lib.selections.EntitySelection
 
 abstract class EntitySelector {
     open fun selector(entities: Collection<Entity>): EntitySelection {

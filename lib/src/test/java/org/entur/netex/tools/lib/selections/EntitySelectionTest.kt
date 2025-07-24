@@ -1,4 +1,4 @@
-package org.entur.netex.tools.lib.model
+package org.entur.netex.tools.lib.selections
 
 import org.entur.netex.tools.lib.data.TestDataFactory
 import org.junit.jupiter.api.Test

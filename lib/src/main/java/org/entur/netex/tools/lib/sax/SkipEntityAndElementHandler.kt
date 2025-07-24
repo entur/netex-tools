@@ -1,8 +1,8 @@
 package org.entur.netex.tools.lib.sax
 
 import org.entur.netex.tools.lib.model.Element
-import org.entur.netex.tools.lib.model.EntitySelection
-import org.entur.netex.tools.lib.model.RefSelection
+import org.entur.netex.tools.lib.selections.EntitySelection
+import org.entur.netex.tools.lib.selections.RefSelection
 
 class SkipEntityAndElementHandler(
     private val entitySelection : EntitySelection,

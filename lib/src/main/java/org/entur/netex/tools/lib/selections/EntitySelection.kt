@@ -1,6 +1,7 @@
-package org.entur.netex.tools.lib.model
+package org.entur.netex.tools.lib.selections
 
-import org.entur.netex.tools.lib.selections.Selection
+import org.entur.netex.tools.lib.model.Element
+import org.entur.netex.tools.lib.model.Entity
 
 class EntitySelection(val selection: MutableMap<String, MutableMap<String, Entity>>): Selection() {
     fun isSelected(e : Entity?) : Boolean {

@@ -3,7 +3,7 @@ package org.entur.netex.tools.cli.app
 import org.entur.netex.tools.cli.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.model.EntitySelection
+import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.model.NetexTypes.AUTHORITY
 import org.entur.netex.tools.lib.model.NetexTypes.DAY_TYPE
 import org.entur.netex.tools.lib.model.NetexTypes.DAY_TYPE_ASSIGNMENT
