@@ -1,14 +1,8 @@
 package org.entur.netex.tools.lib.selectors
 
-import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
 
 abstract class EntitySelector {
-    open fun selector(entities: Collection<Entity>): EntitySelection {
-        throw NotImplementedError("Selector method not implemented in ${this::class.simpleName}")
-    }
-
-    open fun selector(entitySelection: EntitySelection): EntitySelection {
-        throw NotImplementedError("Selector method not implemented in ${this::class.simpleName}")
-    }
+    abstract fun selectEntities(model: EntityModel): EntitySelection
 }

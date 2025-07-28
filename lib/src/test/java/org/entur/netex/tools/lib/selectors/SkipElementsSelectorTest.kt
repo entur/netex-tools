@@ -1,26 +1,27 @@
 package org.entur.netex.tools.lib.selectors
 
+import org.entur.netex.tools.lib.data.TestDataFactory
 import org.entur.netex.tools.lib.model.Entity
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SkipElementsSelectorTest {
     @Test
-    fun testSelector() {
-        val entity1 = Entity("1", "Route", "PUBLIC")
-        val entity2 = Entity("2", "Line", "PUBLIC")
-        val entity3 = Entity("3", "StopPlace", "PUBLIC")
-        val entity4 = Entity("4", "RestrictedElement", "RESTRICTED")
+    fun testSelectEntities() {
+        val entityModel = TestDataFactory.defaultEntityModel()
 
-        val entities = listOf(entity1, entity2, entity3, entity4)
+        entityModel.addEntity(Entity("1", "Route", "PUBLIC"))
+        entityModel.addEntity(Entity("2", "Line", "PUBLIC"))
+        entityModel.addEntity(Entity("3", "StopPlace", "PUBLIC"))
+        entityModel.addEntity(Entity("4", "RestrictedElement", "RESTRICTED"))
+
         val elementsToSkip = setOf("RestrictedElement")
-
-        val selection = SkipElementsSelector(elementsToSkip).selector(entities)
+        val selection = SkipElementsSelector(elementsToSkip).selectEntities(entityModel)
 
         assertEquals(3, selection.selection.size)
-        assertTrue(selection.selection.containsKey(entity1.type))
-        assertTrue(selection.selection.containsKey(entity2.type))
-        assertTrue(selection.selection.containsKey(entity3.type))
-        assertFalse(selection.selection.containsKey(entity4.type))
+        assertTrue(selection.selection.containsKey("Route"))
+        assertTrue(selection.selection.containsKey("Line"))
+        assertTrue(selection.selection.containsKey("StopPlace"))
+        assertFalse(selection.selection.containsKey("RestrictedElement"))
     }
 }

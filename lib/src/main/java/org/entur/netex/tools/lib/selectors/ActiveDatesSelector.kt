@@ -8,14 +8,15 @@ import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import java.time.LocalDate
 import kotlin.collections.forEach
 
-class ActiveDatesSelector(val activeDatesPlugin: ActiveDatesPlugin, val model: EntityModel, val fromDate: LocalDate, val toDate: LocalDate): EntitySelector() {
+class ActiveDatesSelector(val activeDatesPlugin: ActiveDatesPlugin, val fromDate: LocalDate, val toDate: LocalDate): EntitySelector() {
 
-    override fun selector(entitySelection: EntitySelection): EntitySelection {
+    override fun selectEntities(model: EntityModel): EntitySelection {
         val calculator = ActiveDatesCalculator(activeDatesPlugin.getCollectedData())
         val activeEntities = calculator.activeDateEntitiesInPeriod(fromDate, toDate, model)
-
         val activeEntitiesMap = mutableMapOf<String, MutableMap<String, Entity>>()
-        entitySelection.selection.forEach { (type, entities) ->
+
+        val entitiesByTypeAndId = model.getEntitesByTypeAndId()
+        entitiesByTypeAndId.forEach { (type, entities) ->
             if (activeEntities.containsKey(type)) {
                 val idsOfActiveEntitiesWithType = activeEntities[type]
                 val entitiesToKeep = entities.filter { idsOfActiveEntitiesWithType?.contains(it.key) == true  }
@@ -24,7 +25,7 @@ class ActiveDatesSelector(val activeDatesPlugin: ActiveDatesPlugin, val model: E
                 }
             } else {
                 // If no active entities for this type, keep all entities of this type
-                activeEntitiesMap.put(type, entities)
+                activeEntitiesMap.put(type, entities.toMutableMap())
             }
         }
 

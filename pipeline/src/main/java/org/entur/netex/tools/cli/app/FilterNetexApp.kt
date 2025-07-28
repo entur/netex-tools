@@ -2,7 +2,6 @@ package org.entur.netex.tools.cli.app
 
 import org.entur.netex.tools.cli.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
-import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
@@ -10,6 +9,7 @@ import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import org.entur.netex.tools.lib.sax.*
 import org.entur.netex.tools.lib.selectors.ActiveDatesSelector
+import org.entur.netex.tools.lib.selectors.EntitySelector
 import org.entur.netex.tools.lib.selectors.PublicEntitiesSelector
 import org.entur.netex.tools.lib.selectors.SkipElementsSelector
 import org.entur.netex.tools.lib.selectors.UnreferencedEntityPruningSelector
@@ -46,24 +46,13 @@ data class FilterNetexApp(
     printReport(entitySelection)
   }
 
-  val skipElementsSelector = { entities: Collection<Entity>, _: EntitySelection ->
-    SkipElementsSelector(skipElements).selector(entities)
-  }
+  val skipElementsSelector = SkipElementsSelector(skipElements)
+  val publicEntitiesSelector = PublicEntitiesSelector()
+  val activeDatesSelector = ActiveDatesSelector(activeDatesPlugin, config.period!!.start, config.period!!.end)
+  val unreferencedEntityPruningSelector = UnreferencedEntityPruningSelector()
 
-  val publicEntitiesSelector = { entities: Collection<Entity>, _: EntitySelection ->
-    PublicEntitiesSelector().selector(entities)
-  }
-
-  val activeDatesSelector = { _: Collection<Entity>, selection: EntitySelection ->
-    ActiveDatesSelector(activeDatesPlugin, model, config.period!!.start, config.period!!.end).selector(selection)
-  }
-
-  val unreferencedEntityPruningSelector = { _: Collection<Entity>, selection: EntitySelection ->
-    UnreferencedEntityPruningSelector(model = model).selector(selection)
-  }
-
-  private fun setupSelectors(): List<(Collection<Entity>, EntitySelection) -> EntitySelection> {
-    val selectors = mutableListOf<(Collection<Entity>, EntitySelection) -> EntitySelection>()
+  private fun setupSelectors(): List<EntitySelector> {
+    val selectors = mutableListOf<EntitySelector>()
     if (config.skipElements.isNotEmpty()) {
       selectors.add(skipElementsSelector)
     }
@@ -92,24 +81,10 @@ data class FilterNetexApp(
     }
   }
 
-  private fun selectEntitiesToKeep(selectors: List<(Collection<Entity>, EntitySelection) -> EntitySelection>): EntitySelection {
-    val allEntities = model.listAllEntities()
-
-    // maps from type -> (id, Entity)
-    val allEntitiesMap = mutableMapOf<String, MutableMap<String, Entity>>()
-    allEntities.forEach { entity ->
-      allEntitiesMap.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
-    }
-
-    val allEntitiesSelection = EntitySelection(allEntitiesMap)
-
-    // Runs each selector and combines the results by intersecting the selections.
-    val result = selectors
-      .map { selector -> selector(allEntities, allEntitiesSelection) }
+  private fun selectEntitiesToKeep(selectors: List<EntitySelector>): EntitySelection =
+    selectors
+      .map { selector -> selector.selectEntities(model) }
       .reduce { acc, selection -> selection.intersectWith(acc) }
-
-    return result
-  }
 
   private fun selectRefsToKeep(entitySelection: EntitySelection): RefSelection {
     val allRefs = model.listAllRefs()

@@ -15,6 +15,10 @@ class EntityModel(private val alias: Alias) {
         return entities.list(type)
     }
 
+    fun getEntitesByTypeAndId(): MutableMap<String, MutableMap<String, Entity>> {
+        return entities.entitiesByTypeAndId()
+    }
+
     fun addRef(type: String, entity: Entity, ref: String) {
         references.add(Ref(type, entity, ref))
     }

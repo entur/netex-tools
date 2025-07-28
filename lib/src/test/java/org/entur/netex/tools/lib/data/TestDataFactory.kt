@@ -1,13 +1,17 @@
 package org.entur.netex.tools.lib.data
 
+import org.entur.netex.tools.lib.model.Alias
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.model.PublicationEnumeration
 import org.entur.netex.tools.lib.model.Ref
 import org.xml.sax.helpers.AttributesImpl
 
 object TestDataFactory {
+    fun defaultEntityModel(): EntityModel = EntityModel(alias = Alias.of(emptyMap()))
+
     fun defaultEntity(id: String): Entity = Entity(
         id = id,
         type = "testType",

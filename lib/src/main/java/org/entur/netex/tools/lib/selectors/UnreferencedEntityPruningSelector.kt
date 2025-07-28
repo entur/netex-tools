@@ -14,14 +14,13 @@ class UnreferencedEntityPruningSelector(
         "RoutePoint",      // RoutePoints not used by any Route
         "PointOnRoute",    // PointOnRoute not used by any Route
         "OperatingPeriod"  // OperatingPeriods not used by any DayTypeAssignment
-    ),
-    private val model: EntityModel
+    )
 ): EntitySelector() {
 
-    override fun selector(entitySelection: EntitySelection): EntitySelection {
+    override fun selectEntities(model: EntityModel): EntitySelection {
         Log.info("Pruning unreferenced entities...")
-        val nonPrunedSelection = entitySelection.selection
-        val prunedSelection = removeUnreferencedEntities(nonPrunedSelection)
+        val entitiesByTypeAndEntity = model.getEntitesByTypeAndId()
+        val prunedSelection = removeUnreferencedEntities(entitiesByTypeAndEntity, model)
         return EntitySelection(prunedSelection)
     }
 
@@ -32,7 +31,7 @@ class UnreferencedEntityPruningSelector(
      *
      * @param entityTypes List of entity types to check for unreferenced entities
      */
-    fun removeUnreferencedEntities(selection: MutableMap<String, MutableMap<String, Entity>>): MutableMap<String, MutableMap<String, Entity>> {
+    fun removeUnreferencedEntities(selection: MutableMap<String, MutableMap<String, Entity>>, model: EntityModel): MutableMap<String, MutableMap<String, Entity>> {
         var entitiesRemoved: Boolean
         var pass = 1
 
@@ -41,7 +40,7 @@ class UnreferencedEntityPruningSelector(
             Log.info("Pruning pass $pass...")
 
             entityTypes.forEach { entityType ->
-                if (removeUnreferencedEntitiesOfType(entityType, selection)) {
+                if (removeUnreferencedEntitiesOfType(entityType, selection, model)) {
                     entitiesRemoved = true
                 }
             }
@@ -56,7 +55,7 @@ class UnreferencedEntityPruningSelector(
      * Remove entities of a specific type that are not referenced by any selected entities.
      * @return true if any entities were removed, false otherwise
      */
-    private fun removeUnreferencedEntitiesOfType(entityType: String, selection: MutableMap<String, MutableMap<String, Entity>>): Boolean {
+    private fun removeUnreferencedEntitiesOfType(entityType: String, selection: MutableMap<String, MutableMap<String, Entity>>, model: EntityModel): Boolean {
         val entitiesOfType = selection[entityType] ?: return false
         val unreferencedIds = mutableSetOf<String>()
 
