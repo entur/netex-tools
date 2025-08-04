@@ -1,9 +1,9 @@
-package org.entur.netex.tools.cli.moduletest.basic
+package org.entur.netex.tools.pipeline.moduletest.basic
 
 
-import org.entur.netex.tools.cli.app.FilterNetexApp
-import org.entur.netex.tools.cli.config.CliConfig
-import org.entur.netex.tools.cli.config.JsonConfig
+import org.entur.netex.tools.pipeline.app.FilterNetexApp
+import org.entur.netex.tools.pipeline.config.CliConfig
+import org.entur.netex.tools.pipeline.config.JsonConfig
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test

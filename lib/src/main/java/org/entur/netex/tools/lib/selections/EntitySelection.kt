@@ -2,6 +2,7 @@ package org.entur.netex.tools.lib.selections
 
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.Ref
 
 class EntitySelection(val selection: MutableMap<String, MutableMap<String, Entity>>): Selection() {
     fun isSelected(e : Entity?) : Boolean {
@@ -15,6 +16,42 @@ class EntitySelection(val selection: MutableMap<String, MutableMap<String, Entit
         return m != null && m.containsKey(id)
     }
 
+    fun pruneUnreferencedEntities(
+        references: RefSelection,
+        entityTypesToRemove: Set<String> = setOf(
+            "Route",
+            "Line",
+            "JourneyPattern",
+            "DestinationDisplay",
+            "OperatingPeriod",
+            "OperatingDay",
+            "DayTypeRef"
+        )
+    ): EntitySelection {
+        val prunedSelection = mutableMapOf<String, MutableMap<String, Entity>>()
+
+        for ((type, entities) in selection) {
+            if (type !in entityTypesToRemove) {
+                prunedSelection[type] = entities.toMutableMap()
+            } else {
+                // For types that we want to prune, we only keep those that are referenced
+                entities
+                    .filter { entityOfType -> references.isSelected(ref = entityOfType.key) }
+                    .forEach { prunedSelection.computeIfAbsent(type) { mutableMapOf() }[it.key] = it.value }
+            }
+        }
+
+
+//        for ((type, entities) in selection) {
+//            entities.filter {
+//                entityOfType -> references.isSelected(ref = entityOfType.key)
+//            }.forEach {
+//                prunedSelection.computeIfAbsent(type) { mutableMapOf() }[it.key] = it.value
+//            }
+//        }
+        return EntitySelection(prunedSelection)
+    }
+
     override fun includes(element : Element) : Boolean {
         if (!element.isEntity()) {
             return false
@@ -25,6 +62,10 @@ class EntitySelection(val selection: MutableMap<String, MutableMap<String, Entit
 
     fun allIds(): Set<String> {
         return selection.values.flatMap { it.keys }.toHashSet()
+    }
+
+    fun allExternalRefs(): Set<String> {
+        return selection.values.flatMap { it.values.flatMap { it.externalRefs } }.toSet()
     }
 
     private fun getIdsByType(type: String): Set<String> {

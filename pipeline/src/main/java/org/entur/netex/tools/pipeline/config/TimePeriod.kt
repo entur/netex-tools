@@ -1,4 +1,4 @@
-package org.entur.netex.tools.cli.config
+package org.entur.netex.tools.pipeline.config
 
 import kotlinx.serialization.Serializable
 import java.time.LocalDate

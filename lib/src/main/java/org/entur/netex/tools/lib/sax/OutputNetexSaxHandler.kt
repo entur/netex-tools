@@ -22,9 +22,12 @@ class OutputNetexSaxHandler(
     }
 
     override fun endDocument() {
+        // Temporarily commented out to improve readability of diff
+        // val processedOutput = removeEmptyCollections(outputBuffer.toString())
+        // output.write(processedOutput)
+
         // Process the buffer to convert empty elements to self-closing
-        val processedOutput = removeEmptyCollections(outputBuffer.toString())
-        output.write(processedOutput)
+        output.write(outputBuffer.toString())
         output.flush()
         output.close()
     }

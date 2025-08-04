@@ -4,7 +4,8 @@ data class Entity(
     val id : String,
     val type : String,
     val publication : String,
-    val parent : Entity? = null
+    val parent : Entity? = null,
+    val externalRefs: MutableSet<String> = mutableSetOf()
 ) {
     companion object {
         val EMPTY = "Ø"
@@ -28,5 +29,9 @@ data class Entity(
 
     fun grandParent(): Entity? {
         return parent?.parent
+    }
+
+    fun addExternalRef(ref: String) {
+        externalRefs.add(ref)
     }
 }

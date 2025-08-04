@@ -1,7 +1,7 @@
-package org.entur.netex.tools.cli
+package org.entur.netex.tools.pipeline
 
-import org.entur.netex.tools.cli.app.FilterNetexApp
-import org.entur.netex.tools.cli.config.JsonConfig
+import org.entur.netex.tools.pipeline.app.FilterNetexApp
+import org.entur.netex.tools.pipeline.config.JsonConfig
 import java.io.File
 
 

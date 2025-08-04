@@ -11,4 +11,8 @@ class RefSelection(val selection: Set<Ref>): Selection() {
         val ref = element.attributes?.getValue("ref") ?: return false
         return selection.any { it.ref == ref }
     }
+
+    fun isSelected(ref: String): Boolean {
+        return selection.any { it.ref == ref }
+    }
 }
