@@ -31,7 +31,7 @@ data class Entity(
         return parent?.parent
     }
 
-    fun addExternalRef(ref: String) {
-        externalRefs.add(ref)
+    fun addExternalRef(ref: Ref) {
+        externalRefs.add(ref.ref)
     }
 }

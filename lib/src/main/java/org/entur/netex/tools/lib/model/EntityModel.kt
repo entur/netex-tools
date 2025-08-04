@@ -19,8 +19,10 @@ class EntityModel(private val alias: Alias) {
         return entities.entitiesByTypeAndId()
     }
 
-    fun addRef(type: String, entity: Entity, ref: String) {
-        references.add(Ref(type, entity, ref))
+    fun addRef(type: String, entity: Entity, ref: String): Ref {
+        val refObject = Ref(type, entity, ref)
+        references.add(refObject)
+        return refObject
     }
 
     fun getRefsOfTypeFrom(sourceId: String, type: String): List<Ref> {

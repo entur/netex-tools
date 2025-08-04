@@ -10,10 +10,9 @@ import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import org.entur.netex.tools.lib.sax.*
 import org.entur.netex.tools.lib.selectors.ActiveDatesSelector
 import org.entur.netex.tools.lib.selectors.EntitySelector
-import org.entur.netex.tools.lib.selectors.ExternalRefSelector
+import org.entur.netex.tools.lib.selectors.EntityPruningSelector
 import org.entur.netex.tools.lib.selectors.PublicEntitiesSelector
 import org.entur.netex.tools.lib.selectors.SkipElementsSelector
-import org.entur.netex.tools.lib.selectors.UnreferencedEntityPruningSelector
 import org.entur.netex.tools.lib.utils.Log
 import java.io.File
 
@@ -38,23 +37,20 @@ data class FilterNetexApp(
 
     // Step 2: filter data based on configuration and data collected in step 1
     val selectors = setupSelectors()
-    val tmpEntitySelection = selectEntitiesToKeep(selectors)
 
-    val entitySelection = ExternalRefSelector(tmpEntitySelection).selectEntities(model).intersectWith(tmpEntitySelection)
-
-    val refSelection = selectRefsToKeep(entitySelection)
-//    val prunedEntitySelection = entitySelection.pruneUnreferencedEntities(refSelection)
+    val selectionOfEntitiesToKeep = selectEntitiesToKeep(selectors)
+    val prunedSelectionOfEntitiesToKeep = pruneUnreferencedEntities(selectionOfEntitiesToKeep)
+    val refSelection = selectRefsToKeep(prunedSelectionOfEntitiesToKeep)
 
     // Step 3: export the filtered data to XML files
-    exportXmlFiles(entitySelection, refSelection)
+    exportXmlFiles(prunedSelectionOfEntitiesToKeep, refSelection)
 
-    printReport(entitySelection)
+    printReport(prunedSelectionOfEntitiesToKeep)
   }
 
   val skipElementsSelector = SkipElementsSelector(skipElements)
   val publicEntitiesSelector = PublicEntitiesSelector()
   val activeDatesSelector = ActiveDatesSelector(activeDatesPlugin, config.period!!.start, config.period!!.end)
-//  val unreferencedEntityPruningSelector = UnreferencedEntityPruningSelector()
 
   private fun setupSelectors(): List<EntitySelector> {
     val selectors = mutableListOf<EntitySelector>()
@@ -67,8 +63,15 @@ data class FilterNetexApp(
     if (config.period != null) {
         selectors.add(activeDatesSelector)
     }
-//    selectors.add(unreferencedEntityPruningSelector)
     return selectors
+  }
+
+  private fun pruneUnreferencedEntities(initialEntitySelection: EntitySelection): EntitySelection {
+    val unreferencedEntityPruningSelector = EntityPruningSelector(initialEntitySelection)
+    val prunedEntitySelection = unreferencedEntityPruningSelector
+      .selectEntities(model)
+      .intersectWith(initialEntitySelection)
+    return prunedEntitySelection
   }
 
   private fun setupAndLogStartupInfo() {
