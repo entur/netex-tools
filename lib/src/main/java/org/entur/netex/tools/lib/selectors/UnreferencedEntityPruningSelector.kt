@@ -11,9 +11,7 @@ class UnreferencedEntityPruningSelector(
         "Line",            // Lines that aren't used by any ServiceJourney or Route
         "JourneyPattern",  // JourneyPatterns that aren't used by any ServiceJourney
         "DestinationDisplay", // DestinationDisplays not used by any journey pattern or service journey
-        "RoutePoint",      // RoutePoints not used by any Route
-        "PointOnRoute",    // PointOnRoute not used by any Route
-        "OperatingPeriod"  // OperatingPeriods not used by any DayTypeAssignment
+        "OperatingPeriod",  // OperatingPeriods not used by any DayTypeAssignment
     )
 ): EntitySelector() {
 
