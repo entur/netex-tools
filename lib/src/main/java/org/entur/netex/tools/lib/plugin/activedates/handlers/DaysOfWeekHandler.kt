@@ -4,11 +4,16 @@ import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesParsingContext
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.NetexDataCollector
+import org.xml.sax.Attributes
 import java.time.DayOfWeek
 import java.util.*
 
 class DaysOfWeekHandler(val activeDatesRepository: ActiveDatesRepository): NetexDataCollector() {
     private val stringBuilder = StringBuilder()
+
+    override fun startElement(context: ActiveDatesParsingContext, attributes: Attributes?, currentEntity: Entity) {
+        stringBuilder.clear()
+    }
 
     override fun characters(context: ActiveDatesParsingContext, ch: CharArray?, start: Int, length: Int) {
         stringBuilder.append(ch, start, length)
