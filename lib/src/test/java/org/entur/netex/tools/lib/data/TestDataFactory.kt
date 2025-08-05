@@ -1,5 +1,6 @@
 package org.entur.netex.tools.lib.data
 
+import org.entur.netex.tools.lib.data.TestDataFactory.entityWithReference
 import org.entur.netex.tools.lib.model.Alias
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
@@ -12,9 +13,9 @@ import org.xml.sax.helpers.AttributesImpl
 object TestDataFactory {
     fun defaultEntityModel(): EntityModel = EntityModel(alias = Alias.of(emptyMap()))
 
-    fun defaultEntity(id: String): Entity = Entity(
+    fun defaultEntity(id: String, type: String = "testType"): Entity = Entity(
         id = id,
-        type = "testType",
+        type = type,
         publication = PublicationEnumeration.PUBLIC.toString(),
         parent = null
     )
@@ -24,6 +25,31 @@ object TestDataFactory {
         source = defaultEntity(id),
         ref = id
     )
+
+    fun entityWithReference(id: String, ref: String, type: String = "testType"): Entity {
+        val entity = defaultEntity(id=id, type=type)
+        entity.addExternalRef(defaultRef(id=ref))
+        return entity
+    }
+
+    fun entityModelWithReferences(): EntityModel {
+        val model = defaultEntityModel()
+        model.addEntity(defaultEntity(id = "entity1", type = "unreferencedType"))
+        model.addEntity(entityWithReference(id = "entity2", ref = "entity1", type = "unreferencedType"))
+        model.addEntity(entityWithReference(id = "entity3", ref = "entity2", type = "unreferencedType"))
+        model.addEntity(entityWithReference(id = "entity4", ref = "entity3", type = "unreferencedType"))
+        return model
+    }
+
+    fun entitySelectionWithUnreferredEntities(): EntitySelection {
+        val entities = listOf(
+            defaultEntity(id = "entity1", type = "unreferencedType"),
+            entityWithReference(id = "entity2", ref = "entity1", type = "unreferencedType"),
+            entityWithReference(id = "entity3", ref = "entity2", type = "unreferencedType"),
+            entityWithReference(id = "entity4", ref = "entity3", type = "unreferencedType")
+        )
+        return entitySelection(entities)
+    }
 
     fun entitySelection(entities: Collection<Entity>) : EntitySelection {
         val selection = mutableMapOf<String, MutableMap<String, Entity>>()
