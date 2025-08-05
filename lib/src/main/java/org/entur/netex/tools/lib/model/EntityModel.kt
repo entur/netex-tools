@@ -1,17 +1,32 @@
 package org.entur.netex.tools.lib.model
 
 import org.entur.netex.tools.lib.model.Entity.Companion.EMPTY
+import org.entur.netex.tools.lib.selections.EntitySelection
 
 class EntityModel(private val alias: Alias) {
     private val entities = EntityIndex()
-    private val references = ArrayList<Ref>()
+    private val references = RefIndex()
 
     fun addEntity(entity: Entity) = entities.add(entity)
 
-    fun getEntity(id: String) =  entities.get(id)
+    fun getEntity(id: String) = entities.get(id)
 
-    fun addRef(type: String, entity: Entity, ref: String) {
-        references.add(Ref(type, entity, ref))
+    fun getEntitiesOfType(type: String): List<Entity> {
+        return entities.list(type)
+    }
+
+    fun getEntitesByTypeAndId(): MutableMap<String, MutableMap<String, Entity>> {
+        return entities.entitiesByTypeAndId()
+    }
+
+    fun addRef(type: String, entity: Entity, ref: String): Ref {
+        val refObject = Ref(type, entity, ref)
+        references.add(refObject)
+        return refObject
+    }
+
+    fun getRefsOfTypeFrom(sourceId: String, type: String): List<Ref> {
+        return references.get(sourceId, type)
     }
 
     fun forAllEntities(type: String, body: (Entity) -> Unit) {
@@ -19,10 +34,10 @@ class EntityModel(private val alias: Alias) {
     }
 
     fun forAllReferences(sourceType: String, body: (Ref) -> Unit) {
-        references.filter {it.source.type == sourceType}.forEach{ body(it) }
+        references.list(sourceType).forEach{ body(it) }
     }
 
-    fun listAllRefs() : List<Ref> = references
+    fun listAllRefs() : List<Ref> = references.listAll()
 
     fun printEntities(selection : EntitySelection) {
         Report(
@@ -37,11 +52,12 @@ class EntityModel(private val alias: Alias) {
     fun printReferences(selection : EntitySelection) {
         Report(
             "SELECTED REFERENCES",
-            references,
+            references.listAll(),
             alias,
             { refStr(it) },
             { selection.isSelected(it.source) && selection.isSelected(getEntity(it.ref))}
         ).print()
     }
     private fun refStr(ref : Ref) : String = ref.toString { entities.get(it)?.fullPath() ?: EMPTY }
+    fun listAllEntities() = entities.listAll()
 }

@@ -3,7 +3,9 @@ package org.entur.netex.tools.lib.model
 data class Entity(
     val id : String,
     val type : String,
-    val parent : Entity? = null
+    val publication : String,
+    val parent : Entity? = null,
+    val externalRefs: MutableSet<String> = mutableSetOf()
 ) {
     companion object {
         val EMPTY = "Ø"
@@ -23,5 +25,13 @@ data class Entity(
             return type
         }
         return parent.fullPath() + "/" + type
+    }
+
+    fun grandParent(): Entity? {
+        return parent?.parent
+    }
+
+    fun addExternalRef(ref: Ref) {
+        externalRefs.add(ref.ref)
     }
 }

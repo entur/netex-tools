@@ -1,0 +1,24 @@
+{
+  "logLevel": "INFO",
+  "printReport": true,
+  "preserveComments": false,
+  "removePrivateData": false,
+  "period": {
+    "start": "2025-01-30",
+    "end": "2025-02-02"
+  },
+  "xskipElements": [
+    "VehicleScheduleFrame",
+    "DeadRun"
+  ],
+  "alias": {
+    "CompositeFrame": "CF",
+    "ResourceFrame": "RF",
+    "ServiceCalendarFrame": "SCF",
+    "ServiceFrame": "SF",
+    "Network": "NW",
+    "TimetableFrame ": "TF",
+    "SiteFrame": "SF",
+    "StopPointInJourneyPattern": "SPInJP"
+  }
+}

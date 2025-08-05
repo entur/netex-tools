@@ -3,24 +3,22 @@ package org.entur.netex.tools.cli.app
 import org.entur.netex.tools.cli.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.model.EntitySelection
-import org.entur.netex.tools.lib.model.NetexTypes.AUTHORITY
-import org.entur.netex.tools.lib.model.NetexTypes.DAY_TYPE
-import org.entur.netex.tools.lib.model.NetexTypes.DAY_TYPE_ASSIGNMENT
-import org.entur.netex.tools.lib.model.NetexTypes.FLEX_LINE
-import org.entur.netex.tools.lib.model.NetexTypes.LINE
-import org.entur.netex.tools.lib.model.NetexTypes.PASSENGER_STOP_ASSIGNMENT
-import org.entur.netex.tools.lib.model.NetexTypes.RESOURCE_FRAME
-import org.entur.netex.tools.lib.model.NetexTypes.SCHEDULED_STOP_POINT
-import org.entur.netex.tools.lib.model.NetexTypes.SERVICE_JOURNEY
-import org.entur.netex.tools.lib.model.NetexTypes.STOP_POINT_IN_JOURNEY_PATTERN
-import org.entur.netex.tools.lib.model.NetexTypes.TIMETABLED_PASSING_TIME
+import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
+import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.sax.BuildEntityModelSaxHandler
 import org.entur.netex.tools.lib.sax.OutputNetexSaxHandler
 import org.entur.netex.tools.lib.sax.SkipElementHandler
 import org.entur.netex.tools.lib.sax.SkipEntityAndElementHandler
+import org.entur.netex.tools.lib.selections.EntitySelection
+import org.entur.netex.tools.lib.selections.RefSelection
+import org.entur.netex.tools.lib.selectors.ActiveDatesSelector
+import org.entur.netex.tools.lib.selectors.EntityPruningSelector
+import org.entur.netex.tools.lib.selectors.EntitySelector
+import org.entur.netex.tools.lib.selectors.PublicEntitiesSelector
+import org.entur.netex.tools.lib.selectors.SkipElementsSelector
 import org.entur.netex.tools.lib.utils.Log
 import java.io.File
+import java.time.LocalDate
 
 data class FilterNetexApp(
   val config : CliConfig,
@@ -30,14 +28,54 @@ data class FilterNetexApp(
   val skipElements = config.skipElements.toHashSet()
   val startTime = System.currentTimeMillis()
   val model = EntityModel(config.alias())
-  val selection = EntitySelection(model)
+
+  // Plugin system
+  private val activeDatesPlugin = ActiveDatesPlugin(ActiveDatesRepository())
+  private val plugins = listOf(activeDatesPlugin)
 
   fun run() {
     setupAndLogStartupInfo()
+
+    // Step 1: collect data needed for filtering out entities
     buildEntityModel()
-    selectEntitiesToKeep()
-    exportXmlFiles()
-    printReport()
+
+    // Step 2: filter data based on configuration and data collected in step 1
+    val selectors = setupSelectors()
+
+    val selectionOfEntitiesToKeep = selectEntitiesToKeep(selectors)
+    val prunedSelectionOfEntitiesToKeep = pruneUnreferencedEntities(selectionOfEntitiesToKeep)
+    val refSelection = selectRefsToKeep(prunedSelectionOfEntitiesToKeep)
+
+    // Step 3: export the filtered data to XML files
+    exportXmlFiles(prunedSelectionOfEntitiesToKeep, refSelection)
+
+    printReport(prunedSelectionOfEntitiesToKeep)
+  }
+
+  val skipElementsSelector = SkipElementsSelector(skipElements)
+  val publicEntitiesSelector = PublicEntitiesSelector()
+  val activeDatesSelector = ActiveDatesSelector(activeDatesPlugin, LocalDate.parse(config.period!!.start) , LocalDate.parse(config.period!!.end))
+
+  private fun setupSelectors(): List<EntitySelector> {
+    val selectors = mutableListOf<EntitySelector>()
+    if (config.skipElements.isNotEmpty()) {
+      selectors.add(skipElementsSelector)
+    }
+    if (config.removePrivateData) {
+      selectors.add(publicEntitiesSelector)
+    }
+    if (config.period != null) {
+      selectors.add(activeDatesSelector)
+    }
+    return selectors
+  }
+
+  private fun pruneUnreferencedEntities(initialEntitySelection: EntitySelection): EntitySelection {
+    val unreferencedEntityPruningSelector = EntityPruningSelector(initialEntitySelection)
+    val prunedEntitySelection = unreferencedEntityPruningSelector
+      .selectEntities(model)
+      .intersectWith(initialEntitySelection)
+    return prunedEntitySelection
   }
 
   private fun setupAndLogStartupInfo() {
@@ -48,53 +86,27 @@ data class FilterNetexApp(
   }
 
   private fun buildEntityModel() {
-    Log.info("\nLoad xml files")
+    Log.info("\nLoad xml files for building entity model")
     parseXmlDocuments(input) { file ->
       Log.info("  << ${file.absolutePath}")
       createNetexSaxReadHandler()
     }
   }
 
-  private fun selectEntitiesToKeep() {
-    selectAll(LINE, config.lines)
-    selection.selectType(SERVICE_JOURNEY).ifRefTargetSelected(LINE)
-    selectAll(FLEX_LINE, config.flexLines)
-    selectAll(SERVICE_JOURNEY, config.serviceJourneys)
+  private fun selectEntitiesToKeep(selectors: List<EntitySelector>): EntitySelection =
+    selectors
+      .map { selector -> selector.selectEntities(model) }
+      .reduce { acc, selection -> selection.intersectWith(acc) }
 
-    if(config.area != null) {
-      throw IllegalStateException("Not implemented")
-    }
-    if(config.period != null) {
-      throw IllegalStateException("Not implemented")
-    }
-
-    if(config.area == null) {
-      // This can be made more user-friendly by building up a navigation map, so
-      // the user does not need to know the direction and type of relation. E.g.:
-      // link(
-      //   ServiceJourney,
-      //   TimetabledPassingTime,
-      //   StopPointInJourneyPattern,
-      //   PassengerStopAssignment,
-      //   ScheduledStopPoint
-      // )
-      // We should validate that such link exist as well
-      selection
-        .selectType(TIMETABLED_PASSING_TIME).ifParentSelected(SERVICE_JOURNEY)
-        .selectType(STOP_POINT_IN_JOURNEY_PATTERN).ifRefSourceSelected(TIMETABLED_PASSING_TIME)
-        .selectType(SCHEDULED_STOP_POINT).ifRefSourceSelected(STOP_POINT_IN_JOURNEY_PATTERN)
-        .selectType(PASSENGER_STOP_ASSIGNMENT).ifRefTargetSelected(SCHEDULED_STOP_POINT)
-    }
-    if(config.period == null) {
-      selection.selectType(DAY_TYPE).ifRefSourceSelected(SERVICE_JOURNEY)
-      selection.selectType(DAY_TYPE_ASSIGNMENT).ifRefTargetSelected(DAY_TYPE)
-    }
-    selection.selectAllReferencedEntities()
-    selection.selectAllParents()
-    selection.selectType(AUTHORITY).ifParentSelected(RESOURCE_FRAME)
+  private fun selectRefsToKeep(entitySelection: EntitySelection): RefSelection {
+    val allRefs = model.listAllRefs()
+    val allEntityIds = entitySelection.allIds()
+    val refTypesToKeep = setOf("QuayRef")
+    val refsToKeep = allRefs.filter { allEntityIds.contains(it.ref) || it.type in refTypesToKeep }.toHashSet()
+    return RefSelection(refsToKeep)
   }
 
-  private fun exportXmlFiles() {
+  private fun exportXmlFiles(entitySelection : EntitySelection, refSelection : RefSelection) {
     Log.info("Save xml files")
     if(!target.exists()) {
       target.mkdirs()
@@ -106,11 +118,11 @@ data class FilterNetexApp(
     parseXmlDocuments(input) { file ->
       val outFile = File(target, file.name)
       Log.info("  >> ${outFile.absolutePath}")
-      createNetexSaxWriteHandler(outFile)
+      createNetexSaxWriteHandler(outFile, entitySelection, refSelection)
     }
   }
 
-  private fun printReport() {
+  private fun printReport(selection: EntitySelection) {
     if (config.printReport) {
       model.printEntities(selection)
       model.printReferences(selection)
@@ -118,12 +130,16 @@ data class FilterNetexApp(
     println("Filter NeTEx files done in ${(System.currentTimeMillis() - startTime)/1000.0} seconds.")
   }
 
-  private fun selectAll(type : String, ids : List<String>) {
-    selection.select(type, ids)
-  }
+  private fun createNetexSaxReadHandler() = BuildEntityModelSaxHandler(
+    model,
+    SkipElementHandler(skipElements),
+    plugins,
+  )
 
-  private fun createNetexSaxReadHandler() = BuildEntityModelSaxHandler(model, SkipElementHandler(skipElements))
-
-  private fun createNetexSaxWriteHandler(file: File) = OutputNetexSaxHandler(file, SkipEntityAndElementHandler(skipElements, selection))
-
+  private fun createNetexSaxWriteHandler(file: File, entitySelection: EntitySelection, refSelection: RefSelection) = OutputNetexSaxHandler(
+    file,
+    SkipEntityAndElementHandler(entitySelection, refSelection),
+    config.preserveComments
+  )
 }
+

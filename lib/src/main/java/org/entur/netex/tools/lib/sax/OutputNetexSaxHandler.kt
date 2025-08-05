@@ -4,32 +4,32 @@ import org.apache.commons.lang3.StringEscapeUtils
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.utils.Log
 import org.xml.sax.Attributes
-import org.xml.sax.Locator
+import org.xml.sax.ext.LexicalHandler
 import java.io.File
 
 class OutputNetexSaxHandler(
-    private val outFile : File,
-    private val skipHandler : SkipEntityAndElementHandler
-) : NetexToolsSaxHandler() {
+    outFile : File,
+    private val skipHandler : SkipEntityAndElementHandler,
+    private val preserveComments : Boolean = true,
+) : NetexToolsSaxHandler(), LexicalHandler {
     private val output = outFile.bufferedWriter(Charsets.UTF_8)
     private var currentElement : Element? = null
     private var whiteSpace : String? = null
-    private var empty = true
-
-    override fun setDocumentLocator(locator: Locator?) {
-    }
+    private val outputBuffer = StringBuilder()
 
     override fun startDocument() {
         write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     }
 
     override fun endDocument() {
+        // Temporarily commented out to improve readability of diff
+        // val processedOutput = removeEmptyCollections(outputBuffer.toString())
+        // output.write(processedOutput)
+
+        // Process the buffer to convert empty elements to self-closing
+        output.write(outputBuffer.toString())
         output.flush()
         output.close()
-
-        if(empty) {
-            outFile.delete()
-        }
     }
 
     override fun startPrefixMapping(prefix: String?, uri: String?) {
@@ -62,15 +62,12 @@ class OutputNetexSaxHandler(
     }
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
-        currentElement = Element(qName!!, currentElement)
-        val id = attributes?.getValue("id") //?.let { NetexID.netexID(it) }
-
-        if(skipHandler.startSkip(currentElement!!, id)) {
+        currentElement = Element(qName!!, currentElement, attributes)
+        if (skipHandler.shouldSkip(currentElement!!)) {
+            skipHandler.startSkip(currentElement!!)
             return
         }
-        if(id != null) {
-            empty = false
-        }
+        
         write("<$qName")
         if(attributes != null) {
             for (i in 0..<attributes.length) {
@@ -84,26 +81,75 @@ class OutputNetexSaxHandler(
         val c = currentElement
         currentElement = currentElement?.parent
 
-        if(skipHandler.endSkip(c)){
+        if(skipHandler.inSkipMode()) {
+            skipHandler.endSkip(c)
             return
         }
-        write("</$qName>")
-    }
 
-    private fun write(text : CharArray, start : Int, length : Int) {
-        printCachedWhiteSpace()
-        output.write(text, start, length)
+        write("</$qName>")
     }
 
     private fun write(text : String) {
         printCachedWhiteSpace()
-        output.write(text)
+        outputBuffer.append(text)
     }
 
     private fun printCachedWhiteSpace() {
         if(whiteSpace != null) {
-            output.write(whiteSpace!!)
+            outputBuffer.append(whiteSpace!!)
             whiteSpace = null
         }
+    }
+    
+    override fun comment(ch: CharArray?, start: Int, length: Int) {
+        if(skipHandler.inSkipMode()) {
+            return
+        }
+        
+        if (!preserveComments) {
+            return  // Skip comments when preserveComments is false
+        }
+        
+        val commentText = String(ch!!, start, length)
+        write("<!--$commentText-->")
+    }
+
+    private fun removeEmptyCollections(xmlContent: String): String {
+        val collectionPattern = Regex("""<(\w+)(\s+[^>]*?|)>\s*</\1>""", RegexOption.MULTILINE)
+
+        return collectionPattern.replace(xmlContent) { matchResult ->
+            val tagName = matchResult.groupValues[1]
+            val attributes = matchResult.groupValues[2]
+            if (NetexUtils.isCollectionElement(tagName)) {
+                "<!-- Empty collection element of type $tagName was removed -->"
+            } else {
+                "<$tagName$attributes/>"
+            }
+        }
+    }
+
+    // LexicalHandler methods for comment preservation
+    override fun startDTD(name: String?, publicId: String?, systemId: String?) {
+        // Not needed for NeTEx files
+    }
+
+    override fun endDTD() {
+        // Not needed for NeTEx files
+    }
+
+    override fun startEntity(name: String?) {
+        // Not needed for NeTEx files
+    }
+
+    override fun endEntity(name: String?) {
+        // Not needed for NeTEx files
+    }
+
+    override fun startCDATA() {
+        // Not needed for NeTEx files
+    }
+
+    override fun endCDATA() {
+        // Not needed for NeTEx files
     }
 }

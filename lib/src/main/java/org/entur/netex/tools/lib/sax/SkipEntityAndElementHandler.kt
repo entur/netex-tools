@@ -1,37 +1,46 @@
 package org.entur.netex.tools.lib.sax
 
 import org.entur.netex.tools.lib.model.Element
-import org.entur.netex.tools.lib.model.EntitySelection
-
+import org.entur.netex.tools.lib.selections.EntitySelection
+import org.entur.netex.tools.lib.selections.RefSelection
 
 class SkipEntityAndElementHandler(
-    private val skipElements : Set<String>,
-    private val selection : EntitySelection
-    ) {
+    private val entitySelection : EntitySelection,
+    private val refSelection : RefSelection,
+) {
     private var skipElement : Element? = null
 
     fun inSkipMode() = skipElement != null
 
-    fun startSkip(currentElement: Element, id : String?): Boolean {
+    fun shouldSkip(element: Element): Boolean {
+        if (inSkipMode()) {
+            return true
+        }
+        if (element.isEntity()) {
+            // TODO: Selections may be abstracted. Do we want this?
+            return !entitySelection.includes(element)
+        }
+        if (element.isRef()) {
+            // TODO: Selections may be abstracted. Do we want this?
+            return !refSelection.includes(element)
+        }
+        return false;
+    }
+
+    fun startSkip(currentElement: Element): Boolean {
         if(inSkipMode()) {
             return true
         }
-        if(skipElements.contains(currentElement.name)) {
-            skipElement = currentElement
-            return true
-        }
-        if (id != null && !selection.isSelected(currentElement.name, id)) {
+        if (currentElement.isEntity() || currentElement.isRef()) {
             skipElement = currentElement
             return true
         }
         return false
     }
 
-    fun endSkip(currentElement: Element?): Boolean {
+    fun endSkip(currentElement: Element?) {
         if(skipElement === currentElement) {
             skipElement = null
-            return true
         }
-        return inSkipMode()
     }
 }
