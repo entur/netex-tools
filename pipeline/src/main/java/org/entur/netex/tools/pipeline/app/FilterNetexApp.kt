@@ -98,7 +98,10 @@ data class FilterNetexApp(
     val allRefs = model.listAllRefs()
     val allEntityIds = entitySelection.allIds()
     val refTypesToKeep = setOf("QuayRef")
-    val refsToKeep = allRefs.filter { allEntityIds.contains(it.ref) || it.type in refTypesToKeep }.toHashSet()
+    val refsToKeep = allRefs
+      .filter { allEntityIds.contains(it.ref) || it.type in refTypesToKeep }
+      .map { it.ref }
+      .toHashSet()
     return RefSelection(refsToKeep)
   }
 
