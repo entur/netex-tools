@@ -8,7 +8,7 @@ class RefSelectionTest {
     fun testIncludesOnExistingRef() {
         val includedRef = TestDataFactory.defaultRef("entity1")
         val includedRefElement = TestDataFactory.defaultElement(includedRef.type, ref = includedRef.ref)
-        val refSelection = RefSelection(setOf(includedRef))
+        val refSelection = RefSelection(setOf(includedRef.ref))
 
         assert(refSelection.includes(includedRefElement)) {
             "RefSelection should include element with ref matching included Ref"
