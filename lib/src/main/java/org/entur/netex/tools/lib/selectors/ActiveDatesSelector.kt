@@ -1,18 +1,18 @@
 package org.entur.netex.tools.lib.selectors
 
+import org.entur.netex.tools.lib.config.TimePeriod
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesCalculator
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
-import java.time.LocalDate
 import kotlin.collections.forEach
 
-class ActiveDatesSelector(val activeDatesPlugin: ActiveDatesPlugin, val fromDate: LocalDate, val toDate: LocalDate): EntitySelector() {
+class ActiveDatesSelector(val activeDatesPlugin: ActiveDatesPlugin, val period: TimePeriod): EntitySelector() {
 
     override fun selectEntities(model: EntityModel): EntitySelection {
         val calculator = ActiveDatesCalculator(activeDatesPlugin.getCollectedData())
-        val activeEntities = calculator.activeDateEntitiesInPeriod(fromDate, toDate, model)
+        val activeEntities = calculator.activeDateEntitiesInPeriod(period, model)
         val activeEntitiesMap = mutableMapOf<String, MutableMap<String, Entity>>()
 
         val entitiesByTypeAndId = model.getEntitesByTypeAndId()

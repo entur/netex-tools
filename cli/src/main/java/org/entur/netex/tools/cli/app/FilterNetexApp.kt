@@ -1,6 +1,7 @@
 package org.entur.netex.tools.cli.app
 
-import org.entur.netex.tools.cli.config.CliConfig
+import org.entur.netex.tools.lib.config.CliConfig
+import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
@@ -18,16 +19,16 @@ import org.entur.netex.tools.lib.selectors.PublicEntitiesSelector
 import org.entur.netex.tools.lib.selectors.SkipElementsSelector
 import org.entur.netex.tools.lib.utils.Log
 import java.io.File
-import java.time.LocalDate
 
 data class FilterNetexApp(
-  val config : CliConfig,
+  val cliConfig : CliConfig,
+  val filterConfig: FilterConfig,
   val input : File,
   val target : File
 ) {
-  val skipElements = config.skipElements.toHashSet()
+  val skipElements = filterConfig.skipElements.toHashSet()
   val startTime = System.currentTimeMillis()
-  val model = EntityModel(config.alias())
+  val model = EntityModel(cliConfig.alias())
 
   // Plugin system
   private val activeDatesPlugin = ActiveDatesPlugin(ActiveDatesRepository())
@@ -54,17 +55,17 @@ data class FilterNetexApp(
 
   val skipElementsSelector = SkipElementsSelector(skipElements)
   val publicEntitiesSelector = PublicEntitiesSelector()
-  val activeDatesSelector = ActiveDatesSelector(activeDatesPlugin, LocalDate.parse(config.period!!.start) , LocalDate.parse(config.period!!.end))
+  val activeDatesSelector = ActiveDatesSelector(activeDatesPlugin, filterConfig.period)
 
   private fun setupSelectors(): List<EntitySelector> {
     val selectors = mutableListOf<EntitySelector>()
-    if (config.skipElements.isNotEmpty()) {
+    if (filterConfig.skipElements.isNotEmpty()) {
       selectors.add(skipElementsSelector)
     }
-    if (config.removePrivateData) {
+    if (filterConfig.removePrivateData) {
       selectors.add(publicEntitiesSelector)
     }
-    if (config.period != null) {
+    if (filterConfig.period.start != null || filterConfig.period.end != null) {
       selectors.add(activeDatesSelector)
     }
     return selectors
@@ -79,8 +80,8 @@ data class FilterNetexApp(
   }
 
   private fun setupAndLogStartupInfo() {
-    Log.printLevel = config.logLevel
-    Log.info("Config:\n$config")
+    Log.printLevel = cliConfig.logLevel
+    Log.info("Config:\n$cliConfig")
     Log.info("Read inout from file: $input")
     Log.info("Write output to: ${target.absolutePath}")
   }
@@ -126,7 +127,7 @@ data class FilterNetexApp(
   }
 
   private fun printReport(selection: EntitySelection) {
-    if (config.printReport) {
+    if (cliConfig.printReport) {
       model.printEntities(selection)
       model.printReferences(selection)
     }
@@ -142,7 +143,7 @@ data class FilterNetexApp(
   private fun createNetexSaxWriteHandler(file: File, entitySelection: EntitySelection, refSelection: RefSelection) = OutputNetexSaxHandler(
     file,
     SkipEntityAndElementHandler(entitySelection, refSelection),
-    config.preserveComments
+    filterConfig.preserveComments
   )
 }
 

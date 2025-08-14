@@ -1,4 +1,4 @@
-package org.entur.netex.tools.pipeline.config
+package org.entur.netex.tools.lib.config
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind

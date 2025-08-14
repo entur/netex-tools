@@ -2,8 +2,9 @@ package org.entur.netex.tools.cli.moduletest.basic
 
 
 import org.entur.netex.tools.cli.app.FilterNetexApp
-import org.entur.netex.tools.cli.config.CliConfig
-import org.entur.netex.tools.cli.config.JsonConfig
+import org.entur.netex.tools.lib.config.CliConfig
+import org.entur.netex.tools.lib.config.FilterConfig
+import org.entur.netex.tools.lib.config.JsonConfig
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -21,8 +22,9 @@ class BasicTest {
     )
     fun test() {
         val config = openConfigStream()
+        val filterConfig = FilterConfig()
         val netexInput = netexInputUri()
-        val app = FilterNetexApp(config, netexInput, File("target", "moduletest-basic"))
+        val app = FilterNetexApp(config, filterConfig, netexInput, File("target", "moduletest-basic"))
         app.run()
     }
 
@@ -34,7 +36,7 @@ class BasicTest {
 
     private fun openConfigStream(): CliConfig {
         val configFile = this.javaClass.getResourceAsStream("netex-cli.json")
-        val jsonConfig = JsonConfig.load(configFile!!)
+        val jsonConfig = JsonConfig.loadCliConfig(configFile!!)
         Assertions.assertNotNull(jsonConfig)
         println(jsonConfig)
 

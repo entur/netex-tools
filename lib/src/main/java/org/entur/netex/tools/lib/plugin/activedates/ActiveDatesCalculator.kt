@@ -1,5 +1,6 @@
 package org.entur.netex.tools.lib.plugin.activedates
 
+import org.entur.netex.tools.lib.config.TimePeriod
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.model.NetexTypes
 import org.entur.netex.tools.lib.plugin.activedates.data.VehicleJourneyData
@@ -10,8 +11,10 @@ import java.time.LocalDate
 
 class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
     
-    fun activeDateEntitiesInPeriod(startDate: LocalDate, endDate: LocalDate, entityModel: EntityModel): Map<String, Set<String>> {
+    fun activeDateEntitiesInPeriod(period: TimePeriod, entityModel: EntityModel): Map<String, Set<String>> {
         val activeEntities = ActiveEntitiesCollector()
+        val startDate = period.start
+        val endDate = period.end
         
         repository.serviceJourneys.forEach { (serviceJourneyId, serviceJourneyData) ->
             processServiceJourney(
