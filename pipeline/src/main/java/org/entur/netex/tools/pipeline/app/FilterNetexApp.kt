@@ -31,7 +31,7 @@ data class FilterNetexApp(
   private val activeDatesPlugin = ActiveDatesPlugin(ActiveDatesRepository())
   private val plugins = listOf(activeDatesPlugin)
 
-  fun run() {
+  fun run(): Pair<Set<String>, Set<String>> {
     setupAndLogStartupInfo()
 
     // Step 1: collect data needed for filtering out entities
@@ -48,6 +48,8 @@ data class FilterNetexApp(
     exportXmlFiles(prunedSelectionOfEntitiesToKeep, refSelection)
 
     printReport(prunedSelectionOfEntitiesToKeep)
+
+    return Pair(prunedSelectionOfEntitiesToKeep.allIds(), refSelection.selection)
   }
 
   val skipElementsSelector = SkipElementsSelector(skipElements)
