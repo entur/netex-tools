@@ -20,7 +20,7 @@ class ArrivalTimeHandler(private val activeDatesRepository: ActiveDatesRepositor
 
     override fun endElement(context: ActiveDatesParsingContext, currentEntity: Entity) {
         val arrivalTimeString = stringBuilder.toString().trim()
-        currentEntity.grandParent()?.let { grandParentEntity ->
+        currentEntity.parent?.let { grandParentEntity ->
             when (grandParentEntity.type) {
                 NetexTypes.DEAD_RUN -> {
                     val deadRunId = context.currentDeadRunId

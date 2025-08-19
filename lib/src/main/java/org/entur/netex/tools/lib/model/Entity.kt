@@ -27,10 +27,6 @@ data class Entity(
         return parent.fullPath() + "/" + type
     }
 
-    fun grandParent(): Entity? {
-        return parent?.parent
-    }
-
     fun addExternalRef(ref: Ref) {
         externalRefs.add(ref.ref)
     }

@@ -19,7 +19,7 @@ class ArrivalDayOffsetHandler(private val activeDatesRepository: ActiveDatesRepo
 
     override fun endElement(context: ActiveDatesParsingContext, currentEntity: Entity) {
         val arrivalDayOffset = stringBuilder.toString().trim()
-        currentEntity.grandParent()?.let { grandParentEntity ->
+        currentEntity.parent?.let { grandParentEntity ->
             when (grandParentEntity.type) {
                 NetexTypes.DEAD_RUN -> {
                     val deadRunId = context.currentDeadRunId
