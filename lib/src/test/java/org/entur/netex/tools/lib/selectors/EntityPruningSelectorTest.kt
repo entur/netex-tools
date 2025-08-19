@@ -11,7 +11,7 @@ class EntityPruningSelectorTest {
         val entitySelection = TestDataFactory.entitySelectionWithUnreferredEntities()
         val selector = EntityPruningSelector(
             entitySelection,
-            unreferencedTypesToRemove = setOf("unreferencedType")
+            unreferencedEntitiesToRemove = setOf("unreferencedType")
         )
         val selection = selector.selectEntities(entityModel)
 

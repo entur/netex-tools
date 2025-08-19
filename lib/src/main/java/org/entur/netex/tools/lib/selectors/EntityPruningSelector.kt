@@ -6,10 +6,10 @@ import org.entur.netex.tools.lib.selections.EntitySelection
 
 class EntityPruningSelector(
     private val entitySelection: EntitySelection,
-    private val unreferencedTypesToRemove: Set<String> = setOf("JourneyPattern")
+    private val unreferencedEntitiesToRemove: Set<String>
 ): EntitySelector() {
     private fun shouldKeep(entity: Entity) =
-        entity.type !in unreferencedTypesToRemove || entitySelection.hasEntitiesReferringTo(entity)
+        entity.type !in unreferencedEntitiesToRemove || entitySelection.hasEntitiesReferringTo(entity)
 
     override fun selectEntities(model: EntityModel): EntitySelection {
         val entitiesToKeep = mutableMapOf<String, MutableMap<String, Entity>>()

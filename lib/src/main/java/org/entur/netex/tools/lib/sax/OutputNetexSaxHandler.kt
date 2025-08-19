@@ -10,7 +10,8 @@ import java.io.File
 class OutputNetexSaxHandler(
     outFile : File,
     private val skipHandler : SkipEntityAndElementHandler,
-    private val preserveComments : Boolean = true,
+    private val preserveComments : Boolean,
+    private val useSelfClosingTagsWhereApplicable : Boolean,
 ) : NetexToolsSaxHandler(), LexicalHandler {
     private val output = outFile.bufferedWriter(Charsets.UTF_8)
     private var currentElement : Element? = null
@@ -22,11 +23,13 @@ class OutputNetexSaxHandler(
     }
 
     override fun endDocument() {
-        // Next two lines may be commented out to improve readability of diff,
-        // depending on whether input dataset uses self-closing tags or not.
-         val processedOutput = removeEmptyCollections(outputBuffer.toString())
-         output.write(processedOutput)
-        // output.write(outputBuffer.toString())
+        if (useSelfClosingTagsWhereApplicable) {
+            val processedOutput = removeEmptyCollections(outputBuffer.toString())
+            output.write(processedOutput)
+        } else {
+            output.write(outputBuffer.toString())
+        }
+
 
         output.flush()
         output.close()

@@ -1,7 +1,6 @@
 package org.entur.netex.tools.pipeline
 
-import org.entur.netex.tools.lib.config.CliConfig
-import org.entur.netex.tools.lib.config.FilterConfig
+import org.entur.netex.tools.lib.config.JsonConfig
 import org.entur.netex.tools.pipeline.app.FilterNetexApp
 import java.io.File
 
@@ -13,8 +12,8 @@ fun main(args : Array<String>) {
     }
 
     val app = FilterNetexApp(
-        CliConfig(),
-        FilterConfig(),
+        JsonConfig.loadCliConfig(File(args[0]).inputStream()),
+        JsonConfig.loadFilterConfig(File(args[1]).inputStream()),
         File(args[2]),
         File(args[3])
     )
@@ -30,4 +29,3 @@ fun printHelp() {
        - <output-directory>      : The location for the output.     
     """.trimIndent())
 }
-

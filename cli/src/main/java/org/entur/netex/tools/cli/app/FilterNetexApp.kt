@@ -1,28 +1,25 @@
 package org.entur.netex.tools.cli.app
 
-import org.entur.netex.tools.lib.config.CliConfig
 import org.entur.netex.tools.lib.config.FilterConfig
+import org.entur.netex.tools.lib.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
-import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
-import org.entur.netex.tools.lib.sax.BuildEntityModelSaxHandler
-import org.entur.netex.tools.lib.sax.OutputNetexSaxHandler
-import org.entur.netex.tools.lib.sax.SkipElementHandler
-import org.entur.netex.tools.lib.sax.SkipEntityAndElementHandler
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
+import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
+import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
+import org.entur.netex.tools.lib.sax.*
 import org.entur.netex.tools.lib.selectors.ActiveDatesSelector
-import org.entur.netex.tools.lib.selectors.EntityPruningSelector
 import org.entur.netex.tools.lib.selectors.EntitySelector
+import org.entur.netex.tools.lib.selectors.EntityPruningSelector
 import org.entur.netex.tools.lib.selectors.PublicEntitiesSelector
 import org.entur.netex.tools.lib.selectors.SkipElementsSelector
 import org.entur.netex.tools.lib.utils.Log
 import java.io.File
 
 data class FilterNetexApp(
-  val cliConfig : CliConfig,
-  val filterConfig: FilterConfig,
+  val cliConfig : CliConfig = CliConfig(),
+  val filterConfig: FilterConfig = FilterConfig(),
   val input : File,
   val target : File
 ) {
@@ -34,7 +31,7 @@ data class FilterNetexApp(
   private val activeDatesPlugin = ActiveDatesPlugin(ActiveDatesRepository())
   private val plugins = listOf(activeDatesPlugin)
 
-  fun run() {
+  fun run(): Pair<Set<String>, Set<String>> {
     setupAndLogStartupInfo()
 
     // Step 1: collect data needed for filtering out entities
@@ -43,14 +40,21 @@ data class FilterNetexApp(
     // Step 2: filter data based on configuration and data collected in step 1
     val selectors = setupSelectors()
 
-    val selectionOfEntitiesToKeep = selectEntitiesToKeep(selectors)
-    val prunedSelectionOfEntitiesToKeep = pruneUnreferencedEntities(selectionOfEntitiesToKeep)
-    val refSelection = selectRefsToKeep(prunedSelectionOfEntitiesToKeep)
+    var entitiesToKeep = selectEntitiesToKeep(selectors)
+    entitiesToKeep = if (filterConfig.unreferencedEntitiesToPrune.isEmpty()) {
+      entitiesToKeep
+    } else {
+      pruneUnreferencedEntities(entitiesToKeep)
+    }
+
+    val refSelection = selectRefsToKeep(entitySelection = entitiesToKeep)
 
     // Step 3: export the filtered data to XML files
-    exportXmlFiles(prunedSelectionOfEntitiesToKeep, refSelection)
+    exportXmlFiles(entitiesToKeep, refSelection)
 
-    printReport(prunedSelectionOfEntitiesToKeep)
+    printReport(entitiesToKeep)
+
+    return Pair(entitiesToKeep.allIds(), refSelection.selection)
   }
 
   val skipElementsSelector = SkipElementsSelector(skipElements)
@@ -72,7 +76,10 @@ data class FilterNetexApp(
   }
 
   private fun pruneUnreferencedEntities(initialEntitySelection: EntitySelection): EntitySelection {
-    val unreferencedEntityPruningSelector = EntityPruningSelector(initialEntitySelection)
+    val unreferencedEntityPruningSelector = EntityPruningSelector(
+      entitySelection = initialEntitySelection,
+      unreferencedEntitiesToRemove = filterConfig.unreferencedEntitiesToPrune
+    )
     val prunedEntitySelection = unreferencedEntityPruningSelector
       .selectEntities(model)
       .intersectWith(initialEntitySelection)
@@ -101,12 +108,16 @@ data class FilterNetexApp(
 
   private fun selectRefsToKeep(entitySelection: EntitySelection): RefSelection {
     val allRefs = model.listAllRefs()
-    val allEntityIds = entitySelection.allIds()
-    val refTypesToKeep = setOf("QuayRef")
-    val refsToKeep = allRefs
-      .filter { allEntityIds.contains(it.ref) || it.type in refTypesToKeep }
-      .map { it.ref }
-      .toHashSet()
+    val refsToKeep =
+      if (filterConfig.pruneReferences) {
+        val allEntityIds = entitySelection.allIds()
+        allRefs
+          .filter { allEntityIds.contains(it.ref) || it.type in filterConfig.referencesToExcludeFromPruning }
+          .map { it.ref }
+          .toHashSet()
+      } else {
+        allRefs.map { it.ref }.toHashSet()
+      }
     return RefSelection(refsToKeep)
   }
 
@@ -143,7 +154,7 @@ data class FilterNetexApp(
   private fun createNetexSaxWriteHandler(file: File, entitySelection: EntitySelection, refSelection: RefSelection) = OutputNetexSaxHandler(
     file,
     SkipEntityAndElementHandler(entitySelection, refSelection),
-    filterConfig.preserveComments
+    filterConfig.preserveComments,
+    filterConfig.useSelfClosingTagsWhereApplicable,
   )
 }
-
