@@ -7,6 +7,19 @@
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
+    <distributionManagement>
+        <repository>
+            <id>central</id>
+            <name>entur2-releases</name>
+            <url>https://entur2.jfrog.io/entur2/libs-release-local</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>entur2-snapshots</name>
+            <url>https://entur2.jfrog.io/entur2/libs-snapshot-local</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <properties>
         <jreleaser-maven-plugin.version>1.18.0</jreleaser-maven-plugin.version>
     </properties>
@@ -87,10 +100,12 @@
                                 </configuration>
                             </execution>
                         </executions>
+                        <version>3.10.1</version>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
+                        <version>3.3.1</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
