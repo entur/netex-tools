@@ -1,0 +1,29 @@
+name: Build pull request
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  maven-verify:
+    if: github.event.pull_request.head.repo.fork == true
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          java-version: 17.0.13
+          distribution: liberica
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+            ${{ runner.os }}-maven-
+            ${{ runner.os }}-
+      - name: Run maven build
+        run: mvn verify
+  

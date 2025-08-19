@@ -1,0 +1,50 @@
+name: Build and Deploy Maven Central
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+env:
+    SONATYPE_GPG_KEY_BASE64: ${{ secrets.SONATYPE_GPG_KEY_BASE64 }}
+    SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+    SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+    SONATYPE_GPG_KEY_PASSWORD: ${{ secrets.SONATYPE_GPG_KEY_PASSWORD }}
+jobs:
+  maven-verify:
+    if: github.event.pull_request.head.repo.fork == false && !contains(github.event.head_commit.message, 'ci skip')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          java-version: 17.0.13
+          distribution: liberica
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+            ${{ runner.os }}-maven-
+            ${{ runner.os }}-
+
+      - name: Run maven build
+        run: mvn verify
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          path: netex-tools/target/*.jar
+  publish-release:
+    needs: [maven-verify]
+    if: github.repository_owner == 'entur' && github.event_name == 'push'
+    name: Publish release to maven central
+    uses: entur/gha-maven-central/.github/workflows/maven-publish.yml@v1
+    secrets: inherit
+    with:
+      push_to_repo: true
+      snapshot: false
