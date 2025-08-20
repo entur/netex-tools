@@ -6,6 +6,25 @@
     <artifactId>netex-tools-root</artifactId>
     <version>0.0.1</version>
     <packaging>pom</packaging>
+    <name>NeTEx Tools Root</name>
+    <description>NeTEX Utility Tools</description>
+    <url>https://github.com/entur/netex-tools</url>
+    <organization>
+        <name>Entur AS</name>
+        <url>https://www.entur.org/</url>
+    </organization>
+    <scm>
+        <connection>scm:git:ssh://git@github.com/entur/netex-tools.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/entur/netex-tools.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+    <licenses>
+        <license>
+            <name>EUPL-1.2 with modifications</name>
+            <url>https://joinup.ec.europa.eu/software/page/eupl</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
     <properties>
         <jreleaser-maven-plugin.version>1.18.0</jreleaser-maven-plugin.version>
     </properties>
@@ -16,6 +35,14 @@
         <module>parent</module>
         <module>pipeline</module>
     </modules>
+    <developers>
+        <developer>
+            <name>Thomas Gran</name>
+            <email>thomas.gran@entur.org</email>
+            <organization>Entur</organization>
+            <organizationUrl>http://www.entur.org</organizationUrl>
+        </developer>
+    </developers>
     <build>
         <plugins>
             <plugin>
