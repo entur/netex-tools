@@ -8,8 +8,17 @@ class EntityPruningSelector(
     private val entitySelection: EntitySelection,
     private val unreferencedEntitiesToRemove: Set<String>
 ): EntitySelector() {
-    private fun shouldKeep(entity: Entity) =
-        entity.type !in unreferencedEntitiesToRemove || entitySelection.hasEntitiesReferringTo(entity)
+    private fun shouldKeep(entity: Entity): Boolean {
+        if (entity.parent != null && !entitySelection.includes(entity.parent)) {
+            return false
+        }
+
+        val entityTypeIsKeptRegardless = entity.type !in unreferencedEntitiesToRemove
+        if (entityTypeIsKeptRegardless) {
+            return true
+        }
+        return entitySelection.hasEntitiesReferringTo(entity)
+    }
 
     override fun selectEntities(model: EntityModel): EntitySelection {
         val entitiesToKeep = mutableMapOf<String, MutableMap<String, Entity>>()

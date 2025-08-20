@@ -31,6 +31,10 @@ class EntitySelection(val selection: MutableMap<String, MutableMap<String, Entit
         return isSelected(element.name, id)
     }
 
+    fun includes(entity: Entity) : Boolean {
+        return selection[entity.type]?.containsKey(entity.id) ?: false
+    }
+
     fun allIds(): Set<String> {
         return selection.values.flatMap { it.keys }.toHashSet()
     }
