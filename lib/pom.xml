@@ -5,13 +5,13 @@
   <parent>
     <groupId>org.entur.ror</groupId>
     <artifactId>netex-tools-parent</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <relativePath>../parent</relativePath>
   </parent>
 
   <artifactId>netex-tools-lib</artifactId>
   <packaging>jar</packaging>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
 
   <dependencies>
     <dependency>
