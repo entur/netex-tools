@@ -14,6 +14,9 @@ import org.entur.netex.tools.lib.selectors.EntitySelector
 import org.entur.netex.tools.lib.selectors.EntityPruningSelector
 import org.entur.netex.tools.lib.selectors.PublicEntitiesSelector
 import org.entur.netex.tools.lib.selectors.SkipElementsSelector
+import org.entur.netex.tools.lib.selectors.refs.ActiveDatesRefSelector
+import org.entur.netex.tools.lib.selectors.refs.RefPruningSelector
+import org.entur.netex.tools.lib.selectors.refs.RefSelector
 import org.entur.netex.tools.lib.utils.Log
 import java.io.File
 
@@ -38,30 +41,31 @@ data class FilterNetexApp(
     buildEntityModel()
 
     // Step 2: filter data based on configuration and data collected in step 1
-    val selectors = setupSelectors()
+    val entitySelectors = setupEntitySelectors()
 
-    var entitiesToKeep = selectEntitiesToKeep(selectors)
+    var entitiesToKeep = selectEntitiesToKeep(entitySelectors)
     entitiesToKeep = if (filterConfig.unreferencedEntitiesToPrune.isEmpty()) {
       entitiesToKeep
     } else {
       pruneUnreferencedEntities(entitiesToKeep)
     }
 
-    val refSelection = selectRefsToKeep(entitySelection = entitiesToKeep)
+    val refSelectors = setupRefSelectors(entitiesToKeep)
+    val refSelection = selectRefsToKeep(refSelectors)
 
     // Step 3: export the filtered data to XML files
     exportXmlFiles(entitiesToKeep, refSelection)
 
     printReport(entitiesToKeep)
 
-    return Pair(entitiesToKeep.allIds(), refSelection.selection)
+    return Pair(entitiesToKeep.allIds(), refSelection.selection.map { it.ref }.toSet())
   }
 
   val skipElementsSelector = SkipElementsSelector(skipElements)
   val publicEntitiesSelector = PublicEntitiesSelector()
   val activeDatesSelector = ActiveDatesSelector(activeDatesPlugin, filterConfig.period)
 
-  private fun setupSelectors(): List<EntitySelector> {
+  private fun setupEntitySelectors(): List<EntitySelector> {
     val selectors = mutableListOf<EntitySelector>()
     if (filterConfig.skipElements.isNotEmpty()) {
       selectors.add(skipElementsSelector)
@@ -72,6 +76,15 @@ data class FilterNetexApp(
     if (filterConfig.period.start != null || filterConfig.period.end != null) {
         selectors.add(activeDatesSelector)
     }
+    return selectors
+  }
+
+  private fun setupRefSelectors(entitySelection: EntitySelection): List<RefSelector> {
+    val selectors = mutableListOf<RefSelector>()
+    if (filterConfig.pruneReferences) {
+      selectors.add(RefPruningSelector(entitySelection, filterConfig.referencesToExcludeFromPruning))
+    }
+    selectors.add(ActiveDatesRefSelector(activeDatesPlugin, filterConfig.period))
     return selectors
   }
 
@@ -105,21 +118,13 @@ data class FilterNetexApp(
     selectors
       .map { selector -> selector.selectEntities(model) }
       .reduce { acc, selection -> selection.intersectWith(acc) }
+      .intersectWith(EntitySelection(model.getEntitesByTypeAndId()))
 
-  private fun selectRefsToKeep(entitySelection: EntitySelection): RefSelection {
-    val allRefs = model.listAllRefs()
-    val refsToKeep =
-      if (filterConfig.pruneReferences) {
-        val allEntityIds = entitySelection.allIds()
-        allRefs
-          .filter { allEntityIds.contains(it.ref) || it.type in filterConfig.referencesToExcludeFromPruning }
-          .map { it.ref }
-          .toHashSet()
-      } else {
-        allRefs.map { it.ref }.toHashSet()
-      }
-    return RefSelection(refsToKeep)
-  }
+  private fun selectRefsToKeep(selectors: List<RefSelector>): RefSelection =
+    selectors
+      .map { selector -> selector.selectRefs(model) }
+      .reduce { acc, selection -> selection.intersectWith(acc) }
+      .intersectWith(RefSelection(model.listAllRefs().toSet()))
 
   private fun exportXmlFiles(entitySelection : EntitySelection, refSelection : RefSelection) {
     Log.info("Save xml files")
@@ -153,6 +158,7 @@ data class FilterNetexApp(
 
   private fun createNetexSaxWriteHandler(file: File, entitySelection: EntitySelection, refSelection: RefSelection) = OutputNetexSaxHandler(
     file,
+    entityModel = model,
     SkipEntityAndElementHandler(entitySelection, refSelection),
     filterConfig.preserveComments,
     filterConfig.useSelfClosingTagsWhereApplicable,

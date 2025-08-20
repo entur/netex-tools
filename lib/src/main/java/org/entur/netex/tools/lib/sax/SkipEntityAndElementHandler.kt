@@ -1,6 +1,8 @@
 package org.entur.netex.tools.lib.sax
 
 import org.entur.netex.tools.lib.model.Element
+import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.Ref
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
 
@@ -12,17 +14,29 @@ class SkipEntityAndElementHandler(
 
     fun inSkipMode() = skipElement != null
 
+    fun shouldSkip(ref: Ref): Boolean {
+        if (inSkipMode()) {
+            return true
+        }
+        return !refSelection.includes(ref)
+    }
+
+    fun shouldSkip(entity: Entity): Boolean {
+        if (inSkipMode()) {
+            return true
+        }
+        return !entitySelection.includes(entity)
+    }
+
     fun shouldSkip(element: Element): Boolean {
         if (inSkipMode()) {
             return true
         }
         if (element.isEntity()) {
-            // TODO: Selections may be abstracted. Do we want this?
             return !entitySelection.includes(element)
         }
         if (element.isRef()) {
-            // TODO: Selections may be abstracted. Do we want this?
-            return !refSelection.includes(element)
+            return false
         }
         return false;
     }

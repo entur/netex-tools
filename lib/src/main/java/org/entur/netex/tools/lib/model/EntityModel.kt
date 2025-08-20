@@ -29,6 +29,10 @@ class EntityModel(private val alias: Alias) {
         return references.get(sourceId, type)
     }
 
+    fun getRefOfTypeFromSourceIdAndRef(sourceId: String, type: String, ref: String): Ref? {
+        return getRefsOfTypeFrom(sourceId, type).find { it.ref == ref }
+    }
+
     fun forAllEntities(type: String, body: (Entity) -> Unit) {
         entities.list(type).forEach{ body(it) }
     }

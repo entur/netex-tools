@@ -2,6 +2,9 @@ package org.entur.netex.tools.lib.sax
 
 import org.apache.commons.lang3.StringEscapeUtils
 import org.entur.netex.tools.lib.model.Element
+import org.entur.netex.tools.lib.model.EntityModel
+import org.entur.netex.tools.lib.plugin.NetexPlugin
+import org.entur.netex.tools.lib.plugin.PluginRegistry
 import org.entur.netex.tools.lib.utils.Log
 import org.xml.sax.Attributes
 import org.xml.sax.ext.LexicalHandler
@@ -9,14 +12,26 @@ import java.io.File
 
 class OutputNetexSaxHandler(
     outFile : File,
+    private val entityModel : EntityModel,
     private val skipHandler : SkipEntityAndElementHandler,
     private val preserveComments : Boolean,
     private val useSelfClosingTagsWhereApplicable : Boolean,
+    plugins: List<NetexPlugin> = emptyList(),
 ) : NetexToolsSaxHandler(), LexicalHandler {
     private val output = outFile.bufferedWriter(Charsets.UTF_8)
     private var currentElement : Element? = null
     private var whiteSpace : String? = null
     private val outputBuffer = StringBuilder()
+    private var currentEntityId: String? = null
+
+    private val pluginRegistry = PluginRegistry()
+
+    init {
+        // Register and initialize plugins
+        plugins.forEach { plugin ->
+            pluginRegistry.registerPlugin(plugin)
+        }
+    }
 
     override fun startDocument() {
         write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
@@ -66,6 +81,25 @@ class OutputNetexSaxHandler(
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         currentElement = Element(qName!!, currentElement, attributes)
+
+        if (currentElement?.isEntity() == true) {
+            currentEntityId = currentElement!!.attributes?.getValue("id")
+            val entity = entityModel.getEntity(currentEntityId!!)
+            if (entity != null && skipHandler.shouldSkip(entity)) {
+                skipHandler.startSkip(currentElement!!)
+                return
+            }
+        }
+
+        if (currentElement?.isRef() == true) {
+            val refStr = currentElement!!.attributes?.getValue("ref")
+            val ref = entityModel.getRefOfTypeFromSourceIdAndRef(currentEntityId!!, qName, refStr!!)
+            if (ref != null && skipHandler.shouldSkip(ref)) {
+                skipHandler.startSkip(currentElement!!)
+                return
+            }
+        }
+
         if (skipHandler.shouldSkip(currentElement!!)) {
             skipHandler.startSkip(currentElement!!)
             return
@@ -81,6 +115,10 @@ class OutputNetexSaxHandler(
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
+        if (currentElement?.isEntity() == true) {
+            currentEntityId = null
+        }
+
         val c = currentElement
         currentElement = currentElement?.parent
 
