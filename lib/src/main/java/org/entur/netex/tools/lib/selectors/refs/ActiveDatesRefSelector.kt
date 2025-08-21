@@ -22,7 +22,7 @@ class ActiveDatesRefSelector(val activeDatesPlugin: ActiveDatesPlugin, val perio
 
         for ((serviceJourneyId, serviceJourneyData) in serviceJourneys) {
             val dayTypesOfServiceJourney = mutableMapOf<String, DayTypeData>()
-            serviceJourneyData.dayTypes.forEach { dayTypesOfServiceJourney.put(it, dayTypes.get(it)!!) }
+            serviceJourneyData.dayTypes.forEach { dayTypesOfServiceJourney.put(it, dayTypes[it]!!) }
             for ((dayTypeRef, dayTypeData) in dayTypesOfServiceJourney) {
                 val datesWithinPeriod = dayTypeData.dates.filter {
                     isDateInPeriod(it, serviceJourneyData.finalArrivalDayOffset, period.start, period.end)
