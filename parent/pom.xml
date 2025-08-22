@@ -10,6 +10,10 @@
     </parent>
 
     <artifactId>netex-tools-parent</artifactId>
+    <name>netex-tools-parent</name>
+    <description>Parent POM for netex-tools</description>
+    <url>https://github.com/entur/netex-tools</url>
+
     <groupId>org.entur.ror</groupId>
     <version>0.0.6</version>
     <packaging>pom</packaging>

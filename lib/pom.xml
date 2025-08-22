@@ -10,6 +10,7 @@
   </parent>
 
     <artifactId>netex-tools-lib</artifactId>
+    <name>netex-tools-lib</name>
     <description>netex tools library</description>
     <url>https://github.com/entur/netex-tools</url>
     <packaging>jar</packaging>

@@ -10,6 +10,7 @@
   </parent>
 
     <artifactId>netex-pipeline</artifactId>
+    <name>netex-pipeline</name>
     <description>netex pipeline</description>
     <url>https://github.com/entur/netex-tools</url>
     <packaging>jar</packaging>

@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>netex-tools-cli</artifactId>
+    <name>netex-tools-cli</name>
     <description>netex tools cli</description>
     <url>https://github.com/entur/netex-tools</url>
     <packaging>jar</packaging>
