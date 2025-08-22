@@ -1,6 +1,6 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.entur.ror</groupId>
@@ -9,15 +9,17 @@
     <relativePath>../parent</relativePath>
   </parent>
 
-  <artifactId>netex-pipeline</artifactId>
-  <packaging>jar</packaging>
-  <version>0.0.5</version>
+    <artifactId>netex-pipeline</artifactId>
+    <description>netex pipeline</description>
+    <url>https://github.com/entur/netex-tools</url>
+    <packaging>jar</packaging>
+    <version>0.0.5</version>
 
-  <dependencies>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>netex-tools-lib</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-  </dependencies>
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>netex-tools-lib</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 </project>
