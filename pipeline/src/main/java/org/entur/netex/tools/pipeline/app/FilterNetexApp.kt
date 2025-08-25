@@ -14,6 +14,7 @@ import org.entur.netex.tools.lib.selectors.entities.AllEntitiesSelector
 import org.entur.netex.tools.lib.selectors.entities.EntitySelector
 import org.entur.netex.tools.lib.selectors.entities.EntityPruningSelector
 import org.entur.netex.tools.lib.selectors.entities.PublicEntitiesSelector
+import org.entur.netex.tools.lib.selectors.entities.ServiceJourneyInterchangeSelector
 import org.entur.netex.tools.lib.selectors.entities.SkipElementsSelector
 import org.entur.netex.tools.lib.selectors.refs.ActiveDatesRefSelector
 import org.entur.netex.tools.lib.selectors.refs.AllRefsSelector
@@ -51,6 +52,10 @@ data class FilterNetexApp(
     } else {
       pruneUnreferencedEntities(entitiesToKeep)
     }
+
+    entitiesToKeep = ServiceJourneyInterchangeSelector(entitiesToKeep)
+      .selectEntities(model)
+      .intersectWith(entitiesToKeep)
 
     val refSelectors = setupRefSelectors(entitiesToKeep)
     val refSelection = selectRefsToKeep(refSelectors)

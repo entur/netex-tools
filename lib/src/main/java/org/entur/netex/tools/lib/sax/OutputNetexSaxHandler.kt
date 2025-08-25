@@ -88,6 +88,11 @@ class OutputNetexSaxHandler(
             }
         }
 
+        if (skipHandler.shouldSkip(currentElement!!)) {
+            skipHandler.startSkip(currentElement!!)
+            return
+        }
+
         write("<$qName")
         if(attributes != null) {
             for (i in 0..<attributes.length) {

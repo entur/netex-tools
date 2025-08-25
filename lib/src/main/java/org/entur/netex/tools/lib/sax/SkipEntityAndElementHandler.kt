@@ -28,6 +28,19 @@ class SkipEntityAndElementHandler(
         return !entitySelection.includes(entity)
     }
 
+    fun shouldSkip(element: Element): Boolean {
+        if (inSkipMode()) {
+            return true
+        }
+        if (element.isEntity()) {
+            return !entitySelection.includes(element)
+        }
+        if (element.isRef()) {
+            return false
+        }
+        return false;
+    }
+
     fun startSkip(currentElement: Element): Boolean {
         if(inSkipMode()) {
             return true
