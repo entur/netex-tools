@@ -9,12 +9,14 @@ import org.entur.netex.tools.lib.selections.RefSelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import org.entur.netex.tools.lib.sax.*
-import org.entur.netex.tools.lib.selectors.ActiveDatesSelector
-import org.entur.netex.tools.lib.selectors.EntitySelector
-import org.entur.netex.tools.lib.selectors.EntityPruningSelector
-import org.entur.netex.tools.lib.selectors.PublicEntitiesSelector
-import org.entur.netex.tools.lib.selectors.SkipElementsSelector
+import org.entur.netex.tools.lib.selectors.entities.ActiveDatesSelector
+import org.entur.netex.tools.lib.selectors.entities.AllEntitiesSelector
+import org.entur.netex.tools.lib.selectors.entities.EntitySelector
+import org.entur.netex.tools.lib.selectors.entities.EntityPruningSelector
+import org.entur.netex.tools.lib.selectors.entities.PublicEntitiesSelector
+import org.entur.netex.tools.lib.selectors.entities.SkipElementsSelector
 import org.entur.netex.tools.lib.selectors.refs.ActiveDatesRefSelector
+import org.entur.netex.tools.lib.selectors.refs.AllRefsSelector
 import org.entur.netex.tools.lib.selectors.refs.RefPruningSelector
 import org.entur.netex.tools.lib.selectors.refs.RefSelector
 import org.entur.netex.tools.lib.utils.Log
@@ -66,7 +68,7 @@ data class FilterNetexApp(
   val activeDatesSelector = ActiveDatesSelector(activeDatesPlugin, filterConfig.period)
 
   private fun setupEntitySelectors(): List<EntitySelector> {
-    val selectors = mutableListOf<EntitySelector>()
+    val selectors = mutableListOf<EntitySelector>(AllEntitiesSelector())
     if (filterConfig.skipElements.isNotEmpty()) {
       selectors.add(skipElementsSelector)
     }
@@ -80,11 +82,13 @@ data class FilterNetexApp(
   }
 
   private fun setupRefSelectors(entitySelection: EntitySelection): List<RefSelector> {
-    val selectors = mutableListOf<RefSelector>()
+    val selectors = mutableListOf<RefSelector>(AllRefsSelector())
     if (filterConfig.pruneReferences) {
       selectors.add(RefPruningSelector(entitySelection, filterConfig.referencesToExcludeFromPruning))
     }
-    selectors.add(ActiveDatesRefSelector(activeDatesPlugin, filterConfig.period))
+    if (filterConfig.period.start != null || filterConfig.period.end != null) {
+      selectors.add(ActiveDatesRefSelector(activeDatesPlugin, filterConfig.period))
+    }
     return selectors
   }
 
@@ -118,13 +122,11 @@ data class FilterNetexApp(
     selectors
       .map { selector -> selector.selectEntities(model) }
       .reduce { acc, selection -> selection.intersectWith(acc) }
-      .intersectWith(EntitySelection(model.getEntitesByTypeAndId()))
 
   private fun selectRefsToKeep(selectors: List<RefSelector>): RefSelection =
     selectors
       .map { selector -> selector.selectRefs(model) }
       .reduce { acc, selection -> selection.intersectWith(acc) }
-      .intersectWith(RefSelection(model.listAllRefs().toSet()))
 
   private fun exportXmlFiles(entitySelection : EntitySelection, refSelection : RefSelection) {
     Log.info("Save xml files")

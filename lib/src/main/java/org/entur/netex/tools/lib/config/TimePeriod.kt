@@ -8,7 +8,7 @@ import java.time.LocalDate
 @Serializable
 data class TimePeriod(
     @Serializable(with = LocalDateSerializer::class)
-    val start : LocalDate = LocalDate.MIN,
+    val start : LocalDate?,
     @Serializable(with = LocalDateSerializer::class)
-    val end : LocalDate = LocalDate.MAX,
+    val end : LocalDate?,
 )

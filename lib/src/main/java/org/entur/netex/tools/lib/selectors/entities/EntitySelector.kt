@@ -1,4 +1,4 @@
-package org.entur.netex.tools.lib.selectors
+package org.entur.netex.tools.lib.selectors.entities
 
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
