@@ -4,14 +4,14 @@ import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
 
-class EntityPruningSelector(private val unreferencedEntitiesToRemove: Set<String>, private val entitySelection: EntitySelection): EntitySelector() {
+class EntityPruningSelector(private val typesToRemove: Set<String>, private val entitySelection: EntitySelection): EntitySelector() {
     private fun shouldKeep(entity: Entity, currentEntitySelection: EntitySelection): Boolean {
         if (entity.parent != null && !currentEntitySelection.includes(entity.parent)) {
             return false
         }
 
-        val entityTypeIsKeptRegardless = entity.type !in unreferencedEntitiesToRemove
-        if (entityTypeIsKeptRegardless) {
+        val allEntitiesOfTypeShouldBeKept = entity.type !in typesToRemove
+        if (allEntitiesOfTypeShouldBeKept) {
             return true
         }
 

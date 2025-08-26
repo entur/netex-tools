@@ -32,15 +32,6 @@ object TestDataFactory {
         return entity
     }
 
-    fun entityModelWithReferences(): EntityModel {
-        val model = defaultEntityModel()
-        model.addEntity(defaultEntity(id = "entity1", type = "unreferencedType"))
-        model.addEntity(entityWithReference(id = "entity2", ref = "entity1", type = "unreferencedType"))
-        model.addEntity(entityWithReference(id = "entity3", ref = "entity2", type = "unreferencedType"))
-        model.addEntity(entityWithReference(id = "entity4", ref = "entity3", type = "unreferencedType"))
-        return model
-    }
-
     fun entitySelectionWithUnreferredEntities(): EntitySelection {
         val entities = listOf(
             defaultEntity(id = "entity1", type = "unreferencedType"),
@@ -51,16 +42,26 @@ object TestDataFactory {
         return entitySelection(entities)
     }
 
+    fun entitySelectionWithReferredEntities(): EntitySelection {
+        val entities = listOf(
+            entityWithReference(id = "entity1", ref = "entity2", type = "unreferencedType"),
+            entityWithReference(id = "entity2", ref = "entity1", type = "unreferencedType"),
+        )
+        return entitySelection(entities)
+    }
+
     fun entitySelection(entities: Collection<Entity>) : EntitySelection {
         val selection = mutableMapOf<String, MutableMap<String, Entity>>()
+        val entityModel = EntityModel(alias = Alias.of(emptyMap()))
         entities.forEach { entity ->
+            entityModel.addEntity(entity)
             if (selection.containsKey(entity.type)) {
                 selection[entity.type]?.put(entity.id, entity)
             } else {
                 selection[entity.type] = mutableMapOf(entity.id to entity)
             }
         }
-        return EntitySelection(selection, EntityModel(Alias.of(mapOf())))
+        return EntitySelection(selection, entityModel)
     }
 
     fun defaultElement(name: String, id: String? = null, ref: String? = null): Element {

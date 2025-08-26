@@ -121,7 +121,7 @@ data class FilterNetexApp(
   private fun pruneUnreferencedEntities(initialEntitySelection: EntitySelection): EntitySelection {
     val unreferencedEntityPruningSelector = EntityPruningSelector(
       entitySelection = initialEntitySelection,
-      unreferencedEntitiesToRemove = filterConfig.unreferencedEntitiesToPrune
+      typesToRemove = filterConfig.unreferencedEntitiesToPrune
     )
     val prunedEntitySelection = unreferencedEntityPruningSelector
       .selectEntities(model)
