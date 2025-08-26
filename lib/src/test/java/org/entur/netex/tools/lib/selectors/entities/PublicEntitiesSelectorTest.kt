@@ -1,9 +1,8 @@
-package org.entur.netex.tools.lib.selectors
+package org.entur.netex.tools.lib.selectors.entities
 
 import org.entur.netex.tools.lib.data.TestDataFactory
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.PublicationEnumeration
-import org.entur.netex.tools.lib.selectors.entities.PublicEntitiesSelector
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
