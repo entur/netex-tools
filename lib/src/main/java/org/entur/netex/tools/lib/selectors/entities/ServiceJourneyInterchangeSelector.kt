@@ -17,16 +17,11 @@ class ServiceJourneyInterchangeSelector(private val entitySelection: EntitySelec
                 hasRefToFromJourney && hasRefToToJourney
             }
 
-        val entitiesToKeep = mutableMapOf<String, MutableMap<String, Entity>>()
-        val allEntities = model.listAllEntities()
-        allEntities.filter { it.type != "ServiceJourneyInterchange" }.forEach { entity ->
-            entitiesToKeep.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
+        entitySelection.selection["ServiceJourneyInterchange"] = mutableMapOf()
+        serviceJourneyInterchangesToKeep.forEach { interchange ->
+            entitySelection.selection["ServiceJourneyInterchange"]!!.put(interchange.id, interchange)
         }
 
-        serviceJourneyInterchangesToKeep.forEach { entity ->
-            entitiesToKeep.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
-        }
-
-        return EntitySelection(entitiesToKeep)
+        return entitySelection
     }
 }

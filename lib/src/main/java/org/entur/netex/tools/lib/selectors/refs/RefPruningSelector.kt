@@ -9,11 +9,8 @@ class RefPruningSelector(
     private val referencesToExcludeFromPruning: Set<String>,
 ): RefSelector() {
     override fun selectRefs(model: EntityModel): RefSelection {
-        val allRefs = model.listAllRefs()
         val allEntityIds = entitySelection.allIds()
-        val refsToKeep = allRefs
-            .filter { allEntityIds.contains(it.ref) || it.type in referencesToExcludeFromPruning }
-            .toHashSet()
+        val refsToKeep = model.listAllRefs().filter { it.ref in allEntityIds || it.type in referencesToExcludeFromPruning }.toSet()
         return RefSelection(refsToKeep)
     }
 }

@@ -20,8 +20,10 @@ import org.entur.netex.tools.lib.selectors.refs.ActiveDatesRefSelector
 import org.entur.netex.tools.lib.selectors.refs.AllRefsSelector
 import org.entur.netex.tools.lib.selectors.refs.RefPruningSelector
 import org.entur.netex.tools.lib.selectors.refs.RefSelector
-import org.entur.netex.tools.lib.utils.Log
+import org.slf4j.LoggerFactory
 import java.io.File
+import kotlin.system.measureTimeMillis
+import kotlin.time.measureTime
 
 data class FilterNetexApp(
   val cliConfig : CliConfig = CliConfig(),
@@ -29,6 +31,8 @@ data class FilterNetexApp(
   val input : File,
   val target : File
 ) {
+  private val logger = LoggerFactory.getLogger(javaClass)
+
   val skipElements = filterConfig.skipElements.toHashSet()
   val startTime = System.currentTimeMillis()
   val model = EntityModel(cliConfig.alias())
@@ -47,15 +51,26 @@ data class FilterNetexApp(
     val entitySelectors = setupEntitySelectors()
 
     var entitiesToKeep = selectEntitiesToKeep(entitySelectors)
+
     entitiesToKeep = if (filterConfig.unreferencedEntitiesToPrune.isEmpty()) {
       entitiesToKeep
     } else {
-      pruneUnreferencedEntities(entitiesToKeep)
+      logger.info("Pruning unreferenced entities...")
+      val (prunedEntitySelection, ms) = timed {
+        pruneUnreferencedEntities(entitiesToKeep)
+      }
+      logger.info("Pruned unreferenced entities in $ms")
+      prunedEntitySelection
     }
 
-    entitiesToKeep = ServiceJourneyInterchangeSelector(entitiesToKeep)
+    logger.info("Removing interchanges without service journeys...")
+    val (result, ms) = timed {
+      ServiceJourneyInterchangeSelector(entitiesToKeep)
       .selectEntities(model)
       .intersectWith(entitiesToKeep)
+    }
+    logger.info("Removed interchanges without service journeys in $ms")
+    entitiesToKeep = result
 
     val refSelectors = setupRefSelectors(entitiesToKeep)
     val refSelection = selectRefsToKeep(refSelectors)
@@ -71,6 +86,12 @@ data class FilterNetexApp(
   val skipElementsSelector = SkipElementsSelector(skipElements)
   val publicEntitiesSelector = PublicEntitiesSelector()
   val activeDatesSelector = ActiveDatesSelector(activeDatesPlugin, filterConfig.period)
+
+  inline fun <T> timed(block: () -> T): Pair<T, Long> {
+    var result: T
+    val time = measureTimeMillis { result = block() }
+    return result to time
+  }
 
   private fun setupEntitySelectors(): List<EntitySelector> {
     val selectors = mutableListOf<EntitySelector>(AllEntitiesSelector())
@@ -109,32 +130,52 @@ data class FilterNetexApp(
   }
 
   private fun setupAndLogStartupInfo() {
-    Log.printLevel = cliConfig.logLevel
-    Log.info("Config:\n$cliConfig")
-    Log.info("Read inout from file: $input")
-    Log.info("Write output to: ${target.absolutePath}")
+    logger.info("CliConfig:\n$cliConfig")
+    logger.info("FilterConfig:\n$cliConfig")
+    logger.info("Read inout from file: $input")
+    logger.info("Write output to: ${target.absolutePath}")
   }
 
   private fun buildEntityModel() {
-    Log.info("\nLoad xml files for building entity model")
+    logger.info("\nLoad xml files for building entity model")
     parseXmlDocuments(input) { file ->
-      Log.info("  << ${file.absolutePath}")
+      logger.info("  << ${file.absolutePath}")
       createNetexSaxReadHandler()
     }
   }
 
-  private fun selectEntitiesToKeep(selectors: List<EntitySelector>): EntitySelection =
-    selectors
-      .map { selector -> selector.selectEntities(model) }
-      .reduce { acc, selection -> selection.intersectWith(acc) }
+  private fun selectEntitiesToKeep(selectors: List<EntitySelector>): EntitySelection {
+    logger.info("Starting initial entity selection...")
+    var entitySelection: EntitySelection
+    val time = measureTime {
+      entitySelection = selectors
+        .map { selector ->
+          logger.info("Running entity selector: ${selector::class.simpleName}")
+          selector.selectEntities(model)
+        }
+        .reduce { acc, selection -> selection.intersectWith(acc) }
+    }
+    logger.info("Initial entity collection done in $time. Collected a total of ${entitySelection.allIds().size} entities")
+    return entitySelection
+  }
 
-  private fun selectRefsToKeep(selectors: List<RefSelector>): RefSelection =
-    selectors
-      .map { selector -> selector.selectRefs(model) }
-      .reduce { acc, selection -> selection.intersectWith(acc) }
+  private fun selectRefsToKeep(selectors: List<RefSelector>): RefSelection {
+    logger.info("Starting ref selection...")
+    var refSelection: RefSelection
+    val time = measureTime {
+      refSelection = selectors
+        .map { selector ->
+          logger.info("Running ref selector: ${selector::class.simpleName}")
+          selector.selectRefs(model)
+        }
+        .reduce { acc, selection -> selection.intersectWith(acc) }
+    }
+    logger.info("Ref collection done in $time. Collected a total of ${refSelection.selection.size} references")
+    return refSelection
+  }
 
   private fun exportXmlFiles(entitySelection : EntitySelection, refSelection : RefSelection) {
-    Log.info("Save xml files")
+    logger.info("Save xml files")
     if(!target.exists()) {
       target.mkdirs()
     }
@@ -144,7 +185,7 @@ data class FilterNetexApp(
 
     parseXmlDocuments(input) { file ->
       val outFile = File(target, file.name)
-      Log.info("  >> ${outFile.absolutePath}")
+      logger.info("  >> ${outFile.absolutePath}")
       createNetexSaxWriteHandler(outFile, entitySelection, refSelection)
     }
   }
@@ -154,7 +195,7 @@ data class FilterNetexApp(
       model.printEntities(selection)
       model.printReferences(selection)
     }
-    println("Filter NeTEx files done in ${(System.currentTimeMillis() - startTime)/1000.0} seconds.")
+    logger.info("Filter NeTEx files done in ${(System.currentTimeMillis() - startTime)/1000.0} seconds.")
   }
 
   private fun createNetexSaxReadHandler() = BuildEntityModelSaxHandler(

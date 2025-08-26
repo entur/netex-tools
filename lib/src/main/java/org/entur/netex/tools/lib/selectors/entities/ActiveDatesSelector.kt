@@ -29,6 +29,6 @@ class ActiveDatesSelector(val activeDatesPlugin: ActiveDatesPlugin, val period: 
             }
         }
 
-        return EntitySelection(activeEntitiesMap)
+        return EntitySelection(activeEntitiesMap, model)
     }
 }

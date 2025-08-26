@@ -12,7 +12,7 @@ class SkipElementsSelector(val elementsToSkip: Set<String>): EntitySelector() {
         allEntities.filter { it.type !in elementsToSkip }.forEach { entity ->
             mapOfElementsToKeep.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
         }
-        return EntitySelection(mapOfElementsToKeep)
+        return EntitySelection(mapOfElementsToKeep, model)
     }
 
 }

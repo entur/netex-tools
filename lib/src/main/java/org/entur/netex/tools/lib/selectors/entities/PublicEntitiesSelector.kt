@@ -14,7 +14,7 @@ class PublicEntitiesSelector: EntitySelector() {
         allEntities.filter { it.publication == PublicationEnumeration.PUBLIC.value }.forEach { entity ->
             publicEntitiesMap.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
         }
-        return EntitySelection(publicEntitiesMap)
+        return EntitySelection(publicEntitiesMap, model)
     }
 
 }
