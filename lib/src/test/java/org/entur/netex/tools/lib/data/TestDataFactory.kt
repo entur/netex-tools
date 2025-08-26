@@ -60,7 +60,7 @@ object TestDataFactory {
                 selection[entity.type] = mutableMapOf(entity.id to entity)
             }
         }
-        return EntitySelection(selection)
+        return EntitySelection(selection, EntityModel(Alias.of(mapOf())))
     }
 
     fun defaultElement(name: String, id: String? = null, ref: String? = null): Element {

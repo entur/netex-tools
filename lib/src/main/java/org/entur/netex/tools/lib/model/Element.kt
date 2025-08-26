@@ -15,14 +15,7 @@ data class Element(
         return attributes?.getValue("ref") != null
     }
 
-    fun isDescendantOf(other: Element): Boolean {
-        var current: Element? = this
-        while (current != null) {
-            if (current == other) {
-                return true
-            }
-            current = current.parent
-        }
-        return false
+    fun getAttribute(name: String): String {
+        return attributes?.getValue(name) ?: ""
     }
 }

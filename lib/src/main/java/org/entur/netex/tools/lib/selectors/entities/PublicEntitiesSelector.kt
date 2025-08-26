@@ -1,4 +1,4 @@
-package org.entur.netex.tools.lib.selectors
+package org.entur.netex.tools.lib.selectors.entities
 
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
@@ -14,7 +14,7 @@ class PublicEntitiesSelector: EntitySelector() {
         allEntities.filter { it.publication == PublicationEnumeration.PUBLIC.value }.forEach { entity ->
             publicEntitiesMap.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
         }
-        return EntitySelection(publicEntitiesMap)
+        return EntitySelection(publicEntitiesMap, model)
     }
 
 }

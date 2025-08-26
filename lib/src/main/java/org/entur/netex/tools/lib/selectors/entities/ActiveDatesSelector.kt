@@ -1,4 +1,4 @@
-package org.entur.netex.tools.lib.selectors
+package org.entur.netex.tools.lib.selectors.entities
 
 import org.entur.netex.tools.lib.config.TimePeriod
 import org.entur.netex.tools.lib.model.Entity
@@ -29,6 +29,6 @@ class ActiveDatesSelector(val activeDatesPlugin: ActiveDatesPlugin, val period: 
             }
         }
 
-        return EntitySelection(activeEntitiesMap)
+        return EntitySelection(activeEntitiesMap, model)
     }
 }

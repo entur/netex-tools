@@ -1,4 +1,4 @@
-package org.entur.netex.tools.lib.selectors
+package org.entur.netex.tools.lib.selectors.entities
 
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
@@ -12,7 +12,7 @@ class SkipElementsSelector(val elementsToSkip: Set<String>): EntitySelector() {
         allEntities.filter { it.type !in elementsToSkip }.forEach { entity ->
             mapOfElementsToKeep.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
         }
-        return EntitySelection(mapOfElementsToKeep)
+        return EntitySelection(mapOfElementsToKeep, model)
     }
 
 }

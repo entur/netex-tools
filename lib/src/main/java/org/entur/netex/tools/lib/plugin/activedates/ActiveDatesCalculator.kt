@@ -11,17 +11,14 @@ import java.time.LocalDate
 
 class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
     
-    fun activeDateEntitiesInPeriod(period: TimePeriod, entityModel: EntityModel): Map<String, Set<String>> {
+    fun activeDateEntitiesInPeriod(timePeriod: TimePeriod, entityModel: EntityModel): Map<String, Set<String>> {
         val activeEntities = ActiveEntitiesCollector()
-        val startDate = period.start
-        val endDate = period.end
-        
+
         repository.serviceJourneys.forEach { (serviceJourneyId, serviceJourneyData) ->
             processServiceJourney(
                 serviceJourneyId, 
                 serviceJourneyData, 
-                startDate, 
-                endDate, 
+                timePeriod,
                 activeEntities
             )
         }
@@ -30,8 +27,7 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
             processDeadRun(
                 deadRunId,
                 vehicleJourneyData,
-                startDate,
-                endDate,
+                timePeriod,
                 activeEntities
             )
         }
@@ -76,39 +72,37 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
     private fun processServiceJourney(
         serviceJourneyId: String,
         vehicleJourneyData: VehicleJourneyData,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        timePeriod: TimePeriod,
         activeEntities: ActiveEntitiesCollector
     ) {
         val dayOffset = vehicleJourneyData.finalArrivalDayOffset
         
         // Process day types
         vehicleJourneyData.dayTypes.forEach { dayTypeId ->
-            processDayType(serviceJourneyId, dayTypeId, dayOffset, startDate, endDate, activeEntities)
+            processDayType(serviceJourneyId, dayTypeId, dayOffset, timePeriod, activeEntities)
         }
         
         // Process direct operating days
         vehicleJourneyData.operatingDays.forEach { operatingDayId ->
-            processOperatingDay(serviceJourneyId, operatingDayId, dayOffset, startDate, endDate, activeEntities)
+            processOperatingDay(serviceJourneyId, operatingDayId, dayOffset, timePeriod, activeEntities)
         }
     }
 
     private fun processDeadRun(
         deadRunId: String,
         vehicleJourneyData: VehicleJourneyData,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        timePeriod: TimePeriod,
         activeEntities: ActiveEntitiesCollector
     ) {
         val dayOffset = vehicleJourneyData.finalArrivalDayOffset
 
         vehicleJourneyData.dayTypes.forEach { dayTypeId ->
-            processDayType(deadRunId, dayTypeId, dayOffset, startDate, endDate, activeEntities, isDeadRun = true)
+            processDayType(deadRunId, dayTypeId, dayOffset, timePeriod, activeEntities, isDeadRun = true)
         }
 
         // Process direct operating days
         vehicleJourneyData.operatingDays.forEach { operatingDayId ->
-            processOperatingDay(deadRunId, operatingDayId, dayOffset, startDate, endDate, activeEntities, isDeadRun = true)
+            processOperatingDay(deadRunId, operatingDayId, dayOffset, timePeriod, activeEntities, isDeadRun = true)
         }
     }
     
@@ -116,8 +110,7 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
         serviceJourneyId: String,
         dayTypeId: String,
         dayOffset: Long,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        timePeriod: TimePeriod,
         activeEntities: ActiveEntitiesCollector,
         isDeadRun: Boolean = false,
     ) {
@@ -131,8 +124,7 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
                 operatingPeriodId, 
                 dayTypeData.daysOfWeek,
                 dayOffset, 
-                startDate, 
-                endDate, 
+                timePeriod,
                 activeEntities,
                 isDeadRun = isDeadRun
             )
@@ -140,14 +132,14 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
         
         // Process operating days
         dayTypeData.operatingDays.forEach { operatingDayId ->
-            processOperatingDay(serviceJourneyId, operatingDayId, dayOffset, startDate, endDate, activeEntities, isDeadRun) {
+            processOperatingDay(serviceJourneyId, operatingDayId, dayOffset, timePeriod, activeEntities, isDeadRun) {
                 activeEntities.addDayType(dayTypeId)
             }
         }
         
         // Process dates
         dayTypeData.dates.forEach { date ->
-            if (isDateInPeriod(date, dayOffset, startDate, endDate)) {
+            if (isDateInPeriod(date, dayOffset, timePeriod)) {
                 if (isDeadRun) {
                     activeEntities.addDeadRun(serviceJourneyId)
                 } else {
@@ -164,15 +156,14 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
         operatingPeriodId: String,
         daysOfWeek: Set<DayOfWeek>,
         dayOffset: Long,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        timePeriod: TimePeriod,
         activeEntities: ActiveEntitiesCollector,
         isDeadRun: Boolean = false,
     ) {
         val period = resolveOperatingPeriod(operatingPeriodId) ?: return
         val activePeriod = filterPeriodByDaysOfWeek(period, daysOfWeek)
         
-        if (isPeriodOverlapping(activePeriod, dayOffset, startDate, endDate)) {
+        if (isPeriodOverlapping(activePeriod, dayOffset, timePeriod)) {
             if (isDeadRun) {
                 activeEntities.addDeadRun(vehicleJourneyId)
             } else {
@@ -193,15 +184,14 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
         vehicleJourneyId: String,
         operatingDayId: String,
         dayOffset: Long,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        timePeriod: TimePeriod,
         activeEntities: ActiveEntitiesCollector,
         isDeadRun: Boolean = false,
         additionalAction: (() -> Unit)? = null,
     ) {
         val calendarDate = repository.operatingDays[operatingDayId] ?: return
         
-        if (isDateInPeriod(calendarDate, dayOffset, startDate, endDate)) {
+        if (isDateInPeriod(calendarDate, dayOffset, timePeriod)) {
             if (isDeadRun) {
                 activeEntities.addDeadRun(vehicleJourneyId)
             } else {
@@ -242,15 +232,34 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
         }
     }
     
-    private fun isDateInPeriod(date: LocalDate, dayOffset: Long, startDate: LocalDate, endDate: LocalDate): Boolean {
+    private fun isDateInPeriod(date: LocalDate, dayOffset: Long, timePeriod: TimePeriod): Boolean {
         val adjustedDate = date.plusDays(dayOffset)
-        return !date.isAfter(endDate) && !adjustedDate.isBefore(startDate)
+
+        if (timePeriod.start == null && timePeriod.end != null) {
+            return !date.isAfter(timePeriod.end)
+        }
+
+        if (timePeriod.end == null && timePeriod.start != null) {
+            return !adjustedDate.isBefore(timePeriod.start)
+        }
+
+        return !date.isAfter(timePeriod.end) && !adjustedDate.isBefore(timePeriod.start)
     }
     
-    private fun isPeriodOverlapping(period: Period, dayOffset: Long, startDate: LocalDate, endDate: LocalDate): Boolean {
+    private fun isPeriodOverlapping(period: Period, dayOffset: Long, timePeriod: TimePeriod): Boolean {
         val fromDate = period.fromDate ?: return false
         val toDate = period.toDate ?: return false
-        
-        return !fromDate.isAfter(endDate) && !toDate.plusDays(dayOffset).isBefore(startDate)
+
+        val adjustedToDate = toDate.plusDays(dayOffset)
+
+        if (timePeriod.start == null && timePeriod.end != null) {
+            return !fromDate.isAfter(timePeriod.end)
+        }
+
+        if (timePeriod.end == null && timePeriod.start != null) {
+            return !adjustedToDate.isBefore(timePeriod.start)
+        }
+
+        return !fromDate.isAfter(timePeriod.end) && !adjustedToDate.isBefore(timePeriod.start)
     }
 }

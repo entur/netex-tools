@@ -2,8 +2,12 @@ package org.entur.netex.tools.lib.selections
 
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.EntityModel
 
-class EntitySelection(val selection: MutableMap<String, MutableMap<String, Entity>>): Selection() {
+class EntitySelection(
+    val selection: MutableMap<String, MutableMap<String, Entity>>,
+    val model: EntityModel
+): Selection() {
 
     private var externalRefs: MutableSet<String> = mutableSetOf()
 
@@ -59,13 +63,14 @@ class EntitySelection(val selection: MutableMap<String, MutableMap<String, Entit
 
         for (commonType in typesInCommon) {
             val idsInCommon = intersectIdsByType(otherEntitySelection, commonType)
-            if (idsInCommon.isNotEmpty()) {
-                val entitiesOfType = selection[commonType]!!
-                val commonEntities = entitiesOfType.filter { it.key in idsInCommon }
-                resultingMap.put(commonType, commonEntities.toMutableMap())
+            val entitiesInCommon = idsInCommon.map { model.getEntity(it) }
+            for (entity in entitiesInCommon) {
+                if (entity != null) {
+                    resultingMap.computeIfAbsent(commonType) { mutableMapOf() }[entity.id] = entity
+                }
             }
         }
 
-        return EntitySelection(resultingMap)
+        return EntitySelection(resultingMap, model)
     }
 }
