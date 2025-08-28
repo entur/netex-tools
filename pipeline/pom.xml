@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.entur.ror</groupId>
     <artifactId>netex-tools-parent</artifactId>
-    <version>0.0.11</version>
+    <version>0.0.12-SNAPSHOT</version>
     <relativePath>../parent</relativePath>
   </parent>
 
@@ -14,7 +14,7 @@
     <description>netex pipeline</description>
     <url>https://github.com/entur/netex-tools</url>
     <packaging>jar</packaging>
-    <version>0.0.11</version>
+    <version>0.0.12-SNAPSHOT</version>
 
     <dependencies>
         <dependency>
