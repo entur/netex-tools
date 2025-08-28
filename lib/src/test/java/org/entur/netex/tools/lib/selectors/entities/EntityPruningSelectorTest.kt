@@ -44,7 +44,7 @@ class EntityPruningSelectorTest {
             typesToRemove = setOf("unreferencedType"),
             entitySelection,
         )
-        val selection = selector.selectEntities(EntityModel(Alias.of(emptyMap())))
+        val selection = selector.selectEntities(entitySelection.model)
 
         assertNotNull(selection)
 

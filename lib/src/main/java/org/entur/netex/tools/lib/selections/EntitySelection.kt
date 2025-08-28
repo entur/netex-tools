@@ -8,14 +8,6 @@ class EntitySelection(
     val selection: MutableMap<String, MutableMap<String, Entity>>,
     val model: EntityModel
 ): Selection() {
-
-    private var externalRefs: MutableSet<String> = mutableSetOf()
-
-    init {
-        // TODO: Fix this line
-        externalRefs = selection.values.flatMap { it.values.flatMap { entity -> entity.externalRefs } }.toMutableSet()
-    }
-
     fun isSelected(e : Entity?) : Boolean {
         if (e == null) { return false }
         return isSelected(e.type, e.id)
@@ -43,7 +35,9 @@ class EntitySelection(
         return selection.values.flatMap { it.keys }.toHashSet()
     }
 
-    fun hasEntitiesReferringTo(entity: Entity) = entity.id in externalRefs
+    fun includesOneOf(entities: Collection<Entity>): Boolean {
+        return entities.any { includes(it) }
+    }
 
     private fun getIdsByType(type: String): Set<String> {
         return selection[type]?.keys ?: emptySet()

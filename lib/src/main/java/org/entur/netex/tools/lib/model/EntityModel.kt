@@ -15,6 +15,11 @@ class EntityModel(private val alias: Alias) {
         return entities.list(type)
     }
 
+    fun getEntitiesReferringTo(entity: Entity): List<Entity> {
+        val refs = references.get(entity.id)
+        return refs.mapNotNull { entities.get(it.source.id) }.distinct()
+    }
+
     fun getEntitesByTypeAndId(): MutableMap<String, MutableMap<String, Entity>> {
         return entities.entitiesByTypeAndId()
     }

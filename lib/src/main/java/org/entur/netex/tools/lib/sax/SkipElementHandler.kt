@@ -2,7 +2,6 @@ package org.entur.netex.tools.lib.sax
 
 import org.entur.netex.tools.lib.model.Element
 
-
 class SkipElementHandler(private val skipElements : Set<String>) {
     private var skipElement : Element? = null
 

@@ -20,6 +20,8 @@ class OutputNetexSaxHandler(
     private val output = outFile.bufferedWriter(Charsets.UTF_8)
     private var currentElement : Element? = null
     private var whiteSpace : String? = null
+
+    // TODO: Switch to using a BufferedWriter directly instead of accumulating in a StringBuilder
     private val outputBuffer = StringBuilder()
     private var currentEntityId: String = ""
 
@@ -29,6 +31,7 @@ class OutputNetexSaxHandler(
 
     override fun endDocument() {
         if (useSelfClosingTagsWhereApplicable) {
+            // TODO: Needs to be implemented differently when switching to using BufferedWriter directly
             val processedOutput = removeEmptyCollections(outputBuffer.toString())
             output.write(processedOutput)
         } else {
