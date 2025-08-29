@@ -15,8 +15,7 @@ class EntityPruningSelector(private val typesToRemove: Set<String>, private val 
             return true
         }
 
-        val entitiesReferringToEntity = model.getEntitiesReferringTo(entity)
-        return currentEntitySelection.includesOneOf(entitiesReferringToEntity)
+        return currentEntitySelection.hasEntitiesReferringTo(entity)
     }
 
     override fun selectEntities(model: EntityModel): EntitySelection {

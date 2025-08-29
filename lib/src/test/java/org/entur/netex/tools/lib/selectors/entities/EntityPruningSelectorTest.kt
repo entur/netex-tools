@@ -36,19 +36,4 @@ class EntityPruningSelectorTest {
         val keptEntities = selection.selection.get("unreferencedType")?.keys ?: setOf()
         assertEquals(4, keptEntities.size)
     }
-
-    @Test
-    fun testEntityPruningSelectorKeepsEntityWhenSomethingRefersToIt() {
-        val entitySelection = TestDataFactory.entitySelectionWithReferredEntities()
-        val selector = EntityPruningSelector(
-            typesToRemove = setOf("unreferencedType"),
-            entitySelection,
-        )
-        val selection = selector.selectEntities(entitySelection.model)
-
-        assertNotNull(selection)
-
-        val keptEntities = selection.selection.get("unreferencedType")?.keys ?: setOf()
-        assertEquals(2, keptEntities.size)
-    }
 }

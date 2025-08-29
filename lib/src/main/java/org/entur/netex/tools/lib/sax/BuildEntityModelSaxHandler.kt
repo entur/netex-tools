@@ -47,7 +47,8 @@ class BuildEntityModelSaxHandler(
         } else {
             val ref = attributes?.getValue("ref")
             if (ref != null) {
-                entities.addRef(nn(type), currentEntity!!, ref)
+                val ref = entities.addRef(nn(type), currentEntity!!, ref)
+                currentEntity!!.addExternalRef(ref)
             }
         }
         
