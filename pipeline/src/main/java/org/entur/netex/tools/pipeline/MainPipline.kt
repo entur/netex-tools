@@ -4,16 +4,27 @@ import org.entur.netex.tools.lib.config.JsonConfig
 import org.entur.netex.tools.pipeline.app.FilterNetexApp
 import java.io.File
 
-
 fun main(args : Array<String>) {
     if(args.size != 4) {
         printHelp()
         return
     }
 
+    val cliConfig = File(args[0])
+        .inputStream()
+        .use {
+            inputStream -> JsonConfig.loadCliConfig(inputStream)
+        }
+
+    val filterConfig = File(args[1])
+        .inputStream()
+        .use {
+            inputStream -> JsonConfig.loadFilterConfig(inputStream)
+        }
+
     val app = FilterNetexApp(
-        JsonConfig.loadCliConfig(File(args[0]).inputStream()),
-        JsonConfig.loadFilterConfig(File(args[1]).inputStream()),
+        cliConfig,
+        filterConfig,
         File(args[2]),
         File(args[3])
     )

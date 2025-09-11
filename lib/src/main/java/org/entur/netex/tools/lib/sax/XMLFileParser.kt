@@ -18,6 +18,8 @@ object XMLFileParser {
         
         // Set content handler and parse
         xmlReader.contentHandler = saxHandler
-        xmlReader.parse(InputSource(file.inputStream()))
+        file.inputStream().use { inputStream ->
+            xmlReader.parse(InputSource(inputStream))
+        }
     }
 }
