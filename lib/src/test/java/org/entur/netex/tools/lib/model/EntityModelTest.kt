@@ -24,6 +24,13 @@ class EntityModelTest {
     }
 
     @Test
+    fun testGetEntitiesReferringTo() {
+        val entities = subject.getEntitiesReferringTo(e)
+        assertEquals(1, entities.size)
+        assertTrue(entities.contains(f))
+    }
+
+    @Test
     fun getEntity() {
         assertEquals(e, subject.getEntity(eID))
         assertEquals(f, subject.getEntity(fID))

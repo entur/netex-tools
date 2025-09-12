@@ -6,6 +6,7 @@ import org.entur.netex.tools.lib.selections.EntitySelection
 class EntityModel(private val alias: Alias) {
     private val entities = EntityIndex()
     private val references = RefIndex()
+    private val referredEntities = mutableMapOf<String, MutableSet<Entity>>()
 
     fun addEntity(entity: Entity) = entities.add(entity)
 
@@ -15,19 +16,18 @@ class EntityModel(private val alias: Alias) {
         return entities.list(type)
     }
 
-    fun getEntitiesReferringTo(entity: Entity): List<Entity> {
-        val refs = references.get(entity.id)
-        return refs.mapNotNull { entities.get(it.source.id) }.distinct()
-    }
-
     fun getEntitesByTypeAndId(): MutableMap<String, MutableMap<String, Entity>> {
         return entities.entitiesByTypeAndId()
     }
 
-    fun addRef(type: String, entity: Entity, ref: String): Ref {
+    fun getEntitiesReferringTo(entity: Entity): Set<Entity> {
+        return referredEntities[entity.id] ?: emptySet()
+    }
+
+    fun addRef(type: String, entity: Entity, ref: String) {
         val refObject = Ref(type, entity, ref)
+        referredEntities.computeIfAbsent(ref) { mutableSetOf() }.add(entity)
         references.add(refObject)
-        return refObject
     }
 
     fun getRefsOfTypeFrom(sourceId: String, type: String): List<Ref> {
