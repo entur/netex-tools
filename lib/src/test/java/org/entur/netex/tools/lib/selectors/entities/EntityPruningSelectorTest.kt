@@ -8,6 +8,21 @@ import org.junit.jupiter.api.Test
 
 class EntityPruningSelectorTest {
     @Test
+    fun testEntityPruningSelectorRemovesUnreferencedEntities() {
+        val entitySelection = TestDataFactory.entitySelection(
+            entities = setOf(
+                TestDataFactory.defaultEntity("1", "JourneyPattern"),
+            )
+        )
+        val selector = EntityPruningSelector(
+            typesToRemove = setOf("JourneyPattern"),
+            entitySelection,
+        )
+        val selection = selector.selectEntities(EntityModel(Alias.of(emptyMap())))
+        assertEquals(0, selection.selection.size)
+    }
+
+    @Test
     fun testEntityPruningSelector() {
         val entitySelection = TestDataFactory.entitySelectionWithUnreferredEntities()
         val selector = EntityPruningSelector(

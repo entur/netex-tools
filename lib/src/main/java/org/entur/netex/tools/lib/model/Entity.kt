@@ -5,7 +5,6 @@ data class Entity(
     val type : String,
     val publication : String,
     val parent : Entity? = null,
-    val externalRefs: MutableSet<String> = mutableSetOf()
 ) {
     companion object {
         val EMPTY = "Ø"
@@ -25,9 +24,5 @@ data class Entity(
             return type
         }
         return parent.fullPath() + "/" + type
-    }
-
-    fun addExternalRef(ref: Ref) {
-        externalRefs.add(ref.ref)
     }
 }
