@@ -56,4 +56,15 @@ class EntitySelectionTest {
         assert(!intersection.isSelected(entity1))
         assert(!intersection.isSelected(entity3))
     }
+
+    @Test
+    fun testHasEntitiesReferringTo() {
+        val entity1 = TestDataFactory.defaultEntity("entity1")
+        val entity2 = TestDataFactory.defaultEntity("entity2")
+        val ref = TestDataFactory.defaultRef(entity1.id)
+
+        val entitySelection = TestDataFactory.entitySelection(listOf(entity1, entity2), setOf(ref))
+        assert(entitySelection.hasEntitiesReferringTo(entity1))
+        assert(!entitySelection.hasEntitiesReferringTo(entity2))
+    }
 }

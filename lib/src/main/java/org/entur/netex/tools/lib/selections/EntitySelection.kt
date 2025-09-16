@@ -31,21 +31,13 @@ class EntitySelection(
         return selection[entity.type]?.containsKey(entity.id) ?: false
     }
 
-    private var externalRefs: MutableSet<String> = mutableSetOf()
-
-    init {
-        // TODO: Fix this line
-        externalRefs = selection.values.flatMap { it.values.flatMap { entity -> entity.externalRefs } }.toMutableSet()
+    fun hasEntitiesReferringTo(entity: Entity): Boolean {
+        val entities = model.getEntitiesReferringTo(entity)
+        return entities.any { includes(it) }
     }
-
-    fun hasEntitiesReferringTo(entity: Entity) = entity.id in externalRefs
 
     fun allIds(): Set<String> {
         return selection.values.flatMap { it.keys }.toHashSet()
-    }
-
-    fun includesOneOf(entities: Collection<Entity>): Boolean {
-        return entities.any { includes(it) }
     }
 
     private fun getIdsByType(type: String): Set<String> {
