@@ -137,11 +137,11 @@ data class FilterNetexApp(
   }
 
   private fun buildEntityModel() {
-    logger.info("\nLoad xml files for building entity model")
-    parseXmlDocuments(input) { file ->
-      logger.info("  << ${file.absolutePath}")
+    logger.info("Load xml files for building entity model")
+    parseXmlDocuments(input) {
       createNetexSaxReadHandler()
     }
+    logger.info("Done reading xml files for building entity model. Model contains ${model.listAllEntities().size} entities and ${model.listAllRefs().size} references.")
   }
 
   private fun selectEntitiesToKeep(selectors: List<EntitySelector>): EntitySelection {
@@ -183,17 +183,18 @@ data class FilterNetexApp(
       throw IllegalArgumentException("Target file is not a directory : ${target.absolutePath}")
     }
 
+    logger.info("Writing filtered xml files to ${target.absolutePath}")
     parseXmlDocuments(input) { file ->
       val outFile = File(target, file.name)
-      logger.info("  >> ${outFile.absolutePath}")
       createNetexSaxWriteHandler(outFile, entitySelection, refSelection)
     }
+    logger.info("Done writing filtered xml files to ${target.absolutePath}")
   }
 
   private fun printReport(selection: EntitySelection) {
     if (cliConfig.printReport) {
-      model.printEntities(selection)
-      model.printReferences(selection)
+      logger.info(model.getEntitiesKeptReport(selection))
+      logger.info(model.getRefsKeptReport(selection))
     }
     logger.info("Filter NeTEx files done in ${(System.currentTimeMillis() - startTime)/1000.0} seconds.")
   }

@@ -48,25 +48,24 @@ class EntityModel(private val alias: Alias) {
 
     fun listAllRefs() : List<Ref> = references.listAll()
 
-    fun printEntities(selection : EntitySelection) {
+    fun getEntitiesKeptReport(selection : EntitySelection): String =
         Report(
             "SELECTED ENTITIES",
             entities.listAll(),
             alias,
             { it.fullPath() },
             { selection.isSelected(it) }
-        ).print()
-    }
+        ).report()
 
-    fun printReferences(selection : EntitySelection) {
+    fun getRefsKeptReport(selection : EntitySelection): String =
         Report(
             "SELECTED REFERENCES",
             references.listAll(),
             alias,
             { refStr(it) },
             { selection.isSelected(it.source) && selection.isSelected(getEntity(it.ref))}
-        ).print()
-    }
+        ).report()
+
     private fun refStr(ref : Ref) : String = ref.toString { entities.get(it)?.fullPath() ?: EMPTY }
     fun listAllEntities() = entities.listAll()
 }

@@ -77,7 +77,7 @@ class EntityModelTest {
     fun printReports() {
         // This is just making sure the report does not fail, it does not test anything
         val selection = EntitySelection(mutableMapOf(), EntityModel(Alias.of(mutableMapOf())))
-        subject.printEntities(selection)
-        subject.printReferences(selection)
+        subject.getEntitiesKeptReport(selection)
+        subject.getRefsKeptReport(selection)
     }
 }

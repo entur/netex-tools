@@ -146,8 +146,8 @@ data class FilterNetexApp(
 
   private fun printReport(selection: EntitySelection) {
     if (cliConfig.printReport) {
-      model.printEntities(selection)
-      model.printReferences(selection)
+      Log.info(model.getEntitiesKeptReport(selection))
+      Log.info(model.getRefsKeptReport(selection))
     }
     println("Filter NeTEx files done in ${(System.currentTimeMillis() - startTime)/1000.0} seconds.")
   }

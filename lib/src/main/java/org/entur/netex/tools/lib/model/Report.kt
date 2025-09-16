@@ -7,10 +7,11 @@ class Report<T>(
     val toStr : (T) -> String,
     val include : (T) -> Boolean
 ) {
-
-    fun print() {
+    fun report(): String {
         val countTotal = SetOfCounters()
         val countKept = SetOfCounters()
+
+        val reportString = StringBuilder()
 
         entities.forEach {
             val e = alias.abbreviate(toStr(it))
@@ -19,15 +20,17 @@ class Report<T>(
                 countKept.inc(e)
             }
         }
-        println("\n\n$title\n")
+
+        reportString.append("\n\n$title\n")
         val n = countTotal.listElements().map { it.length }.max()
 
         countTotal.listElements().sorted().forEach { type ->
             val total = countTotal.get(type)
             val kept = countKept.get(type)
             val k = if(kept == 0) "·" else kept
-            println(String.format("%-${n}s  %5s  %5d", type, k, total))
+            reportString.append(String.format("\n%-${n}s  %5s  %5d", type, k, total))
         }
-        println()
+
+        return reportString.toString()
     }
 }
