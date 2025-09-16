@@ -46,7 +46,12 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
                 return@forEach
             }
             val operatingDayId = operatingDayRefs[0].ref
-            if (serviceJourneyId in activeEntities.serviceJourneys() && operatingDayId in activeEntities.operatingDays()) {
+            if (shouldIncludeDatedServiceJourney(
+                serviceJourneyId,
+                operatingDayId,
+                activeEntities,
+                timePeriod
+            )) {
                 activeEntities.addDatedServiceJourney(datedServiceJourneyId)
             }
         }
@@ -67,6 +72,28 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
         }
         
         return activeEntities.toMap()
+    }
+
+    fun shouldIncludeDatedServiceJourney(
+        serviceJourneyId: String,
+        operatingDayId: String,
+        activeEntities: ActiveEntitiesCollector,
+        timePeriod: TimePeriod
+    ): Boolean {
+        if (serviceJourneyId in activeEntities.serviceJourneys() && operatingDayId in activeEntities.operatingDays()) {
+            val operatingDayDate = repository.operatingDays.get(operatingDayId)
+            val finalArrivalDayOffsetForServiceJourney = repository.serviceJourneys.get(serviceJourneyId)?.finalArrivalDayOffset
+            if (operatingDayDate == null || finalArrivalDayOffsetForServiceJourney == null) {
+                return false
+            }
+            val isDateInPeriod = isDateInPeriod(
+                date = operatingDayDate,
+                dayOffset = finalArrivalDayOffsetForServiceJourney,
+                timePeriod = timePeriod
+            )
+            return isDateInPeriod
+        }
+        return false
     }
 
     private fun processServiceJourney(
