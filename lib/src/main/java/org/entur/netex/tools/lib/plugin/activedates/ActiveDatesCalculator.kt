@@ -58,20 +58,18 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
 
         val dayTypeAssignments = entityModel.getEntitiesOfType(NetexTypes.DAY_TYPE_ASSIGNMENT)
         dayTypeAssignments.forEach { (dayTypeAssignmentId) ->
-            val dayTypeRefs = entityModel.getRefsOfTypeFrom(dayTypeAssignmentId, NetexTypes.DAY_TYPE_REF)
-            if (dayTypeRefs.size != 1) {
-                // Invalid day type assignment, skip processing
-                return@forEach
-            }
-            val dayTypeId = dayTypeRefs[0].ref
-
-            // Check if the day type is active in the period
-            if (dayTypeId in activeEntities.dayTypes()) {
+            if (shouldIncludeDayTypeAssignment(dayTypeAssignmentId, activeEntities, entityModel)) {
                 activeEntities.addDayTypeAssignment(dayTypeAssignmentId)
             }
         }
         
         return activeEntities.toMap()
+    }
+
+    fun shouldIncludeDayTypeAssignment(dayTypeAssignmentId: String, activeEntities: ActiveEntitiesCollector, entityModel: EntityModel): Boolean {
+        val dayTypeRefs = entityModel.getRefsOfTypeFrom(dayTypeAssignmentId, NetexTypes.DAY_TYPE_REF)
+        val dayTypeRefValues = dayTypeRefs.map { it.ref }
+        return dayTypeRefValues.any( activeEntities.dayTypes()::contains )
     }
 
     fun shouldIncludeDatedServiceJourney(
