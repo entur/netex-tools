@@ -3,17 +3,19 @@ package org.entur.netex.tools.lib.sax
 import org.apache.commons.lang3.StringEscapeUtils
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.EntityModel
+import org.entur.netex.tools.lib.report.FileIndex
 import org.slf4j.LoggerFactory
 import org.xml.sax.Attributes
 import org.xml.sax.ext.LexicalHandler
 import java.io.File
 
 class OutputNetexSaxHandler(
-    outFile : File,
+    private val outFile : File,
     private val entityModel : EntityModel,
     private val skipHandler : SkipEntityAndElementHandler,
     private val preserveComments : Boolean,
     private val useSelfClosingTagsWhereApplicable : Boolean,
+    private val fileIndex: FileIndex,
 ) : NetexToolsSaxHandler(), LexicalHandler {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -81,6 +83,10 @@ class OutputNetexSaxHandler(
             if (entity != null && skipHandler.shouldSkip(entity)) {
                 skipHandler.startSkip(element)
                 return
+            }
+
+            if (entity != null) {
+                fileIndex.add(entity, outFile)
             }
         }
 

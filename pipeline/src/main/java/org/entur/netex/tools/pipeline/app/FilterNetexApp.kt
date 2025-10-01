@@ -8,6 +8,8 @@ import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
+import org.entur.netex.tools.lib.report.FileIndex
+import org.entur.netex.tools.lib.report.FilterReport
 import org.entur.netex.tools.lib.sax.*
 import org.entur.netex.tools.lib.selectors.entities.ActiveDatesSelector
 import org.entur.netex.tools.lib.selectors.entities.AllEntitiesSelector
@@ -36,12 +38,13 @@ data class FilterNetexApp(
   val skipElements = filterConfig.skipElements.toHashSet()
   val startTime = System.currentTimeMillis()
   val model = EntityModel(cliConfig.alias())
+  val fileIndex = FileIndex()
 
   // Plugin system
   private val activeDatesPlugin = ActiveDatesPlugin(ActiveDatesRepository())
   private val plugins = listOf(activeDatesPlugin)
 
-  fun run(): Pair<Set<String>, Set<String>> {
+  fun run(): FilterReport {
     setupAndLogStartupInfo()
 
     // Step 1: collect data needed for filtering out entities
@@ -80,7 +83,10 @@ data class FilterNetexApp(
 
     printReport(entitiesToKeep)
 
-    return Pair(entitiesToKeep.allIds(), refSelection.selection.map { it.ref }.toSet())
+    return FilterReport(
+        entitiesByFile = fileIndex.entitiesByFile,
+        elementTypesByFile = fileIndex.elementTypesByFile,
+    )
   }
 
   val skipElementsSelector = SkipElementsSelector(skipElements)
@@ -211,5 +217,6 @@ data class FilterNetexApp(
     SkipEntityAndElementHandler(entitySelection, refSelection),
     filterConfig.preserveComments,
     filterConfig.useSelfClosingTagsWhereApplicable,
+    fileIndex
   )
 }

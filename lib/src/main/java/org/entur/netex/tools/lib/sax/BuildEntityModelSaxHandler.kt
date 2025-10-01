@@ -4,6 +4,7 @@ import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.Entity.Companion.EMPTY
 import org.entur.netex.tools.lib.model.EntityModel
+import org.entur.netex.tools.lib.model.Ref
 import org.entur.netex.tools.lib.plugin.NetexPlugin
 import org.entur.netex.tools.lib.plugin.PluginRegistry
 import org.xml.sax.Attributes
@@ -47,7 +48,8 @@ class BuildEntityModelSaxHandler(
         } else {
             val ref = attributes?.getValue("ref")
             if (ref != null) {
-                entities.addRef(nn(type), currentEntity!!, ref)
+                val refObject = Ref(nn(type), currentEntity!!, ref)
+                entities.addRef(refObject)
             }
         }
         

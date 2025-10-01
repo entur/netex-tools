@@ -8,6 +8,7 @@ import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
+import org.entur.netex.tools.lib.report.FileIndex
 import org.entur.netex.tools.lib.sax.*
 import org.entur.netex.tools.lib.selectors.entities.ActiveDatesSelector
 import org.entur.netex.tools.lib.selectors.entities.AllEntitiesSelector
@@ -153,9 +154,9 @@ data class FilterNetexApp(
   }
 
   private fun createNetexSaxReadHandler() = BuildEntityModelSaxHandler(
-    model,
-    SkipElementHandler(skipElements),
-    plugins,
+    entities = model,
+    skipHandler = SkipElementHandler(skipElements),
+    plugins = plugins,
   )
 
   private fun createNetexSaxWriteHandler(file: File, entitySelection: EntitySelection, refSelection: RefSelection) = OutputNetexSaxHandler(
@@ -164,5 +165,6 @@ data class FilterNetexApp(
     SkipEntityAndElementHandler(entitySelection, refSelection),
     filterConfig.preserveComments,
     filterConfig.useSelfClosingTagsWhereApplicable,
+    fileIndex = FileIndex()
   )
 }

@@ -36,26 +36,6 @@ object TestDataFactory {
         return entitySelection(entities)
     }
 
-    fun entitySelectionWithReferredEntities(): EntitySelection {
-        val entities = listOf(
-            defaultEntity(id = "entity1", type = "unreferencedType"),
-            defaultEntity(id = "entity2", type = "unreferencedType"),
-        )
-        val refs = setOf(
-            Ref(
-                type = "unreferencedType",
-                source = entities[0],
-                ref = entities[1].id
-            ),
-            Ref(
-                type = "unreferencedType",
-                source = entities[1],
-                ref = entities[0].id
-            ),
-        )
-        return entitySelection(entities, refs)
-    }
-
     fun entitySelection(entities: Collection<Entity>, refs: Set<Ref> = emptySet()) : EntitySelection {
         val entitySelection = mutableMapOf<String, MutableMap<String, Entity>>()
         val entityModel = EntityModel(alias = Alias.of(emptyMap()))
@@ -67,7 +47,7 @@ object TestDataFactory {
                 entitySelection[entity.type] = mutableMapOf(entity.id to entity)
             }
         }
-        refs.forEach { entityModel.addRef(it.type, it.source, it.ref) }
+        refs.forEach { entityModel.addRef(it) }
         return EntitySelection(entitySelection, entityModel)
     }
 

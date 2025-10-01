@@ -20,7 +20,7 @@ class EntityModelTest {
     fun addEntity() {
         subject.addEntity(f)
         subject.addEntity(e)
-        subject.addRef("MyTypeRef", f, eID)
+        subject.addRef(Ref("MyTypeRef", f, eID))
     }
 
     @Test

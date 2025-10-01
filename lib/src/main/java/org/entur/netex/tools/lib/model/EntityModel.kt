@@ -24,9 +24,8 @@ class EntityModel(private val alias: Alias) {
         return referredEntities[entity.id] ?: emptySet()
     }
 
-    fun addRef(type: String, entity: Entity, ref: String) {
-        val refObject = Ref(type, entity, ref)
-        referredEntities.computeIfAbsent(ref) { mutableSetOf() }.add(entity)
+    fun addRef(refObject: Ref) {
+        referredEntities.computeIfAbsent(refObject.ref) { mutableSetOf() }.add(refObject.source)
         references.add(refObject)
     }
 
