@@ -3,6 +3,7 @@ package org.entur.netex.tools.lib.data
 import org.entur.netex.tools.lib.model.Alias
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.EntityId
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.model.PublicationEnumeration
@@ -14,7 +15,7 @@ object TestDataFactory {
     fun defaultEntityModel(): EntityModel = EntityModel(alias = Alias.of(emptyMap()))
 
     fun defaultEntity(id: String, type: String = "testType"): Entity = Entity(
-        id = id,
+        id = EntityId.Simple(id = id),
         type = type,
         publication = PublicationEnumeration.PUBLIC.toString(),
         parent = null
@@ -37,12 +38,13 @@ object TestDataFactory {
     }
 
     fun entitySelection(entities: Collection<Entity>, refs: Set<Ref> = emptySet()) : EntitySelection {
-        val entitySelection = mutableMapOf<String, MutableMap<String, Entity>>()
+        val entitySelection = mutableMapOf<String, MutableMap<EntityId, Entity>>()
         val entityModel = EntityModel(alias = Alias.of(emptyMap()))
         entities.forEach { entity ->
             entityModel.addEntity(entity)
             if (entitySelection.containsKey(entity.type)) {
-                entitySelection[entity.type]?.put(entity.id, entity)
+                val entityId = EntityId.Simple(id = (entity.id as EntityId.Simple).id)
+                entitySelection[entity.type]?.put(entityId, entity)
             } else {
                 entitySelection[entity.type] = mutableMapOf(entity.id to entity)
             }

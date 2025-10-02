@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Test
 
 class EntityTest {
 
-    val gpID = "gp"
-    val pID = "p"
-    val cID = "c"
+    val gpID = EntityId.Simple("gp")
+    val pID = EntityId.Simple("p")
+    val cID = EntityId.Simple("c")
 
     val grandParent = Entity(gpID, "GrandParent", PublicationEnumeration.PUBLIC.value)
     val parent = Entity(pID, "Parent", PublicationEnumeration.PUBLIC.value, grandParent)

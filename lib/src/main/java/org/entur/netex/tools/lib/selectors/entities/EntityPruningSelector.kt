@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.selectors.entities
 
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.EntityId
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
 
@@ -23,7 +24,7 @@ class EntityPruningSelector(private val typesToRemove: Set<String>, private val 
         var hasPrunedEntities: Boolean
         do {
             hasPrunedEntities = false
-            val entitiesToKeep = mutableMapOf<String, MutableMap<String, Entity>>()
+            val entitiesToKeep = mutableMapOf<String, MutableMap<EntityId, Entity>>()
             val entities = currentEntitySelection.selection.values.flatMap { it.values }
             entities
                 .filter({ entity ->

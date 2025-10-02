@@ -1,7 +1,7 @@
 package org.entur.netex.tools.lib.model
 
 data class Entity(
-    val id : String,
+    val id : EntityId,
     val type : String,
     val publication : String,
     val parent : Entity? = null,
@@ -10,7 +10,13 @@ data class Entity(
         val EMPTY = "Ø"
     }
 
-    override fun toString() : String = "($id ${fullPath()})"
+    override fun toString() : String {
+        val entityId = when(id) {
+            is EntityId.Simple -> id.id
+            is EntityId.Composite -> "${id.id}(${id.version},${id.order})"
+        }
+        return "($entityId ${fullPath()})"
+    }
 
     fun path(): String {
         if(parent == null) {

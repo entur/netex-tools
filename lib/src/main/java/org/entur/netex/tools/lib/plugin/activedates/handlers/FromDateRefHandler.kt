@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.plugin.activedates.handlers
 
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.EntityId
 import org.entur.netex.tools.lib.model.NetexTypes
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesParsingContext
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
@@ -17,10 +18,10 @@ class FromDateRefHandler(
         currentEntity: Entity
     ) {
         if (currentEntity.type == NetexTypes.OPERATING_PERIOD) {
-            val operatingPeriodId = currentEntity.id
+            val operatingPeriodId = currentEntity.id as EntityId.Simple
             val fromDateRef = attributes?.getValue("ref")
             val opPeriodData = activeDatesRepository.getOperatingPeriodData(operatingPeriodId)
-            opPeriodData.fromDateId = fromDateRef.toString()
+            opPeriodData.fromDateId = EntityId.Simple(fromDateRef.toString())
         }
     }
 }

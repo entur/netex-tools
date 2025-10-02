@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.plugin.activedates.handlers
 
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.EntityId
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesParsingContext
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.NetexDataCollector
@@ -15,7 +16,8 @@ class CalendarDateHandler(val activeDatesRepository: ActiveDatesRepository): Net
 
     override fun endElement(context: ActiveDatesParsingContext, currentEntity: Entity) {
         val calendarDate = LocalDate.parse(stringBuilder.trim().toString())
-        activeDatesRepository.operatingDays[currentEntity.id] = calendarDate
+        val operatingDayId = currentEntity.id as EntityId.Simple
+        activeDatesRepository.operatingDays[operatingDayId] = calendarDate
         stringBuilder.setLength(0)
     }
 }

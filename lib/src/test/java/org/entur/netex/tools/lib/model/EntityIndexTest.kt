@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Test
 
 class EntityIndexTest {
 
-    private val eV0 = Entity("e1", "Type", PublicationEnumeration.PUBLIC.value)
-    private val eV1 = Entity("e1", "TypeV2", PublicationEnumeration.PUBLIC.value)
-    private val f = Entity("f1", "Other", PublicationEnumeration.PUBLIC.value)
+    private val eV0 = Entity(EntityId.Simple("e1"), "Type", PublicationEnumeration.PUBLIC.value)
+    private val eV1 = Entity(EntityId.Simple("e1"), "TypeV2", PublicationEnumeration.PUBLIC.value)
+    private val f = Entity(EntityId.Simple("f1"), "Other", PublicationEnumeration.PUBLIC.value)
 
     private var subject = EntityIndex()
 

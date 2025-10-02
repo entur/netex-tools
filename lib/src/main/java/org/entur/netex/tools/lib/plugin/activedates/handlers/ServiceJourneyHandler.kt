@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.plugin.activedates.handlers
 
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.EntityId
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesParsingContext
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.NetexDataCollector
@@ -12,7 +13,7 @@ class ServiceJourneyHandler(val activeDatesRepository: ActiveDatesRepository): N
         attributes: Attributes?,
         currentEntity: Entity
     ) {
-        context.currentServiceJourneyId = currentEntity.id
+        context.currentServiceJourneyId = currentEntity.id as EntityId.Simple
     }
 
     override fun endElement(context: ActiveDatesParsingContext, currentEntity: Entity) {

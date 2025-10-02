@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.selectors.entities
 
 import org.entur.netex.tools.lib.data.TestDataFactory
+import org.entur.netex.tools.lib.model.EntityId
 import org.entur.netex.tools.lib.model.Ref
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -27,8 +28,9 @@ class ServiceJourneyInterchangeSelectorTest {
         val entityModel = TestDataFactory.defaultEntityModel()
         entityModel.addEntity(interchange1)
         entityModel.addEntity(interchange2)
-        entityModel.addRef(Ref("FromJourneyRef", interchange1, serviceJourney1.id))
-        entityModel.addRef(Ref("ToJourneyRef", interchange1, serviceJourney2.id))
+
+        entityModel.addRef(Ref("FromJourneyRef", interchange1, serviceJourney1.id.id))
+        entityModel.addRef(Ref("ToJourneyRef", interchange1, serviceJourney2.id.id))
 
         val selector = ServiceJourneyInterchangeSelector(entitySelection)
         val selection = selector.selectEntities(entityModel)

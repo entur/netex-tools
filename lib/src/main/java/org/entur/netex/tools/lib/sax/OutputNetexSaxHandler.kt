@@ -2,6 +2,8 @@ package org.entur.netex.tools.lib.sax
 
 import org.apache.commons.lang3.StringEscapeUtils
 import org.entur.netex.tools.lib.model.Element
+import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.EntityId
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.report.FileIndex
 import org.slf4j.LoggerFactory
@@ -73,13 +75,23 @@ class OutputNetexSaxHandler(
         logger.info("skippedEntity - name: $name")
     }
 
+    fun getEntity(element: Element): Entity? {
+        val id = element.getAttribute("id")
+        val version = element.getAttribute("version")
+        val order = element.getAttribute("order")
+
+        val simpleEntityId = EntityId.Simple(id = id)
+        val compositeEntityId = EntityId.Composite(id = id, version = version, order = order)
+        return entityModel.getEntity(simpleEntityId) ?: entityModel.getEntity(compositeEntityId)
+    }
+
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         currentElement = Element(qName!!, currentElement, attributes)
         val element: Element = currentElement!!
 
         if (element.isEntity()) {
             currentEntityId = element.getAttribute("id")
-            val entity = entityModel.getEntity(currentEntityId)
+            val entity = getEntity(element)
             if (entity != null && skipHandler.shouldSkip(entity)) {
                 skipHandler.startSkip(element)
                 return
@@ -92,7 +104,11 @@ class OutputNetexSaxHandler(
 
         if (element.isRef()) {
             val refAttributeValue = element.getAttribute("ref")
-            val ref = entityModel.getRefOfTypeFromSourceIdAndRef(currentEntityId, qName, refAttributeValue)
+            val ref = entityModel.getRefOfTypeFromSourceIdAndRef(
+                sourceId = EntityId.Simple(currentEntityId),
+                type = qName,
+                ref = EntityId.Simple(refAttributeValue)
+            )
             if (ref != null && skipHandler.shouldSkip(ref)) {
                 skipHandler.startSkip(element)
                 return

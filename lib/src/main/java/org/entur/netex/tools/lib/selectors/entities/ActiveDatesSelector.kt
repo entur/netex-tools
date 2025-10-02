@@ -2,6 +2,7 @@ package org.entur.netex.tools.lib.selectors.entities
 
 import org.entur.netex.tools.lib.config.TimePeriod
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.EntityId
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesCalculator
@@ -13,7 +14,7 @@ class ActiveDatesSelector(val activeDatesPlugin: ActiveDatesPlugin, val period: 
     override fun selectEntities(model: EntityModel): EntitySelection {
         val calculator = ActiveDatesCalculator(activeDatesPlugin.getCollectedData())
         val activeEntities = calculator.activeDateEntitiesInPeriod(period, model)
-        val activeEntitiesMap = mutableMapOf<String, MutableMap<String, Entity>>()
+        val activeEntitiesMap = mutableMapOf<String, MutableMap<EntityId, Entity>>()
 
         val entitiesByTypeAndId = model.getEntitesByTypeAndId()
         entitiesByTypeAndId.forEach { (type, entities) ->
@@ -21,11 +22,11 @@ class ActiveDatesSelector(val activeDatesPlugin: ActiveDatesPlugin, val period: 
                 val idsOfActiveEntitiesWithType = activeEntities[type]
                 val entitiesToKeep = entities.filter { idsOfActiveEntitiesWithType?.contains(it.key) == true  }
                 if (entitiesToKeep.isNotEmpty()) {
-                    activeEntitiesMap.put(type, entitiesToKeep.toMutableMap())
+                    activeEntitiesMap[type] = entitiesToKeep.toMutableMap()
                 }
             } else {
                 // If no active entities for this type, keep all entities of this type
-                activeEntitiesMap.put(type, entities.toMutableMap())
+                activeEntitiesMap[type] = entities.toMutableMap()
             }
         }
 

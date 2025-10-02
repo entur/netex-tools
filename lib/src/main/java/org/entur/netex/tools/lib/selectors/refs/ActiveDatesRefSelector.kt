@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.selectors.refs
 
 import org.entur.netex.tools.lib.config.TimePeriod
+import org.entur.netex.tools.lib.model.EntityId
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import org.entur.netex.tools.lib.plugin.activedates.data.DayTypeData
@@ -48,8 +49,8 @@ class ActiveDatesRefSelector(val activeDatesPlugin: ActiveDatesPlugin, val perio
         val dayTypes = repository.dayTypes
 
         for ((serviceJourneyId, serviceJourneyData) in serviceJourneys) {
-            val dayTypesOfServiceJourney = mutableMapOf<String, DayTypeData>()
-            serviceJourneyData.dayTypes.forEach { dayTypesOfServiceJourney.put(it, dayTypes[it]!!) }
+            val dayTypesOfServiceJourney = mutableMapOf<EntityId.Simple, DayTypeData>()
+            serviceJourneyData.dayTypes.forEach { dayTypesOfServiceJourney[it] = dayTypes[it]!! }
             for ((dayTypeRef, dayTypeData) in dayTypesOfServiceJourney) {
                 val datesWithinPeriod = dayTypeData.dates.filter {
                     isDateInPeriod(it, serviceJourneyData.finalArrivalDayOffset, period)

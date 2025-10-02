@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.plugin.activedates.handlers
 
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.EntityId
 import org.entur.netex.tools.lib.model.NetexTypes
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesParsingContext
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
@@ -20,7 +21,7 @@ class ToDateHandler(
     override fun endElement(context: ActiveDatesParsingContext, currentEntity: Entity) {
         if (currentEntity.type == NetexTypes.OPERATING_PERIOD) {
             val operatingPeriodId = currentEntity.id
-            val opPeriodData = activeDatesRepository.getOperatingPeriodData(operatingPeriodId)
+            val opPeriodData = activeDatesRepository.getOperatingPeriodData(operatingPeriodId as EntityId.Simple)
             val existingFromDate = opPeriodData.period?.fromDate
             opPeriodData.period = Period(
                 fromDate = existingFromDate,

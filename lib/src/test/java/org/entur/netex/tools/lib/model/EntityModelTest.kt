@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.model
 
 import org.entur.netex.tools.lib.selections.EntitySelection
+import org.entur.netex.tools.lib.selections.RefSelection
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -11,8 +12,8 @@ class EntityModelTest {
 
     val eID = "e1"
     val fID = "f1"
-    private val e = Entity(eID, "MyType", PublicationEnumeration.PUBLIC.value)
-    private val f = Entity(fID, "Other", PublicationEnumeration.PUBLIC.value, e)
+    private val e = Entity(EntityId.Simple(eID), "MyType", PublicationEnumeration.PUBLIC.value)
+    private val f = Entity(EntityId.Simple(fID), "Other", PublicationEnumeration.PUBLIC.value, e)
 
     private val subject = EntityModel(Alias(mutableMapOf(Pair("MyType", "MT"))))
 
@@ -32,8 +33,8 @@ class EntityModelTest {
 
     @Test
     fun getEntity() {
-        assertEquals(e, subject.getEntity(eID))
-        assertEquals(f, subject.getEntity(fID))
+        assertEquals(e, subject.getEntity(EntityId.Simple(eID)))
+        assertEquals(f, subject.getEntity(EntityId.Simple(fID)))
     }
 
 
@@ -78,6 +79,6 @@ class EntityModelTest {
         // This is just making sure the report does not fail, it does not test anything
         val selection = EntitySelection(mutableMapOf(), EntityModel(Alias.of(mutableMapOf())))
         subject.getEntitiesKeptReport(selection)
-        subject.getRefsKeptReport(selection)
+        subject.getRefsKeptReport(selection, RefSelection(mutableSetOf()))
     }
 }

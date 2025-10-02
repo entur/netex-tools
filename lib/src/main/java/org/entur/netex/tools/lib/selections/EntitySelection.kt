@@ -2,10 +2,11 @@ package org.entur.netex.tools.lib.selections
 
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.EntityId
 import org.entur.netex.tools.lib.model.EntityModel
 
 class EntitySelection(
-    val selection: MutableMap<String, MutableMap<String, Entity>>,
+    val selection: MutableMap<String, MutableMap<EntityId, Entity>>,
     val model: EntityModel
 ): Selection() {
     fun isSelected(e : Entity?) : Boolean {
@@ -13,7 +14,7 @@ class EntitySelection(
         return isSelected(e.type, e.id)
     }
 
-    fun isSelected(type : String, id : String?) : Boolean {
+    fun isSelected(type : String, id : EntityId?) : Boolean {
         if (id == null) return false
         val m = selection[type]
         return m != null && m.containsKey(id)
@@ -24,7 +25,10 @@ class EntitySelection(
             return false
         }
         val id = element.attributes?.getValue("id")
-        return isSelected(element.name, id)
+        val version = element.getAttribute("version")
+        val order = element.getAttribute("order")
+        return isSelected(element.name, EntityId.Simple(id ?: "")) ||
+               isSelected(element.name, EntityId.Composite(id ?: "", version, order))
     }
 
     fun includes(entity: Entity) : Boolean {
@@ -36,15 +40,15 @@ class EntitySelection(
         return entities.any { includes(it) }
     }
 
-    fun allIds(): Set<String> {
+    fun allIds(): Set<EntityId> {
         return selection.values.flatMap { it.keys }.toHashSet()
     }
 
-    private fun getIdsByType(type: String): Set<String> {
+    private fun getIdsByType(type: String): Set<EntityId> {
         return selection[type]?.keys ?: emptySet()
     }
 
-    private fun intersectIdsByType(otherSelection: EntitySelection, type: String): Set<String> {
+    private fun intersectIdsByType(otherSelection: EntitySelection, type: String): Set<EntityId> {
         val idsFromSelf = getIdsByType(type)
         val idsFromOther = otherSelection.getIdsByType(type)
         return idsFromSelf.intersect(idsFromOther)
@@ -53,7 +57,7 @@ class EntitySelection(
     fun intersectWith(
         otherEntitySelection: EntitySelection
     ): EntitySelection {
-        val resultingMap = mutableMapOf<String, MutableMap<String, Entity>>()
+        val resultingMap = mutableMapOf<String, MutableMap<EntityId, Entity>>()
         val typesInCommon = selection.keys.intersect(otherEntitySelection.selection.keys)
 
         for (commonType in typesInCommon) {

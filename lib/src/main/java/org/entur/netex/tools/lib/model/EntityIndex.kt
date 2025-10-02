@@ -1,9 +1,9 @@
 package org.entur.netex.tools.lib.model
 
 class EntityIndex {
-    private val mapById = mutableMapOf<String, Entity>()
+    private val mapById = mutableMapOf<EntityId, Entity>()
     private val mapByType = mutableMapOf<String, MutableList<Entity>>()
-    private val mapByTypeAndId = mutableMapOf<String, MutableMap<String, Entity>>()
+    private val mapByTypeAndId = mutableMapOf<String, MutableMap<EntityId, Entity>>()
 
     fun add(e : Entity): Boolean {
         if(!mapById.containsKey(e.id)) {
@@ -15,11 +15,11 @@ class EntityIndex {
         return false
     }
 
-    fun get(id : String) = mapById[id]
+    fun get(id : EntityId) = mapById[id]
 
     fun list(type : String) : List<Entity> = mapByType[type] ?: listOf()
 
     fun listAll() : Collection<Entity> = mapById.values
 
-    fun entitiesByTypeAndId() : MutableMap<String, MutableMap<String, Entity>> = mapByTypeAndId
+    fun entitiesByTypeAndId() : MutableMap<String, MutableMap<EntityId, Entity>> = mapByTypeAndId
 }

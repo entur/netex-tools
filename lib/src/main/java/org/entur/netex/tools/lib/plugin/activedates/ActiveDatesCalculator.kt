@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.plugin.activedates
 
 import org.entur.netex.tools.lib.config.TimePeriod
+import org.entur.netex.tools.lib.model.EntityId
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.model.NetexTypes
 import org.entur.netex.tools.lib.plugin.activedates.data.VehicleJourneyData
@@ -11,7 +12,7 @@ import java.time.LocalDate
 
 class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
     
-    fun activeDateEntitiesInPeriod(timePeriod: TimePeriod, entityModel: EntityModel): Map<String, Set<String>> {
+    fun activeDateEntitiesInPeriod(timePeriod: TimePeriod, entityModel: EntityModel): Map<String, Set<EntityId>> {
         val activeEntities = ActiveEntitiesCollector()
 
         repository.serviceJourneys.forEach { (serviceJourneyId, serviceJourneyData) ->
@@ -39,13 +40,13 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
                 // Invalid dated service journey, skip processing
                 return@forEach
             }
-            val serviceJourneyId = serviceJourneyRefs[0].ref
+            val serviceJourneyId = EntityId.Simple(serviceJourneyRefs[0].ref)
             val operatingDayRefs = entityModel.getRefsOfTypeFrom(datedServiceJourneyId, NetexTypes.OPERATING_DAY_REF)
             if (operatingDayRefs.size != 1) {
                 // Invalid dated service journey, skip processing
                 return@forEach
             }
-            val operatingDayId = operatingDayRefs[0].ref
+            val operatingDayId = EntityId.Simple(operatingDayRefs[0].ref)
             if (shouldIncludeDatedServiceJourney(
                 serviceJourneyId,
                 operatingDayId,
@@ -66,15 +67,15 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
         return activeEntities.toMap()
     }
 
-    fun shouldIncludeDayTypeAssignment(dayTypeAssignmentId: String, activeEntities: ActiveEntitiesCollector, entityModel: EntityModel): Boolean {
+    fun shouldIncludeDayTypeAssignment(dayTypeAssignmentId: EntityId, activeEntities: ActiveEntitiesCollector, entityModel: EntityModel): Boolean {
         val dayTypeRefs = entityModel.getRefsOfTypeFrom(dayTypeAssignmentId, NetexTypes.DAY_TYPE_REF)
         val dayTypeRefValues = dayTypeRefs.map { it.ref }
-        return dayTypeRefValues.any( activeEntities.dayTypes()::contains )
+        return dayTypeRefValues.any( activeEntities.dayTypes().map { it.id }::contains )
     }
 
     fun shouldIncludeDatedServiceJourney(
-        serviceJourneyId: String,
-        operatingDayId: String,
+        serviceJourneyId: EntityId.Simple,
+        operatingDayId: EntityId.Simple,
         activeEntities: ActiveEntitiesCollector,
         timePeriod: TimePeriod
     ): Boolean {
@@ -95,7 +96,7 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
     }
 
     private fun processServiceJourney(
-        serviceJourneyId: String,
+        serviceJourneyId: EntityId.Simple,
         vehicleJourneyData: VehicleJourneyData,
         timePeriod: TimePeriod,
         activeEntities: ActiveEntitiesCollector
@@ -114,7 +115,7 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
     }
 
     private fun processDeadRun(
-        deadRunId: String,
+        deadRunId: EntityId.Simple,
         vehicleJourneyData: VehicleJourneyData,
         timePeriod: TimePeriod,
         activeEntities: ActiveEntitiesCollector
@@ -132,8 +133,8 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
     }
     
     private fun processDayType(
-        serviceJourneyId: String,
-        dayTypeId: String,
+        serviceJourneyId: EntityId.Simple,
+        dayTypeId: EntityId.Simple,
         dayOffset: Long,
         timePeriod: TimePeriod,
         activeEntities: ActiveEntitiesCollector,
@@ -176,9 +177,9 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
     }
     
     private fun processOperatingPeriod(
-        vehicleJourneyId: String,
-        dayTypeId: String,
-        operatingPeriodId: String,
+        vehicleJourneyId: EntityId.Simple,
+        dayTypeId: EntityId.Simple,
+        operatingPeriodId: EntityId.Simple,
         daysOfWeek: Set<DayOfWeek>,
         dayOffset: Long,
         timePeriod: TimePeriod,
@@ -206,8 +207,8 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
     }
     
     private fun processOperatingDay(
-        vehicleJourneyId: String,
-        operatingDayId: String,
+        vehicleJourneyId: EntityId.Simple,
+        operatingDayId: EntityId.Simple,
         dayOffset: Long,
         timePeriod: TimePeriod,
         activeEntities: ActiveEntitiesCollector,
@@ -227,7 +228,7 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
         }
     }
     
-    private fun resolveOperatingPeriod(operatingPeriodId: String): Period? {
+    private fun resolveOperatingPeriod(operatingPeriodId: EntityId.Simple): Period? {
         val opPeriodData = repository.operatingPeriods[operatingPeriodId] ?: return null
         
         return opPeriodData.period ?: run {

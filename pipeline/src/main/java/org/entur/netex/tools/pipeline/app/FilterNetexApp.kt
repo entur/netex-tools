@@ -81,7 +81,7 @@ data class FilterNetexApp(
     // Step 3: export the filtered data to XML files
     exportXmlFiles(entitiesToKeep, refSelection)
 
-    printReport(entitiesToKeep)
+    printReport(entitiesToKeep, refSelection)
 
     return FilterReport(
         entitiesByFile = fileIndex.entitiesByFile,
@@ -197,10 +197,10 @@ data class FilterNetexApp(
     logger.info("Done writing filtered xml files to ${target.absolutePath}")
   }
 
-  private fun printReport(selection: EntitySelection) {
+  private fun printReport(selection: EntitySelection, refSelection: RefSelection) {
     if (cliConfig.printReport) {
       logger.info(model.getEntitiesKeptReport(selection))
-      logger.info(model.getRefsKeptReport(selection))
+      logger.info(model.getRefsKeptReport(selection, refSelection))
     }
     logger.info("Filter NeTEx files done in ${(System.currentTimeMillis() - startTime)/1000.0} seconds.")
   }

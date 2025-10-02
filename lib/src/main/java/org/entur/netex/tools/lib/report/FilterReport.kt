@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.report
 
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.EntityId
 import java.io.File
 
 data class FilterReport(
@@ -11,10 +12,9 @@ data class FilterReport(
         return elementTypesByFile[file]?.get(type) ?: 0
     }
 
-    fun getAllEntityIdsByFiles(files: Set<File>): Set<String> {
+    fun getAllEntityIdsByFiles(files: Set<File>): Set<EntityId> {
         return entitiesByFile.filter { (file, _) -> files.contains(file) }
             .flatMap { (_, entities) -> entities.map { it.id } }
-            .sorted()
             .toSet()
     }
 }

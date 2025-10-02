@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.plugin.activedates.handlers
 
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.EntityId
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesParsingContext
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.NetexDataCollector
@@ -13,6 +14,7 @@ class DatedServiceJourneyHandler(val activeDatesRepository: ActiveDatesRepositor
                 .operatingDays.add(context.currentOperatingDayRef!!)
         }
         if (context.currentOperatingDayRef != null) {
+            val dsjId  = currentEntity.id as EntityId.Simple
             activeDatesRepository.datedServiceJourneyToOperatingDays[currentEntity.id] = context.currentOperatingDayRef!!
         }
         context.currentOperatingDayRef = null

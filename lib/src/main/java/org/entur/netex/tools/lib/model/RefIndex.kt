@@ -2,8 +2,8 @@ package org.entur.netex.tools.lib.model
 
 class RefIndex {
     private val references = mutableListOf<Ref>()
-    private val mapBySourceId = mutableMapOf<String, MutableList<Ref>>()
-    private val mapBySourceIdAndType = mutableMapOf<String, MutableMap<String, MutableList<Ref>>>()
+    private val mapBySourceId = mutableMapOf<EntityId, MutableList<Ref>>()
+    private val mapBySourceIdAndType = mutableMapOf<EntityId, MutableMap<String, MutableList<Ref>>>()
     private val mapBySourcetype = mutableMapOf<String, MutableList<Ref>>()
 
     fun add(ref: Ref): Boolean {
@@ -15,11 +15,11 @@ class RefIndex {
         return true
     }
 
-    fun get(id: String, type: String): List<Ref> {
+    fun get(id: EntityId, type: String): List<Ref> {
         return mapBySourceIdAndType[id]?.get(type) ?: listOf()
     }
 
-    fun get(sourceId: String): List<Ref> {
+    fun get(sourceId: EntityId): List<Ref> {
         return mapBySourceId[sourceId] ?: listOf()
     }
 

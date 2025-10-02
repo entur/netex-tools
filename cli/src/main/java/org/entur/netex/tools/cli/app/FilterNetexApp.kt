@@ -3,6 +3,7 @@ package org.entur.netex.tools.cli.app
 import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
+import org.entur.netex.tools.lib.model.EntityId
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
@@ -37,7 +38,7 @@ data class FilterNetexApp(
   private val activeDatesPlugin = ActiveDatesPlugin(ActiveDatesRepository())
   private val plugins = listOf(activeDatesPlugin)
 
-  fun run(): Pair<Set<String>, Set<String>> {
+  fun run(): Pair<Set<EntityId>, Set<String>> {
     setupAndLogStartupInfo()
 
     // Step 1: collect data needed for filtering out entities
@@ -59,7 +60,7 @@ data class FilterNetexApp(
     // Step 3: export the filtered data to XML files
     exportXmlFiles(entitiesToKeep, refSelection)
 
-    printReport(entitiesToKeep)
+    printReport(entitiesToKeep, refSelection)
 
     return Pair(entitiesToKeep.allIds(), refSelection.selection.map { it.ref }.toSet())
   }
@@ -145,10 +146,10 @@ data class FilterNetexApp(
     }
   }
 
-  private fun printReport(selection: EntitySelection) {
+  private fun printReport(selection: EntitySelection, refSelection: RefSelection) {
     if (cliConfig.printReport) {
       Log.info(model.getEntitiesKeptReport(selection))
-      Log.info(model.getRefsKeptReport(selection))
+      Log.info(model.getRefsKeptReport(selection, refSelection))
     }
     println("Filter NeTEx files done in ${(System.currentTimeMillis() - startTime)/1000.0} seconds.")
   }

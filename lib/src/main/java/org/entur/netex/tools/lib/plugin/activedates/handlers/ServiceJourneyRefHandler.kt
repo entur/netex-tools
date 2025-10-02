@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.plugin.activedates.handlers
 
 import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.EntityId
 import org.entur.netex.tools.lib.model.NetexTypes
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesParsingContext
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
@@ -14,7 +15,11 @@ class ServiceJourneyRefHandler(val activeDatesRepository: ActiveDatesRepository)
         currentEntity: Entity
     ) {
         if (currentEntity.type == NetexTypes.DATED_SERVICE_JOURNEY) {
-            context.currentServiceJourneyRef = attributes?.getValue("ref")
+            val ref = attributes?.getValue("ref")
+            if (ref != null) {
+                val serviceJourneyRef = EntityId.Simple(ref)
+                context.currentServiceJourneyRef = serviceJourneyRef
+            }
         }
     }
 }
