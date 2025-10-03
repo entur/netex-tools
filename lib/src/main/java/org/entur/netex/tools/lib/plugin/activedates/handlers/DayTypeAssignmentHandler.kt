@@ -4,10 +4,16 @@ import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesParsingContext
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.NetexDataCollector
+import org.xml.sax.Attributes
 
 class DayTypeAssignmentHandler(
     val activeDatesRepository: ActiveDatesRepository
 ) : NetexDataCollector() {
+    override fun startElement(context: ActiveDatesParsingContext, attributes: Attributes?, currentEntity: Entity) {
+        context.currentDayTypeAssignmentId = attributes?.getValue("id")
+        context.currentDayTypeAssignmentVersion = attributes?.getValue("version")
+        context.currentDayTypeAssignmentOrder = attributes?.getValue("order")
+    }
 
     override fun endElement(context: ActiveDatesParsingContext, currentEntity: Entity) {
         if (context.currentDayTypeAssignmentDayTypeRef == null) {

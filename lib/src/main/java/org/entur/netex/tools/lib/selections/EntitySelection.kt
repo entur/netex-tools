@@ -1,5 +1,6 @@
 package org.entur.netex.tools.lib.selections
 
+import org.entur.netex.tools.lib.model.CompositeEntityId
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
@@ -23,12 +24,19 @@ class EntitySelection(
         if (!element.isEntity()) {
             return false
         }
-        val id = element.attributes?.getValue("id")
-        return isSelected(element.name, id)
+        val id = element.attributes?.getValue("id") ?: ""
+        val version = element.attributes?.getValue("version") ?: ""
+        val order = element.attributes?.getValue("order") ?: ""
+
+        return isSelected(element.name, id) || isSelected(element.name, CompositeEntityId.IdVersionOrderId(baseId = id, version = version, order = order).id)
     }
 
     fun includes(entity: Entity) : Boolean {
-        return selection[entity.type]?.containsKey(entity.id) ?: false
+        val entitiesOfType = selection[entity.type]
+        if (entity.compositeId != null) {
+            return entitiesOfType?.containsKey(entity.compositeId.id) ?: false
+        }
+        return entitiesOfType?.containsKey(entity.id) ?: false
     }
 
     fun hasEntitiesReferringTo(entity: Entity): Boolean {
@@ -45,6 +53,9 @@ class EntitySelection(
     }
 
     private fun intersectIdsByType(otherSelection: EntitySelection, type: String): Set<String> {
+        if (type == "DayTypeAssignment") {
+            println("Debug intersectIdsByType for DayTypeAssignment")
+        }
         val idsFromSelf = getIdsByType(type)
         val idsFromOther = otherSelection.getIdsByType(type)
         return idsFromSelf.intersect(idsFromOther)

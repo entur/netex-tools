@@ -1,5 +1,6 @@
 package org.entur.netex.tools.lib.sax
 
+import org.entur.netex.tools.lib.model.CompositeEntityId
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.Entity.Companion.EMPTY
@@ -39,10 +40,28 @@ class BuildEntityModelSaxHandler(
 
         // Handle entity
         val id = attributes?.getValue("id")
+        val version = attributes?.getValue("version")
+        val order = attributes?.getValue("order")
         val publication = attributes?.getValue("publication") ?: "public"
 
         if (id != null) {
-            val entity = Entity(id, type, publication, currentEntity)
+            val entity = Entity(
+                id =
+                    if (type == "DayTypeAssignment") "$id|${nn(version)}|${nn(order)}"
+                    else id,
+                type,
+                publication,
+                currentEntity,
+                compositeId =
+                    if (type == "DayTypeAssignment")
+                        CompositeEntityId.IdVersionOrderId(
+                            baseId = id,
+                            version = nn(version),
+                            order = nn(order)
+                        )
+                    else null
+
+            )
             currentEntity = entity
             entities.addEntity(entity)
         } else {

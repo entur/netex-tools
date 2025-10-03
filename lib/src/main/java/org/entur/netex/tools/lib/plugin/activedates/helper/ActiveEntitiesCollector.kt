@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.plugin.activedates.helper
 
 import org.entur.netex.tools.lib.extensions.putOrAddToSet
+import org.entur.netex.tools.lib.model.CompositeEntityId
 import org.entur.netex.tools.lib.model.NetexTypes
 
 class ActiveEntitiesCollector {

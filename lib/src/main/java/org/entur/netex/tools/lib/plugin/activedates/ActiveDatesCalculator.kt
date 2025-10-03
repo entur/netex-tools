@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.plugin.activedates
 
 import org.entur.netex.tools.lib.config.TimePeriod
+import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.model.NetexTypes
 import org.entur.netex.tools.lib.plugin.activedates.data.VehicleJourneyData
@@ -57,17 +58,18 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
         }
 
         val dayTypeAssignments = entityModel.getEntitiesOfType(NetexTypes.DAY_TYPE_ASSIGNMENT)
-        dayTypeAssignments.forEach { (dayTypeAssignmentId) ->
-            if (shouldIncludeDayTypeAssignment(dayTypeAssignmentId, activeEntities, entityModel)) {
-                activeEntities.addDayTypeAssignment(dayTypeAssignmentId)
+        for (dayTypeAssignment in dayTypeAssignments) {
+            if (shouldIncludeDayTypeAssignment(dayTypeAssignment, activeEntities, entityModel)) {
+                activeEntities.addDayTypeAssignment(dayTypeAssignment.compositeId?.id ?: "")
+//                activeEntities.addDayTypeAssignment(dayTypeAssignment.id)
             }
         }
-        
+
         return activeEntities.toMap()
     }
 
-    fun shouldIncludeDayTypeAssignment(dayTypeAssignmentId: String, activeEntities: ActiveEntitiesCollector, entityModel: EntityModel): Boolean {
-        val dayTypeRefs = entityModel.getRefsOfTypeFrom(dayTypeAssignmentId, NetexTypes.DAY_TYPE_REF)
+    fun shouldIncludeDayTypeAssignment(dayTypeAssignmentEntity: Entity, activeEntities: ActiveEntitiesCollector, entityModel: EntityModel): Boolean {
+        val dayTypeRefs = entityModel.getRefsOfTypeFrom(dayTypeAssignmentEntity.id, NetexTypes.DAY_TYPE_REF)
         val dayTypeRefValues = dayTypeRefs.map { it.ref }
         return dayTypeRefValues.any( activeEntities.dayTypes()::contains )
     }

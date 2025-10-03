@@ -79,7 +79,10 @@ class OutputNetexSaxHandler(
 
         if (element.isEntity()) {
             currentEntityId = element.getAttribute("id")
-            val entity = entityModel.getEntity(currentEntityId)
+            val version = element.getAttribute("version")
+            val order = element.getAttribute("order")
+            val compositeEntityId = "$currentEntityId/$version/$order"
+            val entity = entityModel.getEntity(currentEntityId) ?: entityModel.getEntity(compositeEntityId)
             if (entity != null && skipHandler.shouldSkip(entity)) {
                 skipHandler.startSkip(element)
                 return
