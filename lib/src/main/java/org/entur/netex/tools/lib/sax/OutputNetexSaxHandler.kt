@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.sax
 
 import org.apache.commons.lang3.StringEscapeUtils
+import org.entur.netex.tools.lib.model.CompositeEntityId
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.report.FileIndex
@@ -79,7 +80,17 @@ class OutputNetexSaxHandler(
 
         if (element.isEntity()) {
             currentEntityId = element.getAttribute("id")
-            val entity = entityModel.getEntity(currentEntityId)
+            val currentEntityVersion = element.getAttribute("version")
+            val currentEntityOrder = element.getAttribute("order")
+
+            val entity = entityModel.getEntity(currentEntityId) ?: entityModel.getEntity(
+                CompositeEntityId.ByIdVersionAndOrder(
+                    baseId = currentEntityId,
+                    version = currentEntityVersion,
+                    order = currentEntityOrder
+                ).id
+            )
+
             if (entity != null && skipHandler.shouldSkip(entity)) {
                 skipHandler.startSkip(element)
                 return
