@@ -8,9 +8,11 @@ class SkipElementsSelector(val elementsToSkip: Set<String>): EntitySelector() {
 
     override fun selectEntities(model: EntityModel): EntitySelection {
         val mapOfElementsToKeep = mutableMapOf<String, MutableMap<String, Entity>>()
-        val allEntities = model.listAllEntities()
-        allEntities.filter { it.type !in elementsToSkip }.forEach { entity ->
-            mapOfElementsToKeep.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
+        for (entity in model.listAllEntities()) {
+            if (entity.type !in elementsToSkip) {
+                val typeMap = mapOfElementsToKeep.getOrPut(entity.type) { HashMap() }
+                    typeMap[entity.id] = entity
+            }
         }
         return EntitySelection(mapOfElementsToKeep, model)
     }

@@ -10,9 +10,11 @@ class PublicEntitiesSelector: EntitySelector() {
 
     override fun selectEntities(model: EntityModel): EntitySelection {
         val publicEntitiesMap = mutableMapOf<String, MutableMap<String, Entity>>()
-        val allEntities = model.listAllEntities()
-        allEntities.filter { it.publication == PublicationEnumeration.PUBLIC.value }.forEach { entity ->
-            publicEntitiesMap.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
+        for (entity in model.listAllEntities()) {
+            if (entity.publication == PublicationEnumeration.PUBLIC.value) {
+                val typeMap = publicEntitiesMap.getOrPut(entity.type) { HashMap() }
+                    typeMap[entity.id] = entity
+            }
         }
         return EntitySelection(publicEntitiesMap, model)
     }

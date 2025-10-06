@@ -24,6 +24,7 @@ object NetexUtils {
         "pointsInSequence",
         "blocks",
         "journeys",
+        "dataSources",
     )
 
     fun isCollectionElement(elementName: String): Boolean = elementName in netexCollectionElementNames

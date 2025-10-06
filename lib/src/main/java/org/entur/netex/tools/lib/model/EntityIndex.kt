@@ -6,10 +6,11 @@ class EntityIndex {
     private val mapByTypeAndId = mutableMapOf<String, MutableMap<String, Entity>>()
 
     fun add(e : Entity): Boolean {
-        if(!mapById.containsKey(e.id)) {
-            mapById[e.id] = e
+        val entityId = e.id
+        if(!mapById.containsKey(entityId)) {
+            mapById[entityId] = e
             mapByType.computeIfAbsent(e.type) { mutableListOf() }.add(e)
-            mapByTypeAndId.computeIfAbsent(e.type) { mutableMapOf() }.put(e.id, e)
+            mapByTypeAndId.computeIfAbsent(e.type) { mutableMapOf() }.put(entityId, e)
             return true
         }
         return false
