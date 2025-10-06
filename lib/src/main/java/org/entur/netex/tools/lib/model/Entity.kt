@@ -5,7 +5,6 @@ data class Entity(
     val type : String,
     val publication : String,
     val parent : Entity? = null,
-    val compositeId: CompositeEntityId? = null,
 ) {
     companion object {
         val EMPTY = "Ø"

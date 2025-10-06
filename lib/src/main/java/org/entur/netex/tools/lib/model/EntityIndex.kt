@@ -6,7 +6,7 @@ class EntityIndex {
     private val mapByTypeAndId = mutableMapOf<String, MutableMap<String, Entity>>()
 
     fun add(e : Entity): Boolean {
-        val entityId = if (e.compositeId != null) e.compositeId.id else e.id
+        val entityId = e.id
         if(!mapById.containsKey(entityId)) {
             mapById[entityId] = e
             mapByType.computeIfAbsent(e.type) { mutableListOf() }.add(e)

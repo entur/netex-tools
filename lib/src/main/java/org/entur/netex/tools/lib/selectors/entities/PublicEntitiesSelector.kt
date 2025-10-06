@@ -13,11 +13,7 @@ class PublicEntitiesSelector: EntitySelector() {
         for (entity in model.listAllEntities()) {
             if (entity.publication == PublicationEnumeration.PUBLIC.value) {
                 val typeMap = publicEntitiesMap.getOrPut(entity.type) { HashMap() }
-                if (entity.compositeId != null) {
-                    typeMap[entity.compositeId.id] = entity
-                } else {
                     typeMap[entity.id] = entity
-                }
             }
         }
         return EntitySelection(publicEntitiesMap, model)

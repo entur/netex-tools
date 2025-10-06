@@ -28,14 +28,11 @@ class EntitySelection(
         val version = element.attributes?.getValue("version") ?: ""
         val order = element.attributes?.getValue("order") ?: ""
 
-        return isSelected(element.name, id) || isSelected(element.name, CompositeEntityId.IdVersionOrderId(baseId = id, version = version, order = order).id)
+        return isSelected(element.name, id) || isSelected(element.name, CompositeEntityId.ByIdVersionAndOrder(baseId = id, version = version, order = order).id)
     }
 
     fun includes(entity: Entity) : Boolean {
         val entitiesOfType = selection[entity.type]
-        if (entity.compositeId != null) {
-            return entitiesOfType?.containsKey(entity.compositeId.id) ?: false
-        }
         return entitiesOfType?.containsKey(entity.id) ?: false
     }
 
@@ -53,9 +50,6 @@ class EntitySelection(
     }
 
     private fun intersectIdsByType(otherSelection: EntitySelection, type: String): Set<String> {
-        if (type == "DayTypeAssignment") {
-            println("Debug intersectIdsByType for DayTypeAssignment")
-        }
         val idsFromSelf = getIdsByType(type)
         val idsFromOther = otherSelection.getIdsByType(type)
         return idsFromSelf.intersect(idsFromOther)

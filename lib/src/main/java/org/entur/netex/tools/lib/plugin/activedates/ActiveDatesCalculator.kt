@@ -60,8 +60,7 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
         val dayTypeAssignments = entityModel.getEntitiesOfType(NetexTypes.DAY_TYPE_ASSIGNMENT)
         for (dayTypeAssignment in dayTypeAssignments) {
             if (shouldIncludeDayTypeAssignment(dayTypeAssignment, activeEntities, entityModel)) {
-                activeEntities.addDayTypeAssignment(dayTypeAssignment.compositeId?.id ?: "")
-//                activeEntities.addDayTypeAssignment(dayTypeAssignment.id)
+                activeEntities.addDayTypeAssignment(dayTypeAssignment.id)
             }
         }
 

@@ -45,21 +45,19 @@ class BuildEntityModelSaxHandler(
         val publication = attributes?.getValue("publication") ?: "public"
 
         if (id != null) {
+            val entityId = if (type == "DayTypeAssignment")
+                CompositeEntityId.ByIdVersionAndOrder(
+                    baseId = id,
+                    version = nn(version),
+                    order = nn(order)
+                ).id
+            else id
+
             val entity = Entity(
-                id =
-                    if (type == "DayTypeAssignment") "$id|${nn(version)}|${nn(order)}"
-                    else id,
+                id = entityId,
                 type,
                 publication,
                 currentEntity,
-                compositeId =
-                    if (type == "DayTypeAssignment")
-                        CompositeEntityId.IdVersionOrderId(
-                            baseId = id,
-                            version = nn(version),
-                            order = nn(order)
-                        )
-                    else null
 
             )
             currentEntity = entity

@@ -34,11 +34,7 @@ class EntityPruningSelector(private val typesToRemove: Set<String>, private val 
                     shouldKeepEntity
                 })
                 .forEach { entity ->
-                    if (entity.compositeId != null) {
-                        entitiesToKeep.computeIfAbsent(entity.type) { mutableMapOf() }[entity.compositeId.id] = entity
-                    } else {
-                        entitiesToKeep.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
-                    }
+                    entitiesToKeep.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
                 }
             currentEntitySelection = EntitySelection(entitiesToKeep, model)
         } while (hasPrunedEntities)

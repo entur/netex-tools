@@ -11,11 +11,7 @@ class SkipElementsSelector(val elementsToSkip: Set<String>): EntitySelector() {
         for (entity in model.listAllEntities()) {
             if (entity.type !in elementsToSkip) {
                 val typeMap = mapOfElementsToKeep.getOrPut(entity.type) { HashMap() }
-                if (entity.compositeId != null) {
-                    typeMap[entity.compositeId.id] = entity
-                } else {
                     typeMap[entity.id] = entity
-                }
             }
         }
         return EntitySelection(mapOfElementsToKeep, model)
