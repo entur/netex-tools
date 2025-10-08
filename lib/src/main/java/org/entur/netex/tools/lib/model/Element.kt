@@ -6,6 +6,7 @@ data class Element(
     val name : String,
     val parent : Element? = null,
     val attributes: Attributes? = null,
+    val currentEntityId : String? = null
 ) {
     fun isEntity(): Boolean {
         return attributes?.getValue("id") != null
