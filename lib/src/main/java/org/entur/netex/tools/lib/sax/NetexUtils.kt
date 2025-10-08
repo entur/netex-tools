@@ -25,6 +25,7 @@ object NetexUtils {
         "blocks",
         "journeys",
         "dataSources",
+        "additionalNetworks",
     )
 
     fun isCollectionElement(elementName: String): Boolean = elementName in netexCollectionElementNames

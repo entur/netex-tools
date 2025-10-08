@@ -227,7 +227,7 @@ data class FilterNetexApp(
 
       return OutputNetexSaxHandler(
           entityModel = model,
-          fileIndex = FileIndex(),
+          fileIndex = fileIndex,
           inclusionPolicy = inclusionPolicy,
           netexFileWriter = netexFileWriter,
           outputFile = file,
