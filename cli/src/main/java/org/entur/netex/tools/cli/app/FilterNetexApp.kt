@@ -6,10 +6,12 @@ import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.plugin.DefaultNetexFileWriter
 import org.entur.netex.tools.lib.plugin.NetexFileWriterContext
+import org.entur.netex.tools.lib.plugin.NetexPlugin
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
+import org.entur.netex.tools.lib.plugin.file.FileNamePlugin
 import org.entur.netex.tools.lib.report.FileIndex
 import org.entur.netex.tools.lib.report.FilterReport
 import org.entur.netex.tools.lib.sax.*
@@ -46,7 +48,6 @@ data class FilterNetexApp(
     // Plugin system
     private val activeDatesRepository = ActiveDatesRepository()
     private val activeDatesPlugin = ActiveDatesPlugin(activeDatesRepository)
-    private val plugins = listOf(activeDatesPlugin)
 
     fun run(): FilterReport {
         setupAndLogStartupInfo()
@@ -149,7 +150,7 @@ data class FilterNetexApp(
     private fun buildEntityModel() {
         logger.info("Load xml files for building entity model")
         parseXmlDocuments(input) {
-            createNetexSaxReadHandler()
+            createNetexSaxReadHandler(it)
         }
         logger.info("Done reading xml files for building entity model. Model contains ${model.listAllEntities().size} entities and ${model.listAllRefs().size} references.")
     }
@@ -195,7 +196,11 @@ data class FilterNetexApp(
 
         logger.info("Writing filtered xml files to ${target.absolutePath}")
         parseXmlDocuments(input) { file ->
-            val outFile = File(target, file.name)
+            val newFileName = fileIndex.filesToRename[file.name]
+            val outFile = File(target, newFileName ?: file.name)
+            if (!outFile.exists()) {
+                outFile.createNewFile()
+            }
             createNetexSaxWriteHandler(outFile, entitySelection, refSelection)
         }
         logger.info("Done writing filtered xml files to ${target.absolutePath}")
@@ -209,11 +214,18 @@ data class FilterNetexApp(
         logger.info("Filter NeTEx files done in ${(System.currentTimeMillis() - startTime)/1000.0} seconds.")
     }
 
-    private fun createNetexSaxReadHandler() = BuildEntityModelSaxHandler(
-        model,
-        SkipElementHandler(skipElements),
-        plugins,
-    )
+    private fun createNetexSaxReadHandler(file: File): BuildEntityModelSaxHandler {
+        val fileNamePlugin = FileNamePlugin(
+            currentFile = file,
+            fileIndex = fileIndex,
+        )
+        val plugins = listOf<NetexPlugin>(activeDatesPlugin, fileNamePlugin)
+        return BuildEntityModelSaxHandler(
+            model,
+            SkipElementHandler(skipElements),
+            plugins,
+        )
+    }
 
     private fun createNetexSaxWriteHandler(file: File, entitySelection: EntitySelection, refSelection: RefSelection): OutputNetexSaxHandler {
         val netexFileWriterContext = NetexFileWriterContext(

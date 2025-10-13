@@ -20,6 +20,10 @@ abstract class AbstractNetexPlugin : NetexPlugin {
     override fun endElement(elementName: String, currentEntity: Entity?) {
         // Default implementation - do nothing
     }
+
+    override fun endDocument() {
+        // Default implementation - do nothing
+    }
     
     override fun getCollectedData(): Any? {
         return null

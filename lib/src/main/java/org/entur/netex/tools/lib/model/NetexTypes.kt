@@ -59,7 +59,12 @@ object NetexTypes {
     // Additional entity types
     const val ROUTE = "Route"
     const val DESTINATION_DISPLAY = "DestinationDisplay"
-    
+    const val FLEXIBLE_LINE = "FlexibleLine"
+    const val NAME = "Name"
+    const val PUBLIC_CODE = "PublicCode"
+    const val PRIVATE_CODE = "PrivateCode"
+    const val PARTICIPANT_REF = "ParticipantRef"
+
     // Common suffixes
     const val REF_SUFFIX = "Ref"
 }

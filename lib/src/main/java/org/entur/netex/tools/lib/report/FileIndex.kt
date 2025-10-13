@@ -6,6 +6,7 @@ import java.io.File
 class FileIndex {
     val elementTypesByFile = mutableMapOf<File, MutableMap<String, Int>>()
     val entitiesByFile = mutableMapOf<File, MutableSet<Entity>>()
+    val filesToRename = mutableMapOf<String, String>()
 
     private fun incrementTypeCount(
         map: MutableMap<File, MutableMap<String, Int>>,
@@ -29,5 +30,9 @@ class FileIndex {
     fun add(entity: Entity, file: File) {
         incrementTypeCount(elementTypesByFile, file, entity.type)
         entitiesByFile.computeIfAbsent(file) { mutableSetOf() }.add(entity)
+    }
+
+    fun addFileToRename(oldName: String, newName: String) {
+        filesToRename[oldName] = newName
     }
 }
