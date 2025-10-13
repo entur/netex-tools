@@ -108,5 +108,9 @@ class BuildEntityModelSaxHandler(
         }
     }
 
+    override fun endDocument() {
+        pluginRegistry.getAllPlugins().forEach { it.endDocument() }
+    }
+
     private fun nn(value : String?) = value ?: EMPTY
 }

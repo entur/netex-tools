@@ -38,7 +38,12 @@ interface NetexPlugin {
      * Called when an XML element ends
      */
     fun endElement(elementName: String, currentEntity: Entity?)
-    
+
+    /**
+     * Called when an XML document ends
+     * */
+    fun endDocument()
+
     /**
      * Gets the data collected by this plugin (plugin-specific format)
      */

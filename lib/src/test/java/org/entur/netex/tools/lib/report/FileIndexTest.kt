@@ -28,4 +28,11 @@ class FileIndexTest {
         assertEquals(1, fileIndex.elementTypesByFile[file1]?.get("TestAnotherType"))
     }
 
+    @Test
+    fun testAddFileToRename() {
+        val fileIndex = FileIndex()
+        fileIndex.addFileToRename("oldName.xml", "newName.xml")
+        assertEquals("newName.xml", fileIndex.filesToRename["oldName.xml"])
+    }
+
 }

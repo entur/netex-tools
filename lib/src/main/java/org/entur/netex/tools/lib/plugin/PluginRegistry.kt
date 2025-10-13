@@ -8,7 +8,7 @@ import org.entur.netex.tools.lib.extensions.putOrAddToList
 class PluginRegistry {
     private val plugins: MutableList<NetexPlugin> = mutableListOf()
     private val elementToPluginsMap: MutableMap<String, MutableList<NetexPlugin>> = mutableMapOf()
-    
+
     /**
      * Registers a plugin with the registry
      */
@@ -27,4 +27,9 @@ class PluginRegistry {
     fun getPluginsForElement(elementType: String): List<NetexPlugin> {
         return elementToPluginsMap[elementType] ?: emptyList()
     }
+
+    /**
+     * Gets all registered plugins
+     */
+    fun getAllPlugins(): List<NetexPlugin> = plugins
 }
