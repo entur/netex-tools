@@ -4,6 +4,8 @@ import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.EntityModel
+import org.entur.netex.tools.lib.plugin.DefaultNetexFileWriter
+import org.entur.netex.tools.lib.plugin.NetexFileWriterContext
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
@@ -11,6 +13,7 @@ import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import org.entur.netex.tools.lib.report.FileIndex
 import org.entur.netex.tools.lib.report.FilterReport
 import org.entur.netex.tools.lib.sax.*
+import org.entur.netex.tools.lib.selections.InclusionPolicy
 import org.entur.netex.tools.lib.selectors.entities.ActiveDatesSelector
 import org.entur.netex.tools.lib.selectors.entities.AllEntitiesSelector
 import org.entur.netex.tools.lib.selectors.entities.EntitySelector
@@ -41,7 +44,8 @@ data class FilterNetexApp(
   val fileIndex = FileIndex()
 
   // Plugin system
-  private val activeDatesPlugin = ActiveDatesPlugin(ActiveDatesRepository())
+  private val activeDatesRepository = ActiveDatesRepository()
+  private val activeDatesPlugin = ActiveDatesPlugin(activeDatesRepository)
   private val plugins = listOf(activeDatesPlugin)
 
   fun run(): FilterReport {
@@ -207,16 +211,33 @@ data class FilterNetexApp(
 
   private fun createNetexSaxReadHandler() = BuildEntityModelSaxHandler(
     model, 
-    SkipElementHandler(skipElements), 
+    SkipElementHandler(skipElements),
     plugins,
   )
 
-  private fun createNetexSaxWriteHandler(file: File, entitySelection: EntitySelection, refSelection: RefSelection) = OutputNetexSaxHandler(
-    file,
-    entityModel = model,
-    SkipEntityAndElementHandler(entitySelection, refSelection),
-    filterConfig.preserveComments,
-    filterConfig.useSelfClosingTagsWhereApplicable,
-    fileIndex
-  )
+  private fun createNetexSaxWriteHandler(file: File, entitySelection: EntitySelection, refSelection: RefSelection): OutputNetexSaxHandler {
+      val netexFileWriterContext = NetexFileWriterContext(
+          file = file,
+          useSelfClosingTagsWhereApplicable = filterConfig.useSelfClosingTagsWhereApplicable,
+          removeEmptyCollections = true,
+          preserveComments = filterConfig.preserveComments,
+          period = filterConfig.period,
+      )
+
+      val defaultNetexFileWriter = DefaultNetexFileWriter(netexFileWriterContext)
+
+      val inclusionPolicy = InclusionPolicy(
+          entityModel = model,
+          entitySelection = entitySelection,
+          refSelection = refSelection
+      )
+
+      return OutputNetexSaxHandler(
+          entityModel = model,
+          fileIndex = fileIndex,
+          inclusionPolicy = inclusionPolicy,
+          netexFileWriter = defaultNetexFileWriter,
+          outputFile = file,
+      )
+  }
 }

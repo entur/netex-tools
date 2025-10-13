@@ -12,6 +12,14 @@ class EntityModel(private val alias: Alias) {
 
     fun getEntity(id: String) = entities.get(id)
 
+    fun getEntity(element: Element) = getEntity(element.getAttribute("id")) ?: getEntity(
+        CompositeEntityId.ByIdVersionAndOrder(
+            baseId = element.getAttribute("id"),
+            version = element.getAttribute("version"),
+            order = element.getAttribute("order")
+        ).id
+    )
+
     fun getEntitiesOfType(type: String): List<Entity> {
         return entities.list(type)
     }

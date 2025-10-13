@@ -1,182 +1,112 @@
 package org.entur.netex.tools.lib.sax
 
-import org.apache.commons.lang3.StringEscapeUtils
 import org.entur.netex.tools.lib.model.CompositeEntityId
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.EntityModel
+import org.entur.netex.tools.lib.plugin.DefaultNetexFileWriter
 import org.entur.netex.tools.lib.report.FileIndex
-import org.slf4j.LoggerFactory
+import org.entur.netex.tools.lib.selections.InclusionPolicy
 import org.xml.sax.Attributes
 import org.xml.sax.ext.LexicalHandler
 import java.io.File
 
 class OutputNetexSaxHandler(
-    private val outFile : File,
-    private val entityModel : EntityModel,
-    private val skipHandler : SkipEntityAndElementHandler,
-    private val preserveComments : Boolean,
-    private val useSelfClosingTagsWhereApplicable : Boolean,
+    private val entityModel: EntityModel,
     private val fileIndex: FileIndex,
+    private val inclusionPolicy: InclusionPolicy,
+    private val outputFile: File,
+    private val netexFileWriter: DefaultNetexFileWriter,
 ) : NetexToolsSaxHandler(), LexicalHandler {
-    private val logger = LoggerFactory.getLogger(javaClass)
+    protected var currentElement : Element? = null
+    protected var elementBeingSkipped: Element? = null
 
-    private val output = outFile.bufferedWriter(Charsets.UTF_8)
-    private var currentElement : Element? = null
-    private var whiteSpace : String? = null
-
-    // TODO: Switch to using a BufferedWriter directly instead of accumulating in a StringBuilder
-    private val outputBuffer = StringBuilder()
-    private var currentEntityId: String = ""
+    protected fun inSkipMode(): Boolean = elementBeingSkipped != null
 
     override fun startDocument() {
-        write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+        netexFileWriter.startDocument()
     }
 
-    override fun endDocument() {
-        if (useSelfClosingTagsWhereApplicable) {
-            // TODO: Needs to be implemented differently when switching to using BufferedWriter directly
-            val processedOutput = removeEmptyCollections(outputBuffer.toString())
-            output.write(processedOutput)
+    protected fun updateCurrentElement(attributes: Attributes?, qName: String) {
+        if (attributes?.getValue("id") != null) {
+            val id = getIdByQNameAndAttributes(qName = qName, attributes = attributes)
+            currentElement = Element(qName, currentElement, attributes, id)
         } else {
-            output.write(outputBuffer.toString())
-        }
-
-        output.flush()
-        output.close()
-    }
-
-    override fun startPrefixMapping(prefix: String?, uri: String?) {
-        logger.info("startPrefixMapping - prefix: $prefix, uri: $uri")
-    }
-
-    override fun endPrefixMapping(prefix: String?) {
-        logger.info("endPrefixMapping - prefix: $prefix")
-    }
-
-    override fun characters(ch: CharArray?, start: Int, length: Int) {
-        if(skipHandler.inSkipMode()) {
-            return
-        }
-        val text = String(ch!!, start, length)
-        if(text.isBlank()) {
-            whiteSpace = text
-        }
-        else {
-            write(StringEscapeUtils.escapeXml11(text))
+            // not an entity. Use parent's currentEntityId
+            currentElement = Element(qName, currentElement, attributes, currentElement?.currentEntityId)
         }
     }
 
-    override fun processingInstruction(target: String?, data: String?) {
-        logger.info("processingInstruction - target: $target")
-    }
-
-    override fun skippedEntity(name: String?) {
-        logger.info("skippedEntity - name: $name")
+    protected fun getIdByQNameAndAttributes(qName: String, attributes: Attributes?): String? {
+        return when (qName) {
+            "DayTypeAssignment" -> {
+                val version = attributes?.getValue("version") ?: ""
+                val order = attributes?.getValue("order") ?: ""
+                val id = attributes?.getValue("id") ?: ""
+                CompositeEntityId.ByIdVersionAndOrder(id, version, order).id
+            }
+            else -> attributes?.getValue("id")
+        }
     }
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
-        currentElement = Element(qName!!, currentElement, attributes)
-        val element: Element = currentElement!!
+        updateCurrentElement(attributes, qName!!)
 
+        if (!inSkipMode()) {
+            val element = currentElement!!
+            val elementShouldBeIncluded = inclusionPolicy.shouldInclude(element)
+
+            if (elementShouldBeIncluded) {
+                netexFileWriter.writeStartElement(
+                    qName = qName,
+                    attributes = attributes,
+                )
+                indexElementIfEntity(element)
+            } else {
+                elementBeingSkipped = element
+            }
+        }
+    }
+
+    private fun indexElementIfEntity(element: Element) {
         if (element.isEntity()) {
-            currentEntityId = element.getAttribute("id")
-            val currentEntityVersion = element.getAttribute("version")
-            val currentEntityOrder = element.getAttribute("order")
-
-            val entity = entityModel.getEntity(currentEntityId) ?: entityModel.getEntity(
-                CompositeEntityId.ByIdVersionAndOrder(
-                    baseId = currentEntityId,
-                    version = currentEntityVersion,
-                    order = currentEntityOrder
-                ).id
-            )
-
-            if (entity != null && skipHandler.shouldSkip(entity)) {
-                skipHandler.startSkip(element)
-                return
-            }
-
+            val entity = entityModel.getEntity(element)
             if (entity != null) {
-                fileIndex.add(entity, outFile)
+                fileIndex.add(entity, outputFile)
             }
         }
+    }
 
-        if (element.isRef()) {
-            val refAttributeValue = element.getAttribute("ref")
-            val ref = entityModel.getRefOfTypeFromSourceIdAndRef(currentEntityId, qName, refAttributeValue)
-            if (ref != null && skipHandler.shouldSkip(ref)) {
-                skipHandler.startSkip(element)
-                return
-            }
-        }
-
-        if (skipHandler.shouldSkip(currentElement!!)) {
-            skipHandler.startSkip(currentElement!!)
+    override fun characters(ch: CharArray?, start: Int, length: Int) {
+        if(inSkipMode()) {
             return
         }
 
-        write("<$qName")
-        if(attributes != null) {
-            for (i in 0..<attributes.length) {
-                write(" ${attributes.getQName(i)}=\"${attributes.getValue(i)}\"")
-            }
-        }
-        write(">")
+        netexFileWriter.writeCharacters(ch, start, length)
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        if (currentElement?.isEntity() == true) {
-            currentEntityId = ""
-        }
-
-        val c = currentElement
         currentElement = currentElement?.parent
 
-        if(skipHandler.inSkipMode()) {
-            skipHandler.endSkip(c)
-            return
-        }
-
-        write("</$qName>")
-    }
-
-    private fun write(text : String) {
-        printCachedWhiteSpace()
-        outputBuffer.append(text)
-    }
-
-    private fun printCachedWhiteSpace() {
-        if(whiteSpace != null) {
-            outputBuffer.append(whiteSpace!!)
-            whiteSpace = null
-        }
-    }
-    
-    override fun comment(ch: CharArray?, start: Int, length: Int) {
-        if(skipHandler.inSkipMode()) {
-            return
-        }
-        
-        if (!preserveComments) {
-            return  // Skip comments when preserveComments is false
-        }
-        
-        val commentText = String(ch!!, start, length)
-        write("<!--$commentText-->")
-    }
-
-    private fun removeEmptyCollections(xmlContent: String): String {
-        val collectionPattern = Regex("""<(\w+)(\s+[^>]*?|)>\s*</\1>""", RegexOption.MULTILINE)
-
-        return collectionPattern.replace(xmlContent) { matchResult ->
-            val tagName = matchResult.groupValues[1]
-            val attributes = matchResult.groupValues[2]
-            if (NetexUtils.isCollectionElement(tagName)) {
-                "<!-- Empty collection element of type $tagName was removed -->"
-            } else {
-                "<$tagName$attributes/>"
+        if (inSkipMode()) {
+            if (elementBeingSkipped?.name == qName) {
+                elementBeingSkipped = null
             }
+            return
         }
+
+        netexFileWriter.writeEndElement(qName)
+    }
+
+    override fun comment(ch: CharArray?, start: Int, length: Int) {
+        if(inSkipMode()) {
+            return
+        }
+
+        netexFileWriter.writeComments(ch, start, length)
+    }
+
+    override fun endDocument() {
+        netexFileWriter.endDocument()
     }
 
     // LexicalHandler methods for comment preservation
