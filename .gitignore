@@ -5,4 +5,4 @@
 
 # ignore Mavan build directory (incuding sub-modules)
 target/
-
+data

@@ -3,6 +3,7 @@ package org.entur.netex.tools.lib.sax
 import org.entur.netex.tools.lib.model.CompositeEntityId
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.EntityModel
+import org.entur.netex.tools.lib.plugin.DefaultNetexFileWriter
 import org.entur.netex.tools.lib.report.FileIndex
 import org.entur.netex.tools.lib.selections.InclusionPolicy
 import org.xml.sax.Attributes
@@ -13,19 +14,19 @@ class OutputNetexSaxHandler(
     private val entityModel: EntityModel,
     private val fileIndex: FileIndex,
     private val inclusionPolicy: InclusionPolicy,
-    private val netexFileWriter: NetexFileWriter,
     private val outputFile: File,
+    private val netexFileWriter: DefaultNetexFileWriter,
 ) : NetexToolsSaxHandler(), LexicalHandler {
-    private var currentElement : Element? = null
-    private var elementBeingSkipped: Element? = null
+    protected var currentElement : Element? = null
+    protected var elementBeingSkipped: Element? = null
 
-    private fun inSkipMode(): Boolean = elementBeingSkipped != null
+    protected fun inSkipMode(): Boolean = elementBeingSkipped != null
 
     override fun startDocument() {
         netexFileWriter.startDocument()
     }
 
-    private fun updateCurrentElement(attributes: Attributes?, qName: String) {
+    protected fun updateCurrentElement(attributes: Attributes?, qName: String) {
         if (attributes?.getValue("id") != null) {
             val id = getIdByQNameAndAttributes(qName = qName, attributes = attributes)
             currentElement = Element(qName, currentElement, attributes, id)
@@ -35,7 +36,7 @@ class OutputNetexSaxHandler(
         }
     }
 
-    private fun getIdByQNameAndAttributes(qName: String, attributes: Attributes?): String? {
+    protected fun getIdByQNameAndAttributes(qName: String, attributes: Attributes?): String? {
         return when (qName) {
             "DayTypeAssignment" -> {
                 val version = attributes?.getValue("version") ?: ""
@@ -79,6 +80,7 @@ class OutputNetexSaxHandler(
         if(inSkipMode()) {
             return
         }
+
         netexFileWriter.writeCharacters(ch, start, length)
     }
 

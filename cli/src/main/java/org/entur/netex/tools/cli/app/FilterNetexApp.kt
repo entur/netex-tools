@@ -4,6 +4,8 @@ import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.EntityModel
+import org.entur.netex.tools.lib.plugin.DefaultNetexFileWriter
+import org.entur.netex.tools.lib.plugin.NetexFileWriterContext
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
@@ -42,7 +44,8 @@ data class FilterNetexApp(
     val fileIndex = FileIndex()
 
     // Plugin system
-    private val activeDatesPlugin = ActiveDatesPlugin(ActiveDatesRepository())
+    private val activeDatesRepository = ActiveDatesRepository()
+    private val activeDatesPlugin = ActiveDatesPlugin(activeDatesRepository)
     private val plugins = listOf(activeDatesPlugin)
 
     fun run(): FilterReport {
@@ -213,12 +216,16 @@ data class FilterNetexApp(
     )
 
     private fun createNetexSaxWriteHandler(file: File, entitySelection: EntitySelection, refSelection: RefSelection): OutputNetexSaxHandler {
-        val netexFileWriter = NetexFileWriter(
+        val netexFileWriterContext = NetexFileWriterContext(
             file = file,
             useSelfClosingTagsWhereApplicable = filterConfig.useSelfClosingTagsWhereApplicable,
             removeEmptyCollections = true,
             preserveComments = filterConfig.preserveComments,
+            period = filterConfig.period,
         )
+
+        val defaultNetexFileWriter = DefaultNetexFileWriter(netexFileWriterContext)
+
         val inclusionPolicy = InclusionPolicy(
             entityModel = model,
             entitySelection = entitySelection,
@@ -227,9 +234,9 @@ data class FilterNetexApp(
 
         return OutputNetexSaxHandler(
             entityModel = model,
-            fileIndex = FileIndex(),
+            fileIndex = fileIndex,
             inclusionPolicy = inclusionPolicy,
-            netexFileWriter = netexFileWriter,
+            netexFileWriter = defaultNetexFileWriter,
             outputFile = file,
         )
     }
