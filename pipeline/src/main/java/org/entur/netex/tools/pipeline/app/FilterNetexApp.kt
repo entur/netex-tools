@@ -22,7 +22,6 @@ import org.entur.netex.tools.lib.selectors.entities.EntitySelector
 import org.entur.netex.tools.lib.selectors.entities.EntityPruningSelector
 import org.entur.netex.tools.lib.selectors.entities.PublicEntitiesSelector
 import org.entur.netex.tools.lib.selectors.entities.ServiceJourneyInterchangeSelector
-import org.entur.netex.tools.lib.selectors.entities.SkipElementsSelector
 import org.entur.netex.tools.lib.selectors.refs.ActiveDatesRefSelector
 import org.entur.netex.tools.lib.selectors.refs.AllRefsSelector
 import org.entur.netex.tools.lib.selectors.refs.RefPruningSelector
@@ -94,7 +93,6 @@ data class FilterNetexApp(
     )
   }
 
-  val skipElementsSelector = SkipElementsSelector(skipElements)
   val publicEntitiesSelector = PublicEntitiesSelector()
   val activeDatesSelector = ActiveDatesSelector(activeDatesPlugin, filterConfig.period)
 
@@ -106,9 +104,6 @@ data class FilterNetexApp(
 
   private fun setupEntitySelectors(): List<EntitySelector> {
     val selectors = mutableListOf<EntitySelector>(AllEntitiesSelector())
-    if (filterConfig.skipElements.isNotEmpty()) {
-      selectors.add(skipElementsSelector)
-    }
     if (filterConfig.removePrivateData) {
         selectors.add(publicEntitiesSelector)
     }
@@ -221,9 +216,10 @@ data class FilterNetexApp(
       )
       val plugins = listOf<NetexPlugin>(activeDatesPlugin, fileNamePlugin)
       return BuildEntityModelSaxHandler(
-          model,
-          SkipElementHandler(skipElements),
-          plugins,
+          entities = model,
+          skipHandler = SkipElementHandler(skipElements),
+          skipElements = skipElements,
+          plugins = plugins,
       )
   }
 
@@ -241,7 +237,8 @@ data class FilterNetexApp(
       val inclusionPolicy = InclusionPolicy(
           entityModel = model,
           entitySelection = entitySelection,
-          refSelection = refSelection
+          refSelection = refSelection,
+          skipElements = filterConfig.skipElements
       )
 
       return OutputNetexSaxHandler(

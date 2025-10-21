@@ -9,15 +9,19 @@ import org.entur.netex.tools.lib.model.Ref
 import org.entur.netex.tools.lib.plugin.NetexPlugin
 import org.entur.netex.tools.lib.plugin.PluginRegistry
 import org.xml.sax.Attributes
+import java.util.Stack
 
 class BuildEntityModelSaxHandler(
     val entities : EntityModel,
     val skipHandler : SkipElementHandler,
+    val skipElements: Set<String> = emptySet(),
     plugins: List<NetexPlugin> = emptyList(),
 ) : NetexToolsSaxHandler() {
     var currentEntity : Entity? = null
     var currentElement : Element? = null
-    
+
+    private val elementStack = Stack<String>()
+
     // Plugin management
     private val pluginRegistry = PluginRegistry()
     private val elementPath = mutableListOf<String>()
@@ -29,12 +33,17 @@ class BuildEntityModelSaxHandler(
         }
     }
 
+    private fun currentPath(): String {
+        return "/" + elementStack.joinToString(separator = "/")
+    }
+
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
+        elementStack.push(qName)
         val type = qName!!
         currentElement = Element(type, currentElement, attributes)
         elementPath.add(type)
 
-        if(skipHandler.startSkip(currentElement!!)) {
+        if(skipHandler.startSkip(currentElement!!) || skipElements.contains(currentPath())) {
             return
         }
 
@@ -58,7 +67,6 @@ class BuildEntityModelSaxHandler(
                 type,
                 publication,
                 currentEntity,
-
             )
             currentEntity = entity
             entities.addEntity(entity)
@@ -86,6 +94,8 @@ class BuildEntityModelSaxHandler(
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
+        elementStack.pop()
+
         val currentElementName = currentElement?.name
         if (currentElementName != null) {
             pluginRegistry.getPluginsForElement(currentElementName).forEach { plugin ->

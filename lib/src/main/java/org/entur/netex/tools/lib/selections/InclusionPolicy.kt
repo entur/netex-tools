@@ -9,6 +9,7 @@ class InclusionPolicy(
     private val entityModel: EntityModel,
     private val entitySelection: EntitySelection,
     private val refSelection: RefSelection,
+    private val skipElements: List<String>
 ) {
     fun shouldInclude(ref: Ref?): Boolean {
         if (ref != null) {
@@ -24,7 +25,10 @@ class InclusionPolicy(
         return false
     }
 
-    fun shouldInclude(element: Element): Boolean {
+    fun shouldInclude(element: Element, currentPath: String): Boolean {
+        if (skipElements.contains(currentPath)) {
+            return false
+        }
         if (element.isEntity()) {
             val entity = entityModel.getEntity(element)
             return shouldInclude(entity)

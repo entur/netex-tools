@@ -9,6 +9,7 @@ import org.entur.netex.tools.lib.selections.InclusionPolicy
 import org.xml.sax.Attributes
 import org.xml.sax.ext.LexicalHandler
 import java.io.File
+import java.util.Stack
 
 class OutputNetexSaxHandler(
     private val entityModel: EntityModel,
@@ -20,10 +21,16 @@ class OutputNetexSaxHandler(
     protected var currentElement : Element? = null
     protected var elementBeingSkipped: Element? = null
 
+    private val elementStack = Stack<String>()
+
     protected fun inSkipMode(): Boolean = elementBeingSkipped != null
 
     override fun startDocument() {
         netexFileWriter.startDocument()
+    }
+
+    private fun currentPath(): String {
+        return "/" + elementStack.joinToString(separator = "/")
     }
 
     protected fun updateCurrentElement(attributes: Attributes?, qName: String) {
@@ -49,11 +56,12 @@ class OutputNetexSaxHandler(
     }
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
+        elementStack.push(qName)
         updateCurrentElement(attributes, qName!!)
 
         if (!inSkipMode()) {
             val element = currentElement!!
-            val elementShouldBeIncluded = inclusionPolicy.shouldInclude(element)
+            val elementShouldBeIncluded = inclusionPolicy.shouldInclude(element, currentPath())
 
             if (elementShouldBeIncluded) {
                 netexFileWriter.writeStartElement(
@@ -95,6 +103,10 @@ class OutputNetexSaxHandler(
         }
 
         netexFileWriter.writeEndElement(qName)
+
+        if (elementStack.isNotEmpty()) {
+            elementStack.pop()
+        }
     }
 
     override fun comment(ch: CharArray?, start: Int, length: Int) {

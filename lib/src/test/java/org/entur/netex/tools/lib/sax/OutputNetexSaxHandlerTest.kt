@@ -24,6 +24,11 @@ class OutputNetexSaxHandlerTest {
         entityModel = entityModel,
         entitySelection = entitySelection,
         refSelection = refSelection,
+        skipElements = listOf(
+            "/PublicationDelivery/dataObjects/CompositeFrame/frames/VehicleScheduleFrame",
+            "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceFrame/lines/Line/routes",
+            "/PublicationDelivery/dataObjects/CompositeFrame/frames/TimetableFrame/vehicleJourneys/DeadRun"
+        )
     )
 
     private val testFile = File("test.xml")
