@@ -94,10 +94,12 @@ class OutputNetexSaxHandler(
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
         currentElement = currentElement?.parent
-
         if (inSkipMode()) {
             if (elementBeingSkipped?.name == qName) {
                 elementBeingSkipped = null
+            }
+            if (elementStack.isNotEmpty()) {
+                elementStack.pop()
             }
             return
         }

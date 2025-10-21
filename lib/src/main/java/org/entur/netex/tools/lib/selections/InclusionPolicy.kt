@@ -7,18 +7,18 @@ import org.entur.netex.tools.lib.model.Ref
 
 class InclusionPolicy(
     private val entityModel: EntityModel,
-    private val entitySelection: EntitySelection,
-    private val refSelection: RefSelection,
+    private val entitySelection: EntitySelection?,
+    private val refSelection: RefSelection?,
     private val skipElements: List<String>
 ) {
-    fun shouldInclude(ref: Ref?): Boolean {
+    fun shouldInclude(ref: Ref?, refSelection: RefSelection): Boolean {
         if (ref != null) {
             return refSelection.includes(ref)
         }
         return false
     }
 
-    fun shouldInclude(entity: Entity?): Boolean {
+    fun shouldInclude(entity: Entity?, entitySelection: EntitySelection): Boolean {
         if (entity != null) {
             return entitySelection.includes(entity)
         }
@@ -29,18 +29,24 @@ class InclusionPolicy(
         if (skipElements.contains(currentPath)) {
             return false
         }
-        if (element.isEntity()) {
+        if (element.isEntity() && entitySelection != null) {
             val entity = entityModel.getEntity(element)
-            return shouldInclude(entity)
+            return shouldInclude(
+                entity = entity,
+                entitySelection = entitySelection,
+            )
         }
-        if (element.isRef()) {
+        if (element.isRef() && refSelection != null) {
             val refAttributeValue = element.getAttribute("ref")
             val ref = entityModel.getRefOfTypeFromSourceIdAndRef(
                 element.currentEntityId!!,
                 element.name,
                 refAttributeValue
             )
-            return shouldInclude(ref)
+            return shouldInclude(
+                ref = ref,
+                refSelection = refSelection,
+            )
         }
         return true
     }

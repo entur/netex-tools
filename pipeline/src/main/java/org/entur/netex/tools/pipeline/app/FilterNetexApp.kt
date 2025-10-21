@@ -215,11 +215,16 @@ data class FilterNetexApp(
           fileIndex = fileIndex,
       )
       val plugins = listOf<NetexPlugin>(activeDatesPlugin, fileNamePlugin)
+      val inclusionPolicy = InclusionPolicy(
+          entityModel = model,
+          entitySelection = null,
+          refSelection = null,
+          skipElements = filterConfig.skipElements
+      )
       return BuildEntityModelSaxHandler(
-          entities = model,
-          skipHandler = SkipElementHandler(skipElements),
-          skipElements = skipElements,
+          entityModel = model,
           plugins = plugins,
+          inclusionPolicy = inclusionPolicy,
       )
   }
 

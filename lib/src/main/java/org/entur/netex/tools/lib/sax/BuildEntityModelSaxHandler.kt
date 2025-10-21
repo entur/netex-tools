@@ -1,5 +1,6 @@
 package org.entur.netex.tools.lib.sax
 
+import org.entur.netex.tools.lib.extensions.hasAttribute
 import org.entur.netex.tools.lib.model.CompositeEntityId
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
@@ -8,26 +9,25 @@ import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.model.Ref
 import org.entur.netex.tools.lib.plugin.NetexPlugin
 import org.entur.netex.tools.lib.plugin.PluginRegistry
+import org.entur.netex.tools.lib.selections.InclusionPolicy
 import org.xml.sax.Attributes
 import java.util.Stack
 
 class BuildEntityModelSaxHandler(
-    val entities : EntityModel,
-    val skipHandler : SkipElementHandler,
-    val skipElements: Set<String> = emptySet(),
+    val entityModel : EntityModel,
+    val inclusionPolicy: InclusionPolicy,
     plugins: List<NetexPlugin> = emptyList(),
 ) : NetexToolsSaxHandler() {
     var currentEntity : Entity? = null
     var currentElement : Element? = null
 
+    protected var elementBeingSkipped: String? = null
+
     private val elementStack = Stack<String>()
 
-    // Plugin management
     private val pluginRegistry = PluginRegistry()
-    private val elementPath = mutableListOf<String>()
-    
+
     init {
-        // Register and initialize plugins
         plugins.forEach { plugin ->
             pluginRegistry.registerPlugin(plugin)
         }
@@ -37,50 +37,72 @@ class BuildEntityModelSaxHandler(
         return "/" + elementStack.joinToString(separator = "/")
     }
 
+    private fun createEntityId(type: String, attributes: Attributes): String {
+        val id = attributes.getValue("id")
+        return if (type == "DayTypeAssignment") {
+            val version = attributes.getValue("version")
+            val order = attributes.getValue("order")
+            CompositeEntityId.ByIdVersionAndOrder(
+                baseId = id,
+                version = nn(version),
+                order = nn(order)
+            ).id
+        } else id
+    }
+
+    private fun registerEntity(type: String, attributes: Attributes) {
+        val publication = attributes.getValue("publication") ?: "public"
+
+        val entity = Entity(
+            id = createEntityId(type, attributes),
+            type = type,
+            publication = publication,
+            parent = currentEntity,
+        )
+        currentEntity = entity
+
+        entityModel.addEntity(entity)
+    }
+
+    private fun registerRef(type: String, attributes: Attributes) {
+        val ref = attributes.getValue("ref")
+        val refObject = Ref(nn(type), currentEntity!!, ref)
+        entityModel.addRef(refObject)
+    }
+
+    private fun inSkipMode() = elementBeingSkipped != null
+
+    private fun startSkippingCurrentElement() {
+        elementBeingSkipped = currentPath()
+    }
+
+    private fun stopSkippingCurrentElement() {
+        elementBeingSkipped = null
+    }
+
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         elementStack.push(qName)
         val type = qName!!
         currentElement = Element(type, currentElement, attributes)
-        elementPath.add(type)
 
-        if(skipHandler.startSkip(currentElement!!) || skipElements.contains(currentPath())) {
+        if (inSkipMode()) {
             return
         }
 
-        // Handle entity
-        val id = attributes?.getValue("id")
-        val version = attributes?.getValue("version")
-        val order = attributes?.getValue("order")
-        val publication = attributes?.getValue("publication") ?: "public"
-
-        if (id != null) {
-            val entityId = if (type == "DayTypeAssignment")
-                CompositeEntityId.ByIdVersionAndOrder(
-                    baseId = id,
-                    version = nn(version),
-                    order = nn(order)
-                ).id
-            else id
-
-            val entity = Entity(
-                id = entityId,
-                type,
-                publication,
-                currentEntity,
-            )
-            currentEntity = entity
-            entities.addEntity(entity)
-        } else {
-            val ref = attributes?.getValue("ref")
-            if (ref != null) {
-                val refObject = Ref(nn(type), currentEntity!!, ref)
-                entities.addRef(refObject)
+        if (inclusionPolicy.shouldInclude(currentElement!!, currentPath())) {
+            val isEntity = attributes?.hasAttribute("id") ?: false
+            val isRef = attributes?.hasAttribute("ref") ?: false
+            if (isEntity) {
+                registerEntity(type, attributes)
+            } else if (isRef) {
+                registerRef(type, attributes)
             }
-        }
-        
-        // Call plugins
-        pluginRegistry.getPluginsForElement(type).forEach { plugin ->
-            plugin.startElement(type, attributes, currentEntity)
+
+            pluginRegistry.getPluginsForElement(type).forEach { plugin ->
+                plugin.startElement(type, attributes, currentEntity)
+            }
+        } else {
+            startSkippingCurrentElement()
         }
     }
 
@@ -94,6 +116,10 @@ class BuildEntityModelSaxHandler(
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
+        if (elementBeingSkipped == currentPath()) {
+            stopSkippingCurrentElement()
+        }
+
         elementStack.pop()
 
         val currentElementName = currentElement?.name
@@ -103,15 +129,8 @@ class BuildEntityModelSaxHandler(
             }
         }
 
-        val c = currentElement
         currentElement = currentElement?.parent
-        if (elementPath.isNotEmpty()) {
-            elementPath.removeAt(elementPath.size - 1)
-        }
-        
-        if(skipHandler.endSkip(c)){
-            return
-        }
+
 
         if (currentEntity?.type == qName) {
             currentEntity = currentEntity?.parent
