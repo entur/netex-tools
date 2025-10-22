@@ -135,9 +135,11 @@ class OutputNetexSaxHandlerTest {
         val serviceJourneyAttrs = getAttributesForEntity(serviceJourneyEntity)
         outputNetexSaxHandler.startElement("", "", "Block", blockAttrs)
         outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
+        outputNetexSaxHandler.endElement("", "", "ServiceJourney")
         outputNetexSaxHandler.endElement("", "", "Block")
         verify(writer, never()).writeStartElement(qName = "Block", attributes = blockAttrs)
         verify(writer, never()).writeStartElement(qName = "ServiceJourney", attributes = serviceJourneyAttrs)
+        verify(writer, never()).writeEndElement("ServiceJourney")
         verify(writer, never()).writeEndElement("Block")
 
         // After the skipped Block ends, we should be out of skip mode, and writing should resume

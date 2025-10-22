@@ -102,16 +102,20 @@ class OutputNetexSaxHandler(
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        currentElement = currentElement?.parent
-        elementStack.pop()
+        if (elementStack.isNotEmpty()) {
+            elementStack.pop()
+        }
 
         if (!inSkipMode) {
             netexFileWriter.writeEndElement(qName)
         }
 
-        if (inclusionPolicy.shouldInclude(currentElement, currentPath())) {
+        val parent = currentElement?.parent
+        if (parent == null || inclusionPolicy.shouldInclude(parent, currentPath())) {
             endSkipMode()
         }
+
+        currentElement = currentElement?.parent
     }
 
     override fun comment(ch: CharArray?, start: Int, length: Int) {

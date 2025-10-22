@@ -52,12 +52,12 @@ object TestDataFactory {
     }
 
     fun defaultElement(name: String, id: String? = null, ref: String? = null): Element {
-        val attributes = AttributesImpl()
+        val attributes = mutableMapOf<String, String>()
         if (id != null) {
-            attributes.addAttribute("", "id", "id", "CDATA", id)
+            attributes["id"] = id
         }
         if (ref != null) {
-            attributes.addAttribute("", "ref", "ref", "CDATA", ref)
+            attributes["ref"] = ref
         }
         return Element(
             name = name,
