@@ -48,6 +48,13 @@ class InclusionPolicy(
                 refSelection = refSelection,
             )
         }
+        if (element.currentEntityId != null && entitySelection != null) {
+            val currentEntity = entityModel.getEntity(element.currentEntityId)
+            return shouldInclude(
+                entity = currentEntity,
+                entitySelection = entitySelection,
+            )
+        }
         return true
     }
 }

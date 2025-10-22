@@ -19,3 +19,11 @@ fun <K, V> MutableMap<K, MutableList<V>>.putOrAddToList(
 fun Attributes.hasAttribute(attributeName: String): Boolean {
     return this.getValue(attributeName) != null
 }
+
+fun Attributes.toMap(): Map<String, String> {
+    val map = mutableMapOf<String, String>()
+    for (i in 0 until this.length) {
+        map[this.getQName(i)] = this.getValue(i)
+    }
+    return map
+}

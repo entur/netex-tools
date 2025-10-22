@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.sax
 
 import org.entur.netex.tools.lib.extensions.hasAttribute
+import org.entur.netex.tools.lib.extensions.toMap
 import org.entur.netex.tools.lib.model.CompositeEntityId
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
@@ -83,7 +84,7 @@ class BuildEntityModelSaxHandler(
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         elementStack.push(qName)
         val type = qName!!
-        currentElement = Element(type, currentElement, attributes)
+        currentElement = Element(type, currentElement, attributes?.toMap() ?: mapOf())
 
         if (inSkipMode()) {
             return

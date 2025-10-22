@@ -1,5 +1,6 @@
 package org.entur.netex.tools.lib.sax
 
+import org.entur.netex.tools.lib.extensions.toMap
 import org.entur.netex.tools.lib.model.CompositeEntityId
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.EntityModel
@@ -19,11 +20,17 @@ class OutputNetexSaxHandler(
     private val netexFileWriter: DefaultNetexFileWriter,
 ) : NetexToolsSaxHandler(), LexicalHandler {
     protected var currentElement : Element? = null
-    protected var elementBeingSkipped: Element? = null
+    protected var inSkipMode: Boolean = false
 
     private val elementStack = Stack<String>()
 
-    protected fun inSkipMode(): Boolean = elementBeingSkipped != null
+    protected fun startSkipMode() {
+        inSkipMode = true
+    }
+
+    protected fun endSkipMode() {
+        inSkipMode = false
+    }
 
     override fun startDocument() {
         netexFileWriter.startDocument()
@@ -35,23 +42,25 @@ class OutputNetexSaxHandler(
 
     protected fun updateCurrentElement(attributes: Attributes?, qName: String) {
         if (attributes?.getValue("id") != null) {
-            val id = getIdByQNameAndAttributes(qName = qName, attributes = attributes)
-            currentElement = Element(qName, currentElement, attributes, id)
+            val attributesAsMap = attributes.toMap()
+            val id = getIdByQNameAndAttributes(qName = qName, attributes = attributesAsMap)
+            currentElement = Element(qName, currentElement, attributesAsMap, id)
         } else {
             // not an entity. Use parent's currentEntityId
-            currentElement = Element(qName, currentElement, attributes, currentElement?.currentEntityId)
+            val attributesAsMap = attributes?.toMap() ?: mapOf()
+            currentElement = Element(qName, currentElement, attributesAsMap, currentElement?.currentEntityId)
         }
     }
 
-    protected fun getIdByQNameAndAttributes(qName: String, attributes: Attributes?): String? {
+    protected fun getIdByQNameAndAttributes(qName: String, attributes: Map<String, String>): String? {
         return when (qName) {
             "DayTypeAssignment" -> {
-                val version = attributes?.getValue("version") ?: ""
-                val order = attributes?.getValue("order") ?: ""
-                val id = attributes?.getValue("id") ?: ""
+                val version = attributes.getValue("version")
+                val order = attributes.getValue("order")
+                val id = attributes.getValue("id")
                 CompositeEntityId.ByIdVersionAndOrder(id, version, order).id
             }
-            else -> attributes?.getValue("id")
+            else -> attributes.getValue("id")
         }
     }
 
@@ -59,7 +68,7 @@ class OutputNetexSaxHandler(
         elementStack.push(qName)
         updateCurrentElement(attributes, qName!!)
 
-        if (!inSkipMode()) {
+        if (!inSkipMode) {
             val element = currentElement!!
             val elementShouldBeIncluded = inclusionPolicy.shouldInclude(element, currentPath())
 
@@ -70,7 +79,7 @@ class OutputNetexSaxHandler(
                 )
                 indexElementIfEntity(element)
             } else {
-                elementBeingSkipped = element
+                startSkipMode()
             }
         }
     }
@@ -85,7 +94,7 @@ class OutputNetexSaxHandler(
     }
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
-        if(inSkipMode()) {
+        if(inSkipMode) {
             return
         }
 
@@ -93,26 +102,25 @@ class OutputNetexSaxHandler(
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        currentElement = currentElement?.parent
-        if (inSkipMode()) {
-            if (elementBeingSkipped?.name == qName) {
-                elementBeingSkipped = null
-            }
-            if (elementStack.isNotEmpty()) {
-                elementStack.pop()
+        if (inSkipMode) {
+            currentElement = currentElement?.parent
+            elementStack.pop()
+            if (inclusionPolicy.shouldInclude(currentElement!!, currentPath())) {
+                endSkipMode()
             }
             return
-        }
-
-        netexFileWriter.writeEndElement(qName)
-
-        if (elementStack.isNotEmpty()) {
+        } else {
+            netexFileWriter.writeEndElement(qName)
+            currentElement = currentElement?.parent
             elementStack.pop()
+            if (currentElement == null || inclusionPolicy.shouldInclude(currentElement!!, currentPath())) {
+                endSkipMode()
+            }
         }
     }
 
     override fun comment(ch: CharArray?, start: Int, length: Int) {
-        if(inSkipMode()) {
+        if(inSkipMode) {
             return
         }
 
