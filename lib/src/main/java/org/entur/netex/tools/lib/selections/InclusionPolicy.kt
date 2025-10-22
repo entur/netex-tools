@@ -25,7 +25,10 @@ class InclusionPolicy(
         return false
     }
 
-    fun shouldInclude(element: Element, currentPath: String): Boolean {
+    fun shouldInclude(element: Element?, currentPath: String): Boolean {
+        if (element == null) {
+            return true
+        }
         if (skipElements.contains(currentPath)) {
             return false
         }

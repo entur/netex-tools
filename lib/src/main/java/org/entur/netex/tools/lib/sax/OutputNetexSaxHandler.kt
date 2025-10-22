@@ -102,20 +102,15 @@ class OutputNetexSaxHandler(
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        if (inSkipMode) {
-            currentElement = currentElement?.parent
-            elementStack.pop()
-            if (inclusionPolicy.shouldInclude(currentElement!!, currentPath())) {
-                endSkipMode()
-            }
-            return
-        } else {
+        currentElement = currentElement?.parent
+        elementStack.pop()
+
+        if (!inSkipMode) {
             netexFileWriter.writeEndElement(qName)
-            currentElement = currentElement?.parent
-            elementStack.pop()
-            if (currentElement == null || inclusionPolicy.shouldInclude(currentElement!!, currentPath())) {
-                endSkipMode()
-            }
+        }
+
+        if (inclusionPolicy.shouldInclude(currentElement, currentPath())) {
+            endSkipMode()
         }
     }
 
