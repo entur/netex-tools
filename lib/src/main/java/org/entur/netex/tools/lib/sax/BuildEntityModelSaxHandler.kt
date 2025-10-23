@@ -22,7 +22,7 @@ class BuildEntityModelSaxHandler(
     var currentEntity : Entity? = null
     var currentElement : Element? = null
 
-    protected var elementBeingSkipped: String? = null
+    var elementBeingSkipped: String? = null
 
     private val elementStack = Stack<String>()
 
@@ -108,6 +108,10 @@ class BuildEntityModelSaxHandler(
     }
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
+        if (inSkipMode()) {
+            return
+        }
+
         val currentElementName = currentElement?.name
         if (currentElementName != null) {
             pluginRegistry.getPluginsForElement(currentElementName).forEach { plugin ->
@@ -124,7 +128,7 @@ class BuildEntityModelSaxHandler(
         elementStack.pop()
 
         val currentElementName = currentElement?.name
-        if (currentElementName != null) {
+        if (currentElementName != null && !inSkipMode()) {
             pluginRegistry.getPluginsForElement(currentElementName).forEach { plugin ->
                 plugin.endElement(currentElementName, currentEntity)
             }

@@ -25,6 +25,14 @@ class InclusionPolicy(
         return false
     }
 
+    fun shouldInclude(element: Element, entitySelection: EntitySelection?): Boolean {
+        if (element.currentEntityId == null || entitySelection == null) {
+            return true
+        }
+        val parentEntity = entityModel.getEntity(element.currentEntityId)
+        return shouldInclude(parentEntity, entitySelection)
+    }
+
     fun shouldInclude(element: Element?, currentPath: String): Boolean {
         if (element == null) {
             return true
@@ -33,31 +41,17 @@ class InclusionPolicy(
             return false
         }
         if (element.isEntity() && entitySelection != null) {
-            val entity = entityModel.getEntity(element)
             return shouldInclude(
-                entity = entity,
+                entity = entityModel.getEntity(element),
                 entitySelection = entitySelection,
             )
         }
         if (element.isRef() && refSelection != null) {
-            val refAttributeValue = element.getAttribute("ref")
-            val ref = entityModel.getRefOfTypeFromSourceIdAndRef(
-                element.currentEntityId!!,
-                element.name,
-                refAttributeValue
-            )
             return shouldInclude(
-                ref = ref,
+                ref = entityModel.getRef(element),
                 refSelection = refSelection,
             )
         }
-        if (element.currentEntityId != null && entitySelection != null) {
-            val currentEntity = entityModel.getEntity(element.currentEntityId)
-            return shouldInclude(
-                entity = currentEntity,
-                entitySelection = entitySelection,
-            )
-        }
-        return true
+        return shouldInclude(element, entitySelection)
     }
 }

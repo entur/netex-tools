@@ -26,7 +26,9 @@ class DayTypeAssignmentHandler(
         context.currentDayTypeAssignmentDate?.let {
             activeDatesRepository.getDayTypeData(context.currentDayTypeAssignmentDayTypeRef!!)
                 .dates.add(it)
+            activeDatesRepository.dayTypeAssignmentToDate.put(currentEntity.id, it)
         }
+
         context.currentDayTypeAssignmentDayTypeRef = null
         context.currentDayTypeAssignmentOperatingDay = null
         context.currentDayTypeAssignmentOperatingPeriod = null

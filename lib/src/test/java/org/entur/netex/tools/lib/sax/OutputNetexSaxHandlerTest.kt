@@ -148,7 +148,7 @@ class OutputNetexSaxHandlerTest {
     }
 
     @Test
-    fun comment() {
+    fun commentDoesNotWriteIfElementShouldBeSkipped() {
         val blockAttrs = getAttributesForEntity(blockEntity)
         outputNetexSaxHandler.startElement("", "", "Block", blockAttrs)
 
