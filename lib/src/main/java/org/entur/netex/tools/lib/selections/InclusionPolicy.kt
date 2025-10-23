@@ -7,37 +7,51 @@ import org.entur.netex.tools.lib.model.Ref
 
 class InclusionPolicy(
     private val entityModel: EntityModel,
-    private val entitySelection: EntitySelection,
-    private val refSelection: RefSelection,
+    private val entitySelection: EntitySelection?,
+    private val refSelection: RefSelection?,
+    private val skipElements: List<String>
 ) {
-    fun shouldInclude(ref: Ref?): Boolean {
+    fun shouldInclude(ref: Ref?, refSelection: RefSelection): Boolean {
         if (ref != null) {
             return refSelection.includes(ref)
         }
         return false
     }
 
-    fun shouldInclude(entity: Entity?): Boolean {
+    fun shouldInclude(entity: Entity?, entitySelection: EntitySelection): Boolean {
         if (entity != null) {
             return entitySelection.includes(entity)
         }
         return false
     }
 
-    fun shouldInclude(element: Element): Boolean {
-        if (element.isEntity()) {
-            val entity = entityModel.getEntity(element)
-            return shouldInclude(entity)
+    fun shouldInclude(element: Element, entitySelection: EntitySelection?): Boolean {
+        if (element.currentEntityId == null || entitySelection == null) {
+            return true
         }
-        if (element.isRef()) {
-            val refAttributeValue = element.getAttribute("ref")
-            val ref = entityModel.getRefOfTypeFromSourceIdAndRef(
-                element.currentEntityId!!,
-                element.name,
-                refAttributeValue
+        val parentEntity = entityModel.getEntity(element.currentEntityId)
+        return shouldInclude(parentEntity, entitySelection)
+    }
+
+    fun shouldInclude(element: Element?, currentPath: String): Boolean {
+        if (element == null) {
+            return true
+        }
+        if (skipElements.contains(currentPath)) {
+            return false
+        }
+        if (element.isEntity() && entitySelection != null) {
+            return shouldInclude(
+                entity = entityModel.getEntity(element),
+                entitySelection = entitySelection,
             )
-            return shouldInclude(ref)
         }
-        return true
+        if (element.isRef() && refSelection != null) {
+            return shouldInclude(
+                ref = entityModel.getRef(element),
+                refSelection = refSelection,
+            )
+        }
+        return shouldInclude(element, entitySelection)
     }
 }

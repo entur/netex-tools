@@ -9,6 +9,7 @@ class ActiveDatesRepository(
     val dayTypes: MutableMap<String, DayTypeData> = mutableMapOf(),
     val operatingPeriods: MutableMap<String, OperatingPeriodData> = mutableMapOf(),
     val operatingDays: MutableMap<String, LocalDate> = mutableMapOf(),
+    val dayTypeAssignmentToDate: MutableMap<String, LocalDate> = mutableMapOf(),
     val serviceJourneys: MutableMap<String, VehicleJourneyData> = mutableMapOf(),
     val deadRuns: MutableMap<String, VehicleJourneyData> = mutableMapOf(),
     val datedServiceJourneyToOperatingDays: MutableMap<String, String> = mutableMapOf(),
@@ -24,4 +25,7 @@ class ActiveDatesRepository(
 
     fun getDeadRunData(deadRunId: String): VehicleJourneyData =
         deadRuns.getOrPut(deadRunId) { VehicleJourneyData() }
+
+    fun getDayTypeAssignmentDate(dayTypeAssignmentId: String): LocalDate? =
+        dayTypeAssignmentToDate[dayTypeAssignmentId]
 }

@@ -59,7 +59,7 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
 
         val dayTypeAssignments = entityModel.getEntitiesOfType(NetexTypes.DAY_TYPE_ASSIGNMENT)
         for (dayTypeAssignment in dayTypeAssignments) {
-            if (shouldIncludeDayTypeAssignment(dayTypeAssignment, activeEntities, entityModel)) {
+            if (shouldIncludeDayTypeAssignment(dayTypeAssignment, activeEntities, entityModel, timePeriod)) {
                 activeEntities.addDayTypeAssignment(dayTypeAssignment.id)
             }
         }
@@ -67,7 +67,48 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
         return activeEntities.toMap()
     }
 
-    fun shouldIncludeDayTypeAssignment(dayTypeAssignmentEntity: Entity, activeEntities: ActiveEntitiesCollector, entityModel: EntityModel): Boolean {
+    /**
+     * This check is done to ensure valid NeTEx for the case where an OperatingDay or OperatingPeriod entity
+     * is removed from the NeTEx because it is not within the specified timePeriod. In such cases, the
+     * DayTypeAssignment's references to them would be removed, leading to an invalid DayTypeAssignment.
+     * This check ensures that the DayTypeAssignment is removed entirely in these cases.
+     * */
+    fun isDayTypeAssignmentActive(dayTypeAssignmentEntity: Entity, activeEntities: ActiveEntitiesCollector, entityModel: EntityModel, timePeriod: TimePeriod): Boolean {
+        val hasActiveOperatingDaysForDTA = dayTypeAssignmentEntity.let {
+            val operatingDayRefs = entityModel.getRefsOfTypeFrom(it.id, NetexTypes.OPERATING_DAY_REF)
+            val operatingDayRefValues = operatingDayRefs.map { ref -> ref.ref }
+            operatingDayRefValues.any( activeEntities.operatingDays()::contains )
+        }
+
+        val hasActiveOperatingPeriodsForDTA = dayTypeAssignmentEntity.let {
+            val operatingPeriodRefs = entityModel.getRefsOfTypeFrom(it.id, NetexTypes.OPERATING_PERIOD_REF)
+            val operatingPeriodRefValues = operatingPeriodRefs.map { ref -> ref.ref }
+            operatingPeriodRefValues.any( activeEntities.operatingPeriods()::contains )
+        }
+
+        val dateForDTA = repository.getDayTypeAssignmentDate(dayTypeAssignmentEntity.id)
+        var hasActiveDateForDTA = false
+        if (dateForDTA != null) {
+            hasActiveDateForDTA = isDateInPeriod(
+                date = dateForDTA,
+                dayOffset = 0,
+                timePeriod = timePeriod
+            )
+        }
+
+        return hasActiveOperatingDaysForDTA || hasActiveOperatingPeriodsForDTA || hasActiveDateForDTA
+    }
+
+    fun shouldIncludeDayTypeAssignment(
+        dayTypeAssignmentEntity: Entity,
+        activeEntities: ActiveEntitiesCollector,
+        entityModel: EntityModel,
+        timePeriod: TimePeriod
+    ): Boolean {
+        val dayTypeAssignmentIsActive = isDayTypeAssignmentActive(dayTypeAssignmentEntity, activeEntities, entityModel, timePeriod)
+        if (!dayTypeAssignmentIsActive) {
+            return false
+        }
         val dayTypeRefs = entityModel.getRefsOfTypeFrom(dayTypeAssignmentEntity.id, NetexTypes.DAY_TYPE_REF)
         val dayTypeRefValues = dayTypeRefs.map { it.ref }
         return dayTypeRefValues.any( activeEntities.dayTypes()::contains )

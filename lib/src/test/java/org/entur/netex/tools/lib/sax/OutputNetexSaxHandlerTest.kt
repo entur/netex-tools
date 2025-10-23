@@ -24,6 +24,11 @@ class OutputNetexSaxHandlerTest {
         entityModel = entityModel,
         entitySelection = entitySelection,
         refSelection = refSelection,
+        skipElements = listOf(
+            "/PublicationDelivery/dataObjects/CompositeFrame/frames/VehicleScheduleFrame",
+            "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceFrame/lines/Line/routes",
+            "/PublicationDelivery/dataObjects/CompositeFrame/frames/TimetableFrame/vehicleJourneys/DeadRun"
+        )
     )
 
     private val testFile = File("test.xml")
@@ -130,9 +135,11 @@ class OutputNetexSaxHandlerTest {
         val serviceJourneyAttrs = getAttributesForEntity(serviceJourneyEntity)
         outputNetexSaxHandler.startElement("", "", "Block", blockAttrs)
         outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
+        outputNetexSaxHandler.endElement("", "", "ServiceJourney")
         outputNetexSaxHandler.endElement("", "", "Block")
         verify(writer, never()).writeStartElement(qName = "Block", attributes = blockAttrs)
         verify(writer, never()).writeStartElement(qName = "ServiceJourney", attributes = serviceJourneyAttrs)
+        verify(writer, never()).writeEndElement("ServiceJourney")
         verify(writer, never()).writeEndElement("Block")
 
         // After the skipped Block ends, we should be out of skip mode, and writing should resume
@@ -141,7 +148,7 @@ class OutputNetexSaxHandlerTest {
     }
 
     @Test
-    fun comment() {
+    fun commentDoesNotWriteIfElementShouldBeSkipped() {
         val blockAttrs = getAttributesForEntity(blockEntity)
         outputNetexSaxHandler.startElement("", "", "Block", blockAttrs)
 

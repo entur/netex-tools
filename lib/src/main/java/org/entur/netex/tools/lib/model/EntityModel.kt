@@ -20,6 +20,15 @@ class EntityModel(private val alias: Alias) {
         ).id
     )
 
+    fun getRef(element: Element): Ref? {
+        val refAttributeValue = element.getAttribute("ref")
+        return getRefOfTypeFromSourceIdAndRef(
+            element.currentEntityId!!,
+            element.name,
+            refAttributeValue
+        )
+    }
+
     fun getEntitiesOfType(type: String): List<Entity> {
         return entities.list(type)
     }

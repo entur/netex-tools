@@ -24,9 +24,9 @@ class EntitySelection(
         if (!element.isEntity()) {
             return false
         }
-        val id = element.attributes?.getValue("id") ?: ""
-        val version = element.attributes?.getValue("version") ?: ""
-        val order = element.attributes?.getValue("order") ?: ""
+        val id = element.attributes["id"] ?: ""
+        val version = element.attributes["version"] ?: ""
+        val order = element.attributes["order"] ?: ""
 
         return isSelected(element.name, id) || isSelected(element.name, CompositeEntityId.ByIdVersionAndOrder(baseId = id, version = version, order = order).id)
     }

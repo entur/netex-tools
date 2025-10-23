@@ -7,7 +7,8 @@ import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.model.PublicationEnumeration
 import org.entur.netex.tools.lib.model.Ref
-import org.entur.netex.tools.lib.selections.RefSelection
+import org.entur.netex.tools.lib.plugin.NetexPlugin
+import org.xml.sax.Attributes
 import org.xml.sax.helpers.AttributesImpl
 
 object TestDataFactory {
@@ -23,7 +24,7 @@ object TestDataFactory {
     fun defaultRef(id: String): Ref = Ref(
         type = "testType",
         source = defaultEntity(id),
-        ref = id
+        ref = id,
     )
 
     fun entitySelectionWithUnreferredEntities(): EntitySelection {
@@ -51,18 +52,35 @@ object TestDataFactory {
         return EntitySelection(entitySelection, entityModel)
     }
 
-    fun defaultElement(name: String, id: String? = null, ref: String? = null): Element {
-        val attributes = AttributesImpl()
+    fun defaultElement(name: String, id: String? = null, ref: String? = null, currentEntityId: String? = null): Element {
+        val attributes = mutableMapOf<String, String>()
         if (id != null) {
-            attributes.addAttribute("", "id", "id", "CDATA", id)
+            attributes["id"] = id
         }
         if (ref != null) {
-            attributes.addAttribute("", "ref", "ref", "CDATA", ref)
+            attributes["ref"] = ref
         }
         return Element(
             name = name,
             attributes = attributes,
-            parent = null
+            parent = null,
+            currentEntityId = currentEntityId,
         )
+    }
+
+    fun defaultAttributes(id: String? = null, ref: String? = null): Attributes {
+        val attrs = AttributesImpl()
+        if (id != null) {
+            attrs.addAttribute("", "id", "id", "CDATA", id)
+        }
+        if (ref != null) {
+            attrs.addAttribute("", "ref", "ref", "CDATA", ref)
+        }
+        return attrs
+    }
+
+    fun elementWithParentEntity(name: String, currentEntityId: String): Element {
+        val element = defaultElement(name = name, currentEntityId = currentEntityId)
+        return element
     }
 }
