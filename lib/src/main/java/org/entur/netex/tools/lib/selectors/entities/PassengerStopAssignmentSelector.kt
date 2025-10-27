@@ -3,56 +3,57 @@ package org.entur.netex.tools.lib.selectors.entities
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.model.NetexTypes
-import org.entur.netex.tools.lib.model.PublicationEnumeration
 import org.entur.netex.tools.lib.selections.EntitySelection
 
+/**
+ * Filters PassengerStopAssignment and ScheduledStopPoint entities when the only reference made to a
+ * ScheduledStopPoint is made from a PassengerStopAssignment in the provided entity selection. In these cases,
+ * both the PassengerStopAssignment and ScheduledStopPoint will be removed from the EntitySelection returned from
+ * selectEntities.
+ * */
 class PassengerStopAssignmentSelector(
     private val entitySelection: EntitySelection
 ): EntitySelector() {
-    override fun selectEntities(model: EntityModel): EntitySelection {
-        val passengerStopAssignments = model.getEntitiesOfType(NetexTypes.PASSENGER_STOP_ASSIGNMENT)
-        val psasToKeep = passengerStopAssignments.filter { passengerStopAssignment ->
-            val psaId = passengerStopAssignment.id
-            val scheduledStopPointRef = model.getRefsOfTypeFrom(psaId, "ScheduledStopPointRef").firstOrNull()?.ref
-            if (scheduledStopPointRef != null) {
-                val entitiesReferringToSsp = model.getEntitiesReferringTo(
-                    Entity(
-                        id = scheduledStopPointRef,
-                        type = NetexTypes.SCHEDULED_STOP_POINT,
-                        publication = PublicationEnumeration.RESTRICTED.value
-                    )
-                )
+    fun excludePassengerStopAssignments(entities: Collection<Entity>): Collection<Entity> =
+        entities.filter { it.type !== NetexTypes.PASSENGER_STOP_ASSIGNMENT }
 
-                val nonPSAsReferringToSsp = entitiesReferringToSsp.filter { it.type != NetexTypes.PASSENGER_STOP_ASSIGNMENT }
-                val selectedEntitiesReferringToSsp = nonPSAsReferringToSsp.filter { entitySelection.includes(it) }
-                selectedEntitiesReferringToSsp.isNotEmpty()
-            }
-            else {
-                false
-            }
+    fun scheduledStopPointIsReferredToInSelection(scheduledStopPointId: String?, model: EntityModel): Boolean {
+        if (scheduledStopPointId == null) {
+            return false
         }
 
+        val referringEntities = model.getEntitiesReferringTo(scheduledStopPointId)
+        val referringEntitiesExcludingAssignments = excludePassengerStopAssignments(referringEntities)
+        val referringEntitiesInSelection = referringEntitiesExcludingAssignments.filter { entitySelection.includes(it) }
+        return referringEntitiesInSelection.isNotEmpty()
+    }
+
+    fun findPassengerStopAssignmentsToKeep(model: EntityModel): List<Entity> {
+        val passengerStopAssignments = model.getEntitiesOfType(NetexTypes.PASSENGER_STOP_ASSIGNMENT)
+        return passengerStopAssignments.filter { passengerStopAssignment ->
+            val psaId = passengerStopAssignment.id
+            val scheduledStopPointRef = model.getRefsOfTypeFrom(psaId, "ScheduledStopPointRef").firstOrNull()?.ref
+            scheduledStopPointIsReferredToInSelection(scheduledStopPointRef, model)
+        }
+    }
+
+    fun findScheduledStopPointsToKeep(model: EntityModel): List<Entity> {
+        val scheduledStopPoints = model.getEntitiesOfType(NetexTypes.SCHEDULED_STOP_POINT)
+        return scheduledStopPoints.filter { scheduledStopPoint ->
+            scheduledStopPointIsReferredToInSelection(scheduledStopPoint.id, model)
+        }
+    }
+
+    override fun selectEntities(model: EntityModel): EntitySelection {
+        val passengerStopAssignmentsToKeep = findPassengerStopAssignmentsToKeep(model)
         entitySelection.selection[NetexTypes.PASSENGER_STOP_ASSIGNMENT] = mutableMapOf()
-        psasToKeep.forEach { psaToKeep ->
+        passengerStopAssignmentsToKeep.forEach { psaToKeep ->
             entitySelection.selection[NetexTypes.PASSENGER_STOP_ASSIGNMENT]!![psaToKeep.id] = psaToKeep
         }
 
-        val scheduledStopPoints = model.getEntitiesOfType(NetexTypes.SCHEDULED_STOP_POINT)
-        val sspsToKeep = scheduledStopPoints.filter { scheduledStopPoint ->
-            val entitiesReferringToSsp = model.getEntitiesReferringTo(
-                Entity(
-                    id = scheduledStopPoint.id,
-                    type = NetexTypes.SCHEDULED_STOP_POINT,
-                    publication = PublicationEnumeration.RESTRICTED.value
-                )
-            )
-            val nonPSAsReferringToSsp = entitiesReferringToSsp.filter { it.type != NetexTypes.PASSENGER_STOP_ASSIGNMENT }
-            val selectedEntitiesReferringToSsp = nonPSAsReferringToSsp.filter { entitySelection.includes(it) }
-            selectedEntitiesReferringToSsp.isNotEmpty()
-        }
-
+        val scheduledStopPointsToKeep = findScheduledStopPointsToKeep(model)
         entitySelection.selection[NetexTypes.SCHEDULED_STOP_POINT] = mutableMapOf()
-        sspsToKeep.forEach { sspToKeep ->
+        scheduledStopPointsToKeep.forEach { sspToKeep ->
             entitySelection.selection[NetexTypes.SCHEDULED_STOP_POINT]!![sspToKeep.id] = sspToKeep
         }
 
