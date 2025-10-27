@@ -54,7 +54,7 @@ class OutputNetexSaxHandler(
 
     protected fun getIdByQNameAndAttributes(qName: String, attributes: Map<String, String>): String? {
         return when (qName) {
-            "DayTypeAssignment" -> {
+            "DayTypeAssignment", "PassengerStopAssignment" -> {
                 val version = attributes.getValue("version")
                 val order = attributes.getValue("order")
                 val id = attributes.getValue("id")

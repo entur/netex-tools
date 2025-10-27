@@ -18,7 +18,7 @@ class ServiceJourneyInterchangeSelector(private val entitySelection: EntitySelec
 
         entitySelection.selection["ServiceJourneyInterchange"] = mutableMapOf()
         serviceJourneyInterchangesToKeep.forEach { interchange ->
-            entitySelection.selection["ServiceJourneyInterchange"]!!.put(interchange.id, interchange)
+            entitySelection.selection["ServiceJourneyInterchange"]!![interchange.id] = interchange
         }
 
         return entitySelection
