@@ -7,6 +7,7 @@ import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.Entity.Companion.EMPTY
 import org.entur.netex.tools.lib.model.EntityModel
+import org.entur.netex.tools.lib.model.NetexTypes
 import org.entur.netex.tools.lib.model.Ref
 import org.entur.netex.tools.lib.plugin.NetexPlugin
 import org.entur.netex.tools.lib.plugin.PluginRegistry
@@ -40,7 +41,7 @@ class BuildEntityModelSaxHandler(
 
     private fun createEntityId(type: String, attributes: Attributes): String {
         val id = attributes.getValue("id")
-        return if (type == "DayTypeAssignment") {
+        return if (type == NetexTypes.DAY_TYPE_ASSIGNMENT || type == NetexTypes.PASSENGER_STOP_ASSIGNMENT) {
             val version = attributes.getValue("version")
             val order = attributes.getValue("order")
             CompositeEntityId.ByIdVersionAndOrder(

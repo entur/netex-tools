@@ -20,6 +20,7 @@ import org.entur.netex.tools.lib.selectors.entities.ActiveDatesSelector
 import org.entur.netex.tools.lib.selectors.entities.AllEntitiesSelector
 import org.entur.netex.tools.lib.selectors.entities.EntitySelector
 import org.entur.netex.tools.lib.selectors.entities.EntityPruningSelector
+import org.entur.netex.tools.lib.selectors.entities.PassengerStopAssignmentSelector
 import org.entur.netex.tools.lib.selectors.entities.PublicEntitiesSelector
 import org.entur.netex.tools.lib.selectors.entities.ServiceJourneyInterchangeSelector
 import org.entur.netex.tools.lib.selectors.refs.ActiveDatesRefSelector
@@ -71,13 +72,22 @@ data class FilterNetexApp(
     }
 
     logger.info("Removing interchanges without service journeys...")
-    val (result, ms) = timed {
+    val (interchangeResult, interchangeMs) = timed {
       ServiceJourneyInterchangeSelector(entitiesToKeep)
       .selectEntities(model)
       .intersectWith(entitiesToKeep)
     }
-    logger.info("Removed interchanges without service journeys in $ms")
-    entitiesToKeep = result
+    logger.info("Removed interchanges without service journeys in $interchangeMs")
+    entitiesToKeep = interchangeResult
+
+    logger.info("Removing passenger stop assignments with unreferred ScheduledStopPoint...")
+    val (psaResult, psaMs) = timed {
+        PassengerStopAssignmentSelector(entitiesToKeep)
+            .selectEntities(model)
+            .intersectWith(entitiesToKeep)
+    }
+    logger.info("Removed passenger stop assignments with unreferred ScheduledStopPoint in $psaMs")
+    entitiesToKeep = psaResult
 
     val refSelectors = setupRefSelectors(entitiesToKeep)
     val refSelection = selectRefsToKeep(refSelectors)
