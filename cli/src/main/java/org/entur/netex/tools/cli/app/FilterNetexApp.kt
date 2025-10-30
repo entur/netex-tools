@@ -4,9 +4,12 @@ import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.plugin.DefaultNetexFileWriter
+import org.entur.netex.tools.lib.output.DefaultXMLElementWriter
+import org.entur.netex.tools.lib.output.NetexFileWriter
 import org.entur.netex.tools.lib.plugin.NetexFileWriterContext
 import org.entur.netex.tools.lib.plugin.NetexPlugin
+import org.entur.netex.tools.lib.output.SkipElementWriter
+import org.entur.netex.tools.lib.output.ValidBetweenWriter
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
@@ -20,6 +23,7 @@ import org.entur.netex.tools.lib.selectors.entities.ActiveDatesSelector
 import org.entur.netex.tools.lib.selectors.entities.AllEntitiesSelector
 import org.entur.netex.tools.lib.selectors.entities.EntitySelector
 import org.entur.netex.tools.lib.selectors.entities.EntityPruningSelector
+import org.entur.netex.tools.lib.selectors.entities.PassengerStopAssignmentSelector
 import org.entur.netex.tools.lib.selectors.entities.PublicEntitiesSelector
 import org.entur.netex.tools.lib.selectors.entities.ServiceJourneyInterchangeSelector
 import org.entur.netex.tools.lib.selectors.refs.ActiveDatesRefSelector
@@ -35,11 +39,10 @@ data class FilterNetexApp(
     val cliConfig : CliConfig = CliConfig(),
     val filterConfig: FilterConfig = FilterConfig(),
     val input : File,
-    val target : File
+    val target : File,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    val skipElements = filterConfig.skipElements.toHashSet()
     val startTime = System.currentTimeMillis()
     val model = EntityModel(cliConfig.alias())
     val fileIndex = FileIndex()
@@ -71,13 +74,22 @@ data class FilterNetexApp(
         }
 
         logger.info("Removing interchanges without service journeys...")
-        val (result, ms) = timed {
+        val (interchangeResult, interchangeMs) = timed {
             ServiceJourneyInterchangeSelector(entitiesToKeep)
                 .selectEntities(model)
                 .intersectWith(entitiesToKeep)
         }
-        logger.info("Removed interchanges without service journeys in $ms")
-        entitiesToKeep = result
+        logger.info("Removed interchanges without service journeys in $interchangeMs")
+        entitiesToKeep = interchangeResult
+
+        logger.info("Removing passenger stop assignments with unreferred ScheduledStopPoint...")
+        val (psaResult, psaMs) = timed {
+            PassengerStopAssignmentSelector(entitiesToKeep)
+                .selectEntities(model)
+                .intersectWith(entitiesToKeep)
+        }
+        logger.info("Removed passenger stop assignments with unreferred ScheduledStopPoint in $psaMs")
+        entitiesToKeep = psaResult
 
         val refSelectors = setupRefSelectors(entitiesToKeep)
         val refSelection = selectRefsToKeep(refSelectors)
@@ -237,7 +249,17 @@ data class FilterNetexApp(
             period = filterConfig.period,
         )
 
-        val defaultNetexFileWriter = DefaultNetexFileWriter(netexFileWriterContext)
+        val outputFileContent = StringBuilder()
+        val bufferedWhitespace = StringBuilder()
+        val fileWriter = file.bufferedWriter(Charsets.UTF_8)
+        val defaultNetexFileWriter = NetexFileWriter(
+            netexFileWriterContext = netexFileWriterContext,
+            writer = fileWriter,
+            outputFileContent = outputFileContent
+        )
+
+        val skipElementWriter = SkipElementWriter(outputFileContent, bufferedWhitespace)
+        val validBetweenWriter = ValidBetweenWriter(outputFileContent, bufferedWhitespace)
 
         val inclusionPolicy = InclusionPolicy(
             entityModel = model,
@@ -250,8 +272,14 @@ data class FilterNetexApp(
             entityModel = model,
             fileIndex = fileIndex,
             inclusionPolicy = inclusionPolicy,
-            netexFileWriter = defaultNetexFileWriter,
+            fileWriter = defaultNetexFileWriter,
             outputFile = file,
+            defaultElementWriter = DefaultXMLElementWriter(outputFileContent,bufferedWhitespace),
+            elementWriters = mapOf(
+                "/PublicationDelivery/dataObjects/ServiceCalendarFrame/ServiceFrame" to skipElementWriter,
+                "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceCalendarFrame/ServiceFrame" to skipElementWriter,
+                "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween" to validBetweenWriter,
+            )
         )
     }
 }

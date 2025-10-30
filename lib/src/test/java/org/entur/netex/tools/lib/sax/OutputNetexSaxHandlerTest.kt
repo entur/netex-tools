@@ -2,7 +2,8 @@ package org.entur.netex.tools.lib.sax
 
 import org.entur.netex.tools.lib.data.TestDataFactory
 import org.entur.netex.tools.lib.model.Entity
-import org.entur.netex.tools.lib.plugin.DefaultNetexFileWriter
+import org.entur.netex.tools.lib.output.DefaultXMLElementWriter
+import org.entur.netex.tools.lib.output.NetexFileWriter
 import org.entur.netex.tools.lib.report.FileIndex
 import org.entur.netex.tools.lib.selections.InclusionPolicy
 import org.entur.netex.tools.lib.selections.RefSelection
@@ -32,7 +33,9 @@ class OutputNetexSaxHandlerTest {
     )
 
     private val testFile = File("test.xml")
-    private val writer = mock<DefaultNetexFileWriter>()
+
+    private val fileWriter = mock<NetexFileWriter>()
+    private val defaultElementWriter = mock<DefaultXMLElementWriter>()
 
     private lateinit var outputNetexSaxHandler: OutputNetexSaxHandler
 
@@ -42,8 +45,10 @@ class OutputNetexSaxHandlerTest {
             entityModel = TestDataFactory.defaultEntityModel(),
             fileIndex = fileIndex,
             inclusionPolicy = inclusionPolicy,
-            netexFileWriter = writer,
+            fileWriter = fileWriter,
             outputFile = testFile,
+            defaultElementWriter = defaultElementWriter,
+            elementWriters = mapOf() // todo: should be tested
         )
     }
 
@@ -68,33 +73,33 @@ class OutputNetexSaxHandlerTest {
     @Test
     fun startDocument() {
         outputNetexSaxHandler.startDocument()
-        verify(writer).startDocument()
+        verify(fileWriter).startDocument()
     }
 
     @Test
     fun endDocument() {
         outputNetexSaxHandler.endDocument()
-        verify(writer).endDocument()
+        verify(fileWriter).endDocument()
     }
 
     @Test
     fun startElementDoesNotWriteTagIfElementShouldBeSkipped() {
         val blockAttrs = getAttributesForEntity(blockEntity)
         outputNetexSaxHandler.startElement("", "", "Block", blockAttrs)
-        verify(writer, never()).writeStartElement(qName = "Block", attributes = blockAttrs)
+        verify(defaultElementWriter, never()).writeStartElement(qName = "Block", attributes = blockAttrs)
 
         // Verifies that children of skipped elements are also skipped, regardless of selection
         val serviceJourneyAttrs = AttributesImpl()
         serviceJourneyAttrs.addAttribute("", "id", "id", "CDATA", serviceJourneyId)
         outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
-        verify(writer, never()).writeStartElement(qName = "ServiceJourney", attributes = serviceJourneyAttrs)
+        verify(defaultElementWriter, never()).writeStartElement(qName = "ServiceJourney", attributes = serviceJourneyAttrs)
     }
 
     @Test
     fun startElementWritesTagIfElementShouldBeIncluded() {
         val serviceJourneyAttrs = getAttributesForEntity(serviceJourneyEntity)
         outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
-        verify(writer).writeStartElement(qName = "ServiceJourney", attributes = serviceJourneyAttrs)
+        verify(defaultElementWriter).writeStartElement(qName = "ServiceJourney", attributes = serviceJourneyAttrs)
     }
 
     @Test
@@ -104,14 +109,14 @@ class OutputNetexSaxHandlerTest {
 
         val chars = "some characters".toCharArray()
         outputNetexSaxHandler.characters(chars, 0, chars.size)
-        verify(writer, never()).writeCharacters(chars, 0, chars.size)
+        verify(defaultElementWriter, never()).writeCharacters(chars, 0, chars.size)
     }
 
     @Test
     fun charactersWritesIfElementShouldBeIncluded() {
         val chars = "some characters".toCharArray()
         outputNetexSaxHandler.characters(chars, 0, chars.size)
-        verify(writer).writeCharacters(chars, 0, chars.size)
+        verify(defaultElementWriter).writeCharacters(chars, 0, chars.size)
     }
 
     @Test
@@ -120,13 +125,13 @@ class OutputNetexSaxHandlerTest {
         outputNetexSaxHandler.startElement("", "", "Block", blockAttrs)
 
         outputNetexSaxHandler.endElement("", "", "Block")
-        verify(writer, never()).writeEndElement("Block")
+        verify(defaultElementWriter, never()).writeEndElement("Block")
     }
 
     @Test
     fun endElementWritesIfElementShouldBeIncluded() {
         outputNetexSaxHandler.endElement("", "", "ServiceJourney")
-        verify(writer).writeEndElement("ServiceJourney")
+        verify(defaultElementWriter).writeEndElement("ServiceJourney")
     }
 
     @Test
@@ -137,14 +142,14 @@ class OutputNetexSaxHandlerTest {
         outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
         outputNetexSaxHandler.endElement("", "", "ServiceJourney")
         outputNetexSaxHandler.endElement("", "", "Block")
-        verify(writer, never()).writeStartElement(qName = "Block", attributes = blockAttrs)
-        verify(writer, never()).writeStartElement(qName = "ServiceJourney", attributes = serviceJourneyAttrs)
-        verify(writer, never()).writeEndElement("ServiceJourney")
-        verify(writer, never()).writeEndElement("Block")
+        verify(defaultElementWriter, never()).writeStartElement(qName = "Block", attributes = blockAttrs)
+        verify(defaultElementWriter, never()).writeStartElement(qName = "ServiceJourney", attributes = serviceJourneyAttrs)
+        verify(defaultElementWriter, never()).writeEndElement("ServiceJourney")
+        verify(defaultElementWriter, never()).writeEndElement("Block")
 
         // After the skipped Block ends, we should be out of skip mode, and writing should resume
         outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
-        verify(writer).writeStartElement(qName = "ServiceJourney", attributes = serviceJourneyAttrs)
+        verify(defaultElementWriter).writeStartElement(qName = "ServiceJourney", attributes = serviceJourneyAttrs)
     }
 
     @Test
@@ -153,6 +158,6 @@ class OutputNetexSaxHandlerTest {
         outputNetexSaxHandler.startElement("", "", "Block", blockAttrs)
 
         outputNetexSaxHandler.comment("some comment".toCharArray(), 0, 0)
-        verify(writer, never()).writeComments("some comment".toCharArray(), 0, 0)
+        verify(fileWriter, never()).writeComments("some comment".toCharArray(), 0, 0)
     }
 }

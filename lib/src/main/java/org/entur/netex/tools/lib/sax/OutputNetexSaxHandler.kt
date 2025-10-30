@@ -4,7 +4,9 @@ import org.entur.netex.tools.lib.extensions.toMap
 import org.entur.netex.tools.lib.model.CompositeEntityId
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.plugin.DefaultNetexFileWriter
+import org.entur.netex.tools.lib.output.DefaultXMLElementWriter
+import org.entur.netex.tools.lib.output.NetexFileWriter
+import org.entur.netex.tools.lib.output.XMLElementWriter
 import org.entur.netex.tools.lib.report.FileIndex
 import org.entur.netex.tools.lib.selections.InclusionPolicy
 import org.xml.sax.Attributes
@@ -17,7 +19,9 @@ class OutputNetexSaxHandler(
     private val fileIndex: FileIndex,
     private val inclusionPolicy: InclusionPolicy,
     private val outputFile: File,
-    private val netexFileWriter: DefaultNetexFileWriter,
+    private val fileWriter: NetexFileWriter,
+    private val defaultElementWriter: DefaultXMLElementWriter,
+    private val elementWriters: Map<String, XMLElementWriter>,
 ) : NetexToolsSaxHandler(), LexicalHandler {
     protected var currentElement : Element? = null
     protected var inSkipMode: Boolean = false
@@ -33,12 +37,15 @@ class OutputNetexSaxHandler(
     }
 
     override fun startDocument() {
-        netexFileWriter.startDocument()
+        fileWriter.startDocument()
     }
 
     private fun currentPath(): String {
         return "/" + elementStack.joinToString(separator = "/")
     }
+
+    private fun elementWriter(path: String = currentPath()): XMLElementWriter =
+        elementWriters[path] ?: defaultElementWriter
 
     protected fun updateCurrentElement(attributes: Attributes?, qName: String) {
         if (attributes?.getValue("id") != null) {
@@ -73,7 +80,7 @@ class OutputNetexSaxHandler(
             val elementShouldBeIncluded = inclusionPolicy.shouldInclude(element, currentPath())
 
             if (elementShouldBeIncluded) {
-                netexFileWriter.writeStartElement(
+                elementWriter().writeStartElement(
                     qName = qName,
                     attributes = attributes,
                 )
@@ -98,16 +105,16 @@ class OutputNetexSaxHandler(
             return
         }
 
-        netexFileWriter.writeCharacters(ch, start, length)
+        elementWriter().writeCharacters(ch, start, length)
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        if (elementStack.isNotEmpty()) {
-            elementStack.pop()
+        if (!inSkipMode) {
+            elementWriter().writeEndElement(qName)
         }
 
-        if (!inSkipMode) {
-            netexFileWriter.writeEndElement(qName)
+        if (elementStack.isNotEmpty()) {
+            elementStack.pop()
         }
 
         val parent = currentElement?.parent
@@ -123,11 +130,11 @@ class OutputNetexSaxHandler(
             return
         }
 
-        netexFileWriter.writeComments(ch, start, length)
+        fileWriter.writeComments(ch, start, length)
     }
 
     override fun endDocument() {
-        netexFileWriter.endDocument()
+        fileWriter.endDocument()
     }
 
     // LexicalHandler methods for comment preservation
