@@ -1,6 +1,8 @@
 package org.entur.netex.tools.lib.extensions
 
 import org.xml.sax.Attributes
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 fun <K, V> MutableMap<K, MutableSet<V>>.putOrAddToSet(
     key: K,
@@ -27,3 +29,5 @@ fun Attributes.toMap(): Map<String, String> {
     }
     return map
 }
+
+fun LocalDate.toISO8601(): String = this.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'00:00:00"))

@@ -9,6 +9,8 @@ import org.entur.netex.tools.lib.output.NetexFileWriter
 import org.entur.netex.tools.lib.plugin.NetexFileWriterContext
 import org.entur.netex.tools.lib.plugin.NetexPlugin
 import org.entur.netex.tools.lib.output.SkipElementWriter
+import org.entur.netex.tools.lib.output.ValidBetweenFromDateWriter
+import org.entur.netex.tools.lib.output.ValidBetweenToDateWriter
 import org.entur.netex.tools.lib.output.ValidBetweenWriter
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
@@ -260,6 +262,8 @@ data class FilterNetexApp(
 
       val skipElementWriter = SkipElementWriter(outputFileContent, bufferedWhitespace)
       val validBetweenWriter = ValidBetweenWriter(outputFileContent, bufferedWhitespace)
+      val validBetweenFromDateWriter = ValidBetweenFromDateWriter(outputFileContent, bufferedWhitespace, filterConfig.period.start!!)
+      val validBetweenToDateWriter = ValidBetweenToDateWriter(outputFileContent, bufferedWhitespace, filterConfig.period.end!!)
 
       val inclusionPolicy = InclusionPolicy(
           entityModel = model,
@@ -279,6 +283,8 @@ data class FilterNetexApp(
               "/PublicationDelivery/dataObjects/ServiceCalendarFrame/ServiceFrame" to skipElementWriter,
               "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceCalendarFrame/ServiceFrame" to skipElementWriter,
               "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween" to validBetweenWriter,
+              "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/FromDate" to validBetweenFromDateWriter,
+              "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/ToDate" to validBetweenToDateWriter,
           )
       )
   }
