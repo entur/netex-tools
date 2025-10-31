@@ -21,21 +21,10 @@ import org.entur.netex.tools.lib.report.FileIndex
 import org.entur.netex.tools.lib.report.FilterReport
 import org.entur.netex.tools.lib.sax.*
 import org.entur.netex.tools.lib.selections.InclusionPolicy
-import org.entur.netex.tools.lib.selectors.entities.ActiveDatesSelector
-import org.entur.netex.tools.lib.selectors.entities.AllEntitiesSelector
-import org.entur.netex.tools.lib.selectors.entities.EntitySelector
-import org.entur.netex.tools.lib.selectors.entities.EntityPruningSelector
-import org.entur.netex.tools.lib.selectors.entities.PassengerStopAssignmentSelector
-import org.entur.netex.tools.lib.selectors.entities.PublicEntitiesSelector
-import org.entur.netex.tools.lib.selectors.entities.ServiceJourneyInterchangeSelector
-import org.entur.netex.tools.lib.selectors.refs.ActiveDatesRefSelector
-import org.entur.netex.tools.lib.selectors.refs.AllRefsSelector
-import org.entur.netex.tools.lib.selectors.refs.RefPruningSelector
-import org.entur.netex.tools.lib.selectors.refs.RefSelector
+import org.entur.netex.tools.lib.selectors.entities.CompositeEntitySelector
+import org.entur.netex.tools.lib.selectors.refs.CompositeRefSelector
 import org.slf4j.LoggerFactory
 import java.io.File
-import kotlin.system.measureTimeMillis
-import kotlin.time.measureTime
 
 data class FilterNetexApp(
   val cliConfig : CliConfig = CliConfig(),
@@ -59,45 +48,12 @@ data class FilterNetexApp(
     // Step 1: collect data needed for filtering out entities
     buildEntityModel()
 
-    // Step 2: filter data based on configuration and data collected in step 1
-    val entitySelectors = setupEntitySelectors()
-
-    var entitiesToKeep = selectEntitiesToKeep(entitySelectors)
-
-    entitiesToKeep = if (filterConfig.unreferencedEntitiesToPrune.isEmpty()) {
-      entitiesToKeep
-    } else {
-      logger.info("Pruning unreferenced entities...")
-      val (prunedEntitySelection, ms) = timed {
-        pruneUnreferencedEntities(entitiesToKeep)
-      }
-      logger.info("Pruned unreferenced entities in $ms")
-      prunedEntitySelection
-    }
-
-    logger.info("Removing interchanges without service journeys...")
-    val (interchangeResult, interchangeMs) = timed {
-      ServiceJourneyInterchangeSelector(entitiesToKeep)
-      .selectEntities(model)
-      .intersectWith(entitiesToKeep)
-    }
-    logger.info("Removed interchanges without service journeys in $interchangeMs")
-    entitiesToKeep = interchangeResult
-
-    logger.info("Removing passenger stop assignments with unreferred ScheduledStopPoint...")
-    val (psaResult, psaMs) = timed {
-        PassengerStopAssignmentSelector(entitiesToKeep)
-            .selectEntities(model)
-            .intersectWith(entitiesToKeep)
-    }
-    logger.info("Removed passenger stop assignments with unreferred ScheduledStopPoint in $psaMs")
-    entitiesToKeep = psaResult
-
-    val refSelectors = setupRefSelectors(entitiesToKeep)
-    val refSelection = selectRefsToKeep(refSelectors)
+      // Step 2: select the entities and refs to keep
+    val entitiesToKeep = CompositeEntitySelector(filterConfig, activeDatesPlugin).selectEntities(model)
+    val refsToKeep = CompositeRefSelector(filterConfig, entitiesToKeep, activeDatesPlugin).selectRefs(model)
 
     // Step 3: export the filtered data to XML files
-    exportXmlFiles(entitiesToKeep, refSelection)
+    exportXmlFiles(entitiesToKeep, refsToKeep)
 
     printReport(entitiesToKeep)
 
@@ -105,48 +61,6 @@ data class FilterNetexApp(
         entitiesByFile = fileIndex.entitiesByFile,
         elementTypesByFile = fileIndex.elementTypesByFile,
     )
-  }
-
-  val publicEntitiesSelector = PublicEntitiesSelector()
-  val activeDatesSelector = ActiveDatesSelector(activeDatesPlugin, filterConfig.period)
-
-  inline fun <T> timed(block: () -> T): Pair<T, Long> {
-    var result: T
-    val time = measureTimeMillis { result = block() }
-    return result to time
-  }
-
-  private fun setupEntitySelectors(): List<EntitySelector> {
-    val selectors = mutableListOf<EntitySelector>(AllEntitiesSelector())
-    if (filterConfig.removePrivateData) {
-        selectors.add(publicEntitiesSelector)
-    }
-    if (filterConfig.period.start != null || filterConfig.period.end != null) {
-        selectors.add(activeDatesSelector)
-    }
-    return selectors
-  }
-
-  private fun setupRefSelectors(entitySelection: EntitySelection): List<RefSelector> {
-    val selectors = mutableListOf<RefSelector>(AllRefsSelector())
-    if (filterConfig.pruneReferences) {
-      selectors.add(RefPruningSelector(entitySelection, filterConfig.referencesToExcludeFromPruning))
-    }
-    if (filterConfig.period.start != null || filterConfig.period.end != null) {
-      selectors.add(ActiveDatesRefSelector(activeDatesPlugin, filterConfig.period))
-    }
-    return selectors
-  }
-
-  private fun pruneUnreferencedEntities(initialEntitySelection: EntitySelection): EntitySelection {
-    val unreferencedEntityPruningSelector = EntityPruningSelector(
-      entitySelection = initialEntitySelection,
-      typesToRemove = filterConfig.unreferencedEntitiesToPrune
-    )
-    val prunedEntitySelection = unreferencedEntityPruningSelector
-      .selectEntities(model)
-      .intersectWith(initialEntitySelection)
-    return prunedEntitySelection
   }
 
   private fun setupAndLogStartupInfo() {
@@ -162,36 +76,6 @@ data class FilterNetexApp(
       createNetexSaxReadHandler(it)
     }
     logger.info("Done reading xml files for building entity model. Model contains ${model.listAllEntities().size} entities and ${model.listAllRefs().size} references.")
-  }
-
-  private fun selectEntitiesToKeep(selectors: List<EntitySelector>): EntitySelection {
-    logger.info("Starting initial entity selection...")
-    var entitySelection: EntitySelection
-    val time = measureTime {
-      entitySelection = selectors
-        .map { selector ->
-          logger.info("Running entity selector: ${selector::class.simpleName}")
-          selector.selectEntities(model)
-        }
-        .reduce { acc, selection -> selection.intersectWith(acc) }
-    }
-    logger.info("Initial entity collection done in $time. Collected a total of ${entitySelection.allIds().size} entities")
-    return entitySelection
-  }
-
-  private fun selectRefsToKeep(selectors: List<RefSelector>): RefSelection {
-    logger.info("Starting ref selection...")
-    var refSelection: RefSelection
-    val time = measureTime {
-      refSelection = selectors
-        .map { selector ->
-          logger.info("Running ref selector: ${selector::class.simpleName}")
-          selector.selectRefs(model)
-        }
-        .reduce { acc, selection -> selection.intersectWith(acc) }
-    }
-    logger.info("Ref collection done in $time. Collected a total of ${refSelection.selection.size} references")
-    return refSelection
   }
 
   private fun exportXmlFiles(entitySelection : EntitySelection, refSelection : RefSelection) {
