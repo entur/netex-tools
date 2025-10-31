@@ -4,6 +4,7 @@ import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.EntityModel
+import org.entur.netex.tools.lib.output.DefaultLocaleWriter
 import org.entur.netex.tools.lib.output.DefaultXMLElementWriter
 import org.entur.netex.tools.lib.output.NetexFileWriter
 import org.entur.netex.tools.lib.plugin.NetexFileWriterContext
@@ -148,6 +149,7 @@ data class FilterNetexApp(
       val validBetweenWriter = ValidBetweenWriter(outputFileContent, bufferedWhitespace)
       val validBetweenFromDateWriter = ValidBetweenFromDateWriter(outputFileContent, bufferedWhitespace, filterConfig.period.start!!)
       val validBetweenToDateWriter = ValidBetweenToDateWriter(outputFileContent, bufferedWhitespace, filterConfig.period.end!!)
+      val defaultLocaleWriter = DefaultLocaleWriter(outputFileContent, bufferedWhitespace)
 
       val inclusionPolicy = InclusionPolicy(
           entityModel = model,
@@ -169,6 +171,9 @@ data class FilterNetexApp(
               "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween" to validBetweenWriter,
               "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/FromDate" to validBetweenFromDateWriter,
               "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/ToDate" to validBetweenToDateWriter,
+              "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale/TimeZone" to skipElementWriter,
+              "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale/DefaultLanguage" to skipElementWriter,
+              "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale" to defaultLocaleWriter,
           )
       )
   }
