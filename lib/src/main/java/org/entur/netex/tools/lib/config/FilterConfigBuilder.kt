@@ -53,6 +53,11 @@ class FilterConfigBuilder(
         return this
     }
 
+    fun withRenameFiles(renameFiles: Boolean): FilterConfigBuilder {
+        filterConfig.renameFiles = renameFiles
+        return this
+    }
+
     fun build(): FilterConfig {
         return filterConfig
     }

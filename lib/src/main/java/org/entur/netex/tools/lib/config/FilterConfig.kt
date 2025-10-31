@@ -17,6 +17,7 @@ data class FilterConfig(
     var useSelfClosingTagsWhereApplicable : Boolean = true,
     var removeInterchangesWithoutServiceJourneys: Boolean = true,
     var removePassengerStopAssignmentsWithUnreferredScheduledStopPoint: Boolean = true,
+    var renameFiles: Boolean = true,
 ) {
     fun toBuilder() : FilterConfigBuilder {
         return FilterConfigBuilder(filterConfig = this)

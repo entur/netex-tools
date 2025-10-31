@@ -5,7 +5,7 @@ import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
-import org.entur.netex.tools.lib.utils.timed
+import org.entur.netex.tools.lib.utils.timedMs
 import org.slf4j.LoggerFactory
 
 class CompositeRefSelector(
@@ -33,7 +33,7 @@ class CompositeRefSelector(
 
     private fun runRefSelectors(selectors: List<RefSelector>, model: EntityModel): RefSelection {
         logger.info("Starting ref selection...")
-        val (refSelection, ms) = timed {
+        val (refSelection, ms) = timedMs {
             selectors
                 .map { runRefSelector(it, model) }
                 .reduce { acc, selection -> selection.intersectWith(acc) }

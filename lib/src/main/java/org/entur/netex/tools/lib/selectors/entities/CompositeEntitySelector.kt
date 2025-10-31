@@ -4,7 +4,7 @@ import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import org.entur.netex.tools.lib.selections.EntitySelection
-import org.entur.netex.tools.lib.utils.timed
+import org.entur.netex.tools.lib.utils.timedMs
 import org.slf4j.LoggerFactory
 
 class CompositeEntitySelector(
@@ -43,7 +43,7 @@ class CompositeEntitySelector(
 
     private fun runInitialEntitySelection(entityModel: EntityModel): EntitySelection {
         logger.info("Starting initial entity selection...")
-        val (entitySelection, ms) = timed {
+        val (entitySelection, ms) = timedMs {
             val selectors = getInitialEntitySelectors()
             selectEntitiesToKeep(
                 entityModel = entityModel,
@@ -59,7 +59,7 @@ class CompositeEntitySelector(
         entitySelection: EntitySelection
     ): EntitySelection {
         logger.info("Pruning unreferenced entities...")
-        val (prunedEntitySelection, ms) = timed {
+        val (prunedEntitySelection, ms) = timedMs {
             val selector = EntityPruningSelector(
                 entitySelection = entitySelection,
                 typesToRemove = filterConfig.unreferencedEntitiesToPrune
@@ -75,7 +75,7 @@ class CompositeEntitySelector(
         entitySelection: EntitySelection
     ): EntitySelection {
         logger.info("Removing interchanges without service journeys...")
-        val (entitySelectionWithInterchangesRemoved, ms) = timed {
+        val (entitySelectionWithInterchangesRemoved, ms) = timedMs {
             val selector = ServiceJourneyInterchangeSelector(entitySelection)
             runSelector(selector, entityModel).intersectWith(entitySelection)
         }
@@ -88,7 +88,7 @@ class CompositeEntitySelector(
         entitySelection: EntitySelection
     ): EntitySelection {
         logger.info("Removing passenger stop assignments with unreferred ScheduledStopPoint...")
-        val (entitySelectionWithAssignmentsRemoved, ms) = timed {
+        val (entitySelectionWithAssignmentsRemoved, ms) = timedMs {
             PassengerStopAssignmentSelector(entitySelection)
                 .selectEntities(entityModel)
                 .intersectWith(entitySelection)

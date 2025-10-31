@@ -24,6 +24,7 @@ import org.entur.netex.tools.lib.sax.*
 import org.entur.netex.tools.lib.selections.InclusionPolicy
 import org.entur.netex.tools.lib.selectors.entities.CompositeEntitySelector
 import org.entur.netex.tools.lib.selectors.refs.CompositeRefSelector
+import org.entur.netex.tools.lib.utils.timedSeconds
 import org.slf4j.LoggerFactory
 import java.io.File
 
@@ -35,7 +36,6 @@ data class FilterNetexApp(
 ) {
   private val logger = LoggerFactory.getLogger(javaClass)
 
-  val startTime = System.currentTimeMillis()
   val model = EntityModel(cliConfig.alias())
   val fileIndex = FileIndex()
 
@@ -46,17 +46,21 @@ data class FilterNetexApp(
   fun run(): FilterReport {
     setupAndLogStartupInfo()
 
-    // Step 1: collect data needed for filtering out entities
-    buildEntityModel()
+    val (entitySelection, seconds) = timedSeconds {
+        // Step 1: collect data needed for filtering out entities
+        buildEntityModel()
 
-      // Step 2: select the entities and refs to keep
-    val entitiesToKeep = CompositeEntitySelector(filterConfig, activeDatesPlugin).selectEntities(model)
-    val refsToKeep = CompositeRefSelector(filterConfig, entitiesToKeep, activeDatesPlugin).selectRefs(model)
+        // Step 2: select the entities and refs to keep
+        val entitiesToKeep = CompositeEntitySelector(filterConfig, activeDatesPlugin).selectEntities(model)
+        val refsToKeep = CompositeRefSelector(filterConfig, entitiesToKeep, activeDatesPlugin).selectRefs(model)
 
-    // Step 3: export the filtered data to XML files
-    exportXmlFiles(entitiesToKeep, refsToKeep)
+        // Step 3: export the filtered data to XML files
+        exportXmlFiles(entitiesToKeep, refsToKeep)
 
-    printReport(entitiesToKeep)
+        entitiesToKeep
+    }
+
+    printReport(entitySelection, seconds)
 
     return FilterReport(
         entitiesByFile = fileIndex.entitiesByFile,
@@ -79,6 +83,18 @@ data class FilterNetexApp(
     logger.info("Done reading xml files for building entity model. Model contains ${model.listAllEntities().size} entities and ${model.listAllRefs().size} references.")
   }
 
+  private fun getOutputXmlFile(directory: File, file: File): File {
+      if (filterConfig.renameFiles) {
+          val newFileName = fileIndex.filesToRename[file.name]
+          val outFile = File(target, newFileName ?: file.name)
+          if (!outFile.exists()) {
+              outFile.createNewFile()
+          }
+          return outFile
+      }
+      return File(directory, file.name)
+  }
+
   private fun exportXmlFiles(entitySelection : EntitySelection, refSelection : RefSelection) {
     logger.info("Save xml files")
     if(!target.exists()) {
@@ -90,42 +106,50 @@ data class FilterNetexApp(
 
     logger.info("Writing filtered xml files to ${target.absolutePath}")
     parseXmlDocuments(input) { file ->
-      val newFileName = fileIndex.filesToRename[file.name]
-      val outFile = File(target, newFileName ?: file.name)
-      if (!outFile.exists()) {
-          outFile.createNewFile()
-      }
+      val outFile = getOutputXmlFile(target, file)
       createNetexSaxWriteHandler(outFile, entitySelection, refSelection)
     }
     logger.info("Done writing filtered xml files to ${target.absolutePath}")
   }
 
-  private fun printReport(selection: EntitySelection) {
+  private fun printReport(selection: EntitySelection, secondsSpent: Double) {
     if (cliConfig.printReport) {
       logger.info(model.getEntitiesKeptReport(selection))
       logger.info(model.getRefsKeptReport(selection))
     }
-    logger.info("Filter NeTEx files done in ${(System.currentTimeMillis() - startTime)/1000.0} seconds.")
+    logger.info("Filter NeTEx files done in $secondsSpent seconds.")
   }
 
-  private fun createNetexSaxReadHandler(file: File): BuildEntityModelSaxHandler {
-      val fileNamePlugin = FileNamePlugin(
-          currentFile = file,
-          fileIndex = fileIndex,
-      )
-      val plugins = listOf<NetexPlugin>(activeDatesPlugin, fileNamePlugin)
-      val inclusionPolicy = InclusionPolicy(
+    private fun getPluginsBy(
+        filterConfig: FilterConfig,
+        file: File
+    ): List<NetexPlugin> {
+        val plugins = mutableListOf<NetexPlugin>()
+        if (filterConfig.renameFiles) {
+            plugins.add(
+                FileNamePlugin(
+                    currentFile = file,
+                    fileIndex = fileIndex,
+                )
+            )
+        }
+        if (filterConfig.period.hasStartOrEnd()) {
+            plugins.add(activeDatesPlugin)
+        }
+        return plugins
+    }
+
+  private fun createNetexSaxReadHandler(file: File): BuildEntityModelSaxHandler =
+      BuildEntityModelSaxHandler(
           entityModel = model,
-          entitySelection = null,
-          refSelection = null,
-          skipElements = filterConfig.skipElements
+          plugins = getPluginsBy(filterConfig, file),
+          inclusionPolicy = InclusionPolicy(
+              entityModel = model,
+              entitySelection = null,
+              refSelection = null,
+              skipElements = filterConfig.skipElements
+          )
       )
-      return BuildEntityModelSaxHandler(
-          entityModel = model,
-          plugins = plugins,
-          inclusionPolicy = inclusionPolicy,
-      )
-  }
 
   private fun createNetexSaxWriteHandler(file: File, entitySelection: EntitySelection, refSelection: RefSelection): OutputNetexSaxHandler {
       val netexFileWriterContext = NetexFileWriterContext(
@@ -151,17 +175,15 @@ data class FilterNetexApp(
       val validBetweenToDateWriter = ValidBetweenToDateWriter(outputFileContent, bufferedWhitespace, filterConfig.period.end!!)
       val defaultLocaleWriter = DefaultLocaleWriter(outputFileContent, bufferedWhitespace)
 
-      val inclusionPolicy = InclusionPolicy(
-          entityModel = model,
-          entitySelection = entitySelection,
-          refSelection = refSelection,
-          skipElements = filterConfig.skipElements
-      )
-
       return OutputNetexSaxHandler(
           entityModel = model,
           fileIndex = fileIndex,
-          inclusionPolicy = inclusionPolicy,
+          inclusionPolicy = InclusionPolicy(
+              entityModel = model,
+              entitySelection = entitySelection,
+              refSelection = refSelection,
+              skipElements = filterConfig.skipElements
+          ),
           fileWriter = defaultNetexFileWriter,
           outputFile = file,
           defaultElementWriter = DefaultXMLElementWriter(outputFileContent,bufferedWhitespace),
