@@ -4,9 +4,15 @@ import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.plugin.DefaultNetexFileWriter
+import org.entur.netex.tools.lib.output.DefaultLocaleWriter
+import org.entur.netex.tools.lib.output.DefaultXMLElementWriter
+import org.entur.netex.tools.lib.output.NetexFileWriter
 import org.entur.netex.tools.lib.plugin.NetexFileWriterContext
 import org.entur.netex.tools.lib.plugin.NetexPlugin
+import org.entur.netex.tools.lib.output.SkipElementWriter
+import org.entur.netex.tools.lib.output.ValidBetweenFromDateWriter
+import org.entur.netex.tools.lib.output.ValidBetweenToDateWriter
+import org.entur.netex.tools.lib.output.ValidBetweenWriter
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
@@ -16,32 +22,20 @@ import org.entur.netex.tools.lib.report.FileIndex
 import org.entur.netex.tools.lib.report.FilterReport
 import org.entur.netex.tools.lib.sax.*
 import org.entur.netex.tools.lib.selections.InclusionPolicy
-import org.entur.netex.tools.lib.selectors.entities.ActiveDatesSelector
-import org.entur.netex.tools.lib.selectors.entities.AllEntitiesSelector
-import org.entur.netex.tools.lib.selectors.entities.EntitySelector
-import org.entur.netex.tools.lib.selectors.entities.EntityPruningSelector
-import org.entur.netex.tools.lib.selectors.entities.PassengerStopAssignmentSelector
-import org.entur.netex.tools.lib.selectors.entities.PublicEntitiesSelector
-import org.entur.netex.tools.lib.selectors.entities.ServiceJourneyInterchangeSelector
-import org.entur.netex.tools.lib.selectors.refs.ActiveDatesRefSelector
-import org.entur.netex.tools.lib.selectors.refs.AllRefsSelector
-import org.entur.netex.tools.lib.selectors.refs.RefPruningSelector
-import org.entur.netex.tools.lib.selectors.refs.RefSelector
+import org.entur.netex.tools.lib.selectors.entities.CompositeEntitySelector
+import org.entur.netex.tools.lib.selectors.refs.CompositeRefSelector
+import org.entur.netex.tools.lib.utils.timedSeconds
 import org.slf4j.LoggerFactory
 import java.io.File
-import kotlin.system.measureTimeMillis
-import kotlin.time.measureTime
 
 data class FilterNetexApp(
   val cliConfig : CliConfig = CliConfig(),
   val filterConfig: FilterConfig = FilterConfig(),
   val input : File,
-  val target : File
+  val target : File,
 ) {
   private val logger = LoggerFactory.getLogger(javaClass)
 
-  val skipElements = filterConfig.skipElements.toHashSet()
-  val startTime = System.currentTimeMillis()
   val model = EntityModel(cliConfig.alias())
   val fileIndex = FileIndex()
 
@@ -52,97 +46,26 @@ data class FilterNetexApp(
   fun run(): FilterReport {
     setupAndLogStartupInfo()
 
-    // Step 1: collect data needed for filtering out entities
-    buildEntityModel()
+    val (entitySelection, seconds) = timedSeconds {
+        // Step 1: collect data needed for filtering out entities
+        buildEntityModel()
 
-    // Step 2: filter data based on configuration and data collected in step 1
-    val entitySelectors = setupEntitySelectors()
+        // Step 2: select the entities and refs to keep
+        val entitiesToKeep = CompositeEntitySelector(filterConfig, activeDatesPlugin).selectEntities(model)
+        val refsToKeep = CompositeRefSelector(filterConfig, entitiesToKeep, activeDatesPlugin).selectRefs(model)
 
-    var entitiesToKeep = selectEntitiesToKeep(entitySelectors)
+        // Step 3: export the filtered data to XML files
+        exportXmlFiles(entitiesToKeep, refsToKeep)
 
-    entitiesToKeep = if (filterConfig.unreferencedEntitiesToPrune.isEmpty()) {
-      entitiesToKeep
-    } else {
-      logger.info("Pruning unreferenced entities...")
-      val (prunedEntitySelection, ms) = timed {
-        pruneUnreferencedEntities(entitiesToKeep)
-      }
-      logger.info("Pruned unreferenced entities in $ms")
-      prunedEntitySelection
+        entitiesToKeep
     }
 
-    logger.info("Removing interchanges without service journeys...")
-    val (interchangeResult, interchangeMs) = timed {
-      ServiceJourneyInterchangeSelector(entitiesToKeep)
-      .selectEntities(model)
-      .intersectWith(entitiesToKeep)
-    }
-    logger.info("Removed interchanges without service journeys in $interchangeMs")
-    entitiesToKeep = interchangeResult
-
-    logger.info("Removing passenger stop assignments with unreferred ScheduledStopPoint...")
-    val (psaResult, psaMs) = timed {
-        PassengerStopAssignmentSelector(entitiesToKeep)
-            .selectEntities(model)
-            .intersectWith(entitiesToKeep)
-    }
-    logger.info("Removed passenger stop assignments with unreferred ScheduledStopPoint in $psaMs")
-    entitiesToKeep = psaResult
-
-    val refSelectors = setupRefSelectors(entitiesToKeep)
-    val refSelection = selectRefsToKeep(refSelectors)
-
-    // Step 3: export the filtered data to XML files
-    exportXmlFiles(entitiesToKeep, refSelection)
-
-    printReport(entitiesToKeep)
+    printReport(entitySelection, seconds)
 
     return FilterReport(
         entitiesByFile = fileIndex.entitiesByFile,
         elementTypesByFile = fileIndex.elementTypesByFile,
     )
-  }
-
-  val publicEntitiesSelector = PublicEntitiesSelector()
-  val activeDatesSelector = ActiveDatesSelector(activeDatesPlugin, filterConfig.period)
-
-  inline fun <T> timed(block: () -> T): Pair<T, Long> {
-    var result: T
-    val time = measureTimeMillis { result = block() }
-    return result to time
-  }
-
-  private fun setupEntitySelectors(): List<EntitySelector> {
-    val selectors = mutableListOf<EntitySelector>(AllEntitiesSelector())
-    if (filterConfig.removePrivateData) {
-        selectors.add(publicEntitiesSelector)
-    }
-    if (filterConfig.period.start != null || filterConfig.period.end != null) {
-        selectors.add(activeDatesSelector)
-    }
-    return selectors
-  }
-
-  private fun setupRefSelectors(entitySelection: EntitySelection): List<RefSelector> {
-    val selectors = mutableListOf<RefSelector>(AllRefsSelector())
-    if (filterConfig.pruneReferences) {
-      selectors.add(RefPruningSelector(entitySelection, filterConfig.referencesToExcludeFromPruning))
-    }
-    if (filterConfig.period.start != null || filterConfig.period.end != null) {
-      selectors.add(ActiveDatesRefSelector(activeDatesPlugin, filterConfig.period))
-    }
-    return selectors
-  }
-
-  private fun pruneUnreferencedEntities(initialEntitySelection: EntitySelection): EntitySelection {
-    val unreferencedEntityPruningSelector = EntityPruningSelector(
-      entitySelection = initialEntitySelection,
-      typesToRemove = filterConfig.unreferencedEntitiesToPrune
-    )
-    val prunedEntitySelection = unreferencedEntityPruningSelector
-      .selectEntities(model)
-      .intersectWith(initialEntitySelection)
-    return prunedEntitySelection
   }
 
   private fun setupAndLogStartupInfo() {
@@ -160,34 +83,16 @@ data class FilterNetexApp(
     logger.info("Done reading xml files for building entity model. Model contains ${model.listAllEntities().size} entities and ${model.listAllRefs().size} references.")
   }
 
-  private fun selectEntitiesToKeep(selectors: List<EntitySelector>): EntitySelection {
-    logger.info("Starting initial entity selection...")
-    var entitySelection: EntitySelection
-    val time = measureTime {
-      entitySelection = selectors
-        .map { selector ->
-          logger.info("Running entity selector: ${selector::class.simpleName}")
-          selector.selectEntities(model)
-        }
-        .reduce { acc, selection -> selection.intersectWith(acc) }
-    }
-    logger.info("Initial entity collection done in $time. Collected a total of ${entitySelection.allIds().size} entities")
-    return entitySelection
-  }
-
-  private fun selectRefsToKeep(selectors: List<RefSelector>): RefSelection {
-    logger.info("Starting ref selection...")
-    var refSelection: RefSelection
-    val time = measureTime {
-      refSelection = selectors
-        .map { selector ->
-          logger.info("Running ref selector: ${selector::class.simpleName}")
-          selector.selectRefs(model)
-        }
-        .reduce { acc, selection -> selection.intersectWith(acc) }
-    }
-    logger.info("Ref collection done in $time. Collected a total of ${refSelection.selection.size} references")
-    return refSelection
+  private fun getOutputXmlFile(directory: File, file: File): File {
+      if (filterConfig.renameFiles) {
+          val newFileName = fileIndex.filesToRename[file.name]
+          val outFile = File(target, newFileName ?: file.name)
+          if (!outFile.exists()) {
+              outFile.createNewFile()
+          }
+          return outFile
+      }
+      return File(directory, file.name)
   }
 
   private fun exportXmlFiles(entitySelection : EntitySelection, refSelection : RefSelection) {
@@ -201,42 +106,50 @@ data class FilterNetexApp(
 
     logger.info("Writing filtered xml files to ${target.absolutePath}")
     parseXmlDocuments(input) { file ->
-      val newFileName = fileIndex.filesToRename[file.name]
-      val outFile = File(target, newFileName ?: file.name)
-      if (!outFile.exists()) {
-          outFile.createNewFile()
-      }
+      val outFile = getOutputXmlFile(target, file)
       createNetexSaxWriteHandler(outFile, entitySelection, refSelection)
     }
     logger.info("Done writing filtered xml files to ${target.absolutePath}")
   }
 
-  private fun printReport(selection: EntitySelection) {
+  private fun printReport(selection: EntitySelection, secondsSpent: Double) {
     if (cliConfig.printReport) {
       logger.info(model.getEntitiesKeptReport(selection))
       logger.info(model.getRefsKeptReport(selection))
     }
-    logger.info("Filter NeTEx files done in ${(System.currentTimeMillis() - startTime)/1000.0} seconds.")
+    logger.info("Filter NeTEx files done in $secondsSpent seconds.")
   }
 
-  private fun createNetexSaxReadHandler(file: File): BuildEntityModelSaxHandler {
-      val fileNamePlugin = FileNamePlugin(
-          currentFile = file,
-          fileIndex = fileIndex,
-      )
-      val plugins = listOf<NetexPlugin>(activeDatesPlugin, fileNamePlugin)
-      val inclusionPolicy = InclusionPolicy(
+    private fun getPluginsBy(
+        filterConfig: FilterConfig,
+        file: File
+    ): List<NetexPlugin> {
+        val plugins = mutableListOf<NetexPlugin>()
+        if (filterConfig.renameFiles) {
+            plugins.add(
+                FileNamePlugin(
+                    currentFile = file,
+                    fileIndex = fileIndex,
+                )
+            )
+        }
+        if (filterConfig.period.hasStartOrEnd()) {
+            plugins.add(activeDatesPlugin)
+        }
+        return plugins
+    }
+
+  private fun createNetexSaxReadHandler(file: File): BuildEntityModelSaxHandler =
+      BuildEntityModelSaxHandler(
           entityModel = model,
-          entitySelection = null,
-          refSelection = null,
-          skipElements = filterConfig.skipElements
+          plugins = getPluginsBy(filterConfig, file),
+          inclusionPolicy = InclusionPolicy(
+              entityModel = model,
+              entitySelection = null,
+              refSelection = null,
+              skipElements = filterConfig.skipElements
+          )
       )
-      return BuildEntityModelSaxHandler(
-          entityModel = model,
-          plugins = plugins,
-          inclusionPolicy = inclusionPolicy,
-      )
-  }
 
   private fun createNetexSaxWriteHandler(file: File, entitySelection: EntitySelection, refSelection: RefSelection): OutputNetexSaxHandler {
       val netexFileWriterContext = NetexFileWriterContext(
@@ -247,21 +160,43 @@ data class FilterNetexApp(
           period = filterConfig.period,
       )
 
-      val defaultNetexFileWriter = DefaultNetexFileWriter(netexFileWriterContext)
-
-      val inclusionPolicy = InclusionPolicy(
-          entityModel = model,
-          entitySelection = entitySelection,
-          refSelection = refSelection,
-          skipElements = filterConfig.skipElements
+      val outputFileContent = StringBuilder()
+      val bufferedWhitespace = StringBuilder()
+      val fileWriter = file.bufferedWriter(Charsets.UTF_8)
+      val defaultNetexFileWriter = NetexFileWriter(
+          netexFileWriterContext = netexFileWriterContext,
+          writer = fileWriter,
+          outputFileContent = outputFileContent
       )
+
+      val skipElementWriter = SkipElementWriter(outputFileContent, bufferedWhitespace)
+      val validBetweenWriter = ValidBetweenWriter(outputFileContent, bufferedWhitespace)
+      val validBetweenFromDateWriter = ValidBetweenFromDateWriter(outputFileContent, bufferedWhitespace, filterConfig.period.start!!)
+      val validBetweenToDateWriter = ValidBetweenToDateWriter(outputFileContent, bufferedWhitespace, filterConfig.period.end!!)
+      val defaultLocaleWriter = DefaultLocaleWriter(outputFileContent, bufferedWhitespace)
 
       return OutputNetexSaxHandler(
           entityModel = model,
           fileIndex = fileIndex,
-          inclusionPolicy = inclusionPolicy,
-          netexFileWriter = defaultNetexFileWriter,
+          inclusionPolicy = InclusionPolicy(
+              entityModel = model,
+              entitySelection = entitySelection,
+              refSelection = refSelection,
+              skipElements = filterConfig.skipElements
+          ),
+          fileWriter = defaultNetexFileWriter,
           outputFile = file,
+          defaultElementWriter = DefaultXMLElementWriter(outputFileContent,bufferedWhitespace),
+          elementWriters = mapOf(
+              "/PublicationDelivery/dataObjects/ServiceCalendarFrame/ServiceFrame" to skipElementWriter,
+              "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceCalendarFrame/ServiceFrame" to skipElementWriter,
+              "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween" to validBetweenWriter,
+              "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/FromDate" to validBetweenFromDateWriter,
+              "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/ToDate" to validBetweenToDateWriter,
+              "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale/TimeZone" to skipElementWriter,
+              "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale/DefaultLanguage" to skipElementWriter,
+              "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale" to defaultLocaleWriter,
+          )
       )
   }
 }

@@ -11,4 +11,8 @@ data class TimePeriod(
     val start : LocalDate?,
     @Serializable(with = LocalDateSerializer::class)
     val end : LocalDate?,
-)
+) {
+    fun hasStartOrEnd() : Boolean {
+        return start != null || end != null
+    }
+}

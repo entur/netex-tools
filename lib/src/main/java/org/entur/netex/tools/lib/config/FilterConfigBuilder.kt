@@ -43,6 +43,21 @@ class FilterConfigBuilder(
         return this
     }
 
+    fun withRemoveInterchangesWithoutServiceJourneys(removeInterchangesWithoutServiceJourneys: Boolean): FilterConfigBuilder {
+        filterConfig.removeInterchangesWithoutServiceJourneys = removeInterchangesWithoutServiceJourneys
+        return this
+    }
+
+    fun withRemovePassengerStopAssignmentsWithUnreferredScheduledStopPoint(removePassengerStopAssignmentsWithUnreferredScheduledStopPoint: Boolean): FilterConfigBuilder {
+        filterConfig.removePassengerStopAssignmentsWithUnreferredScheduledStopPoint = removePassengerStopAssignmentsWithUnreferredScheduledStopPoint
+        return this
+    }
+
+    fun withRenameFiles(renameFiles: Boolean): FilterConfigBuilder {
+        filterConfig.renameFiles = renameFiles
+        return this
+    }
+
     fun build(): FilterConfig {
         return filterConfig
     }

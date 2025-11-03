@@ -15,8 +15,13 @@ data class FilterConfig(
     var pruneReferences : Boolean = false,
     var referencesToExcludeFromPruning : Set<String> = setOf(),
     var useSelfClosingTagsWhereApplicable : Boolean = true,
+    var removeInterchangesWithoutServiceJourneys: Boolean = true,
+    var removePassengerStopAssignmentsWithUnreferredScheduledStopPoint: Boolean = true,
+    var renameFiles: Boolean = true,
 ) {
     fun toBuilder() : FilterConfigBuilder {
         return FilterConfigBuilder(filterConfig = this)
     }
+
+    fun hasSpecifiedEntitiesToPrune() : Boolean = unreferencedEntitiesToPrune.isNotEmpty()
 }

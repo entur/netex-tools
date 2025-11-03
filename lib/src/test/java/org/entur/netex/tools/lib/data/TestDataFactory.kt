@@ -7,17 +7,20 @@ import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.model.PublicationEnumeration
 import org.entur.netex.tools.lib.model.Ref
-import org.entur.netex.tools.lib.plugin.NetexPlugin
 import org.xml.sax.Attributes
 import org.xml.sax.helpers.AttributesImpl
 
 object TestDataFactory {
     fun defaultEntityModel(): EntityModel = EntityModel(alias = Alias.of(emptyMap()))
 
-    fun defaultEntity(id: String, type: String = "testType"): Entity = Entity(
+    fun defaultEntity(
+        id: String,
+        type: String = "testType",
+        publication: String = PublicationEnumeration.PUBLIC.toString().lowercase()
+    ): Entity = Entity(
         id = id,
         type = type,
-        publication = PublicationEnumeration.PUBLIC.toString(),
+        publication = publication,
         parent = null
     )
 
@@ -25,6 +28,12 @@ object TestDataFactory {
         type = "testType",
         source = defaultEntity(id),
         ref = id,
+    )
+
+    fun defaultRef(entity: Entity): Ref = Ref(
+        type = "testType",
+        source = entity,
+        ref = entity.id,
     )
 
     fun entitySelectionWithUnreferredEntities(): EntitySelection {
