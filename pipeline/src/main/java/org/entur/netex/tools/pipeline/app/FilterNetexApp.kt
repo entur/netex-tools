@@ -7,6 +7,7 @@ import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.output.DefaultLocaleWriter
 import org.entur.netex.tools.lib.output.DefaultXMLElementWriter
 import org.entur.netex.tools.lib.output.NetexFileWriter
+import org.entur.netex.tools.lib.output.QuayRefWriter
 import org.entur.netex.tools.lib.plugin.NetexFileWriterContext
 import org.entur.netex.tools.lib.plugin.NetexPlugin
 import org.entur.netex.tools.lib.output.SkipElementWriter
@@ -174,6 +175,7 @@ data class FilterNetexApp(
       val validBetweenFromDateWriter = ValidBetweenFromDateWriter(outputFileContent, bufferedWhitespace, filterConfig.period.start!!)
       val validBetweenToDateWriter = ValidBetweenToDateWriter(outputFileContent, bufferedWhitespace, filterConfig.period.end!!)
       val defaultLocaleWriter = DefaultLocaleWriter(outputFileContent, bufferedWhitespace)
+      val quayRefWriter = QuayRefWriter(outputFileContent, bufferedWhitespace)
 
       return OutputNetexSaxHandler(
           entityModel = model,
@@ -188,8 +190,9 @@ data class FilterNetexApp(
           outputFile = file,
           defaultElementWriter = DefaultXMLElementWriter(outputFileContent,bufferedWhitespace),
           elementWriters = mapOf(
-              "/PublicationDelivery/dataObjects/ServiceCalendarFrame/ServiceFrame" to skipElementWriter,
-              "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceCalendarFrame/ServiceFrame" to skipElementWriter,
+              "/PublicationDelivery/dataObjects/ServiceCalendarFrame/ServiceCalendar" to skipElementWriter,
+              "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceCalendarFrame/ServiceCalendar" to skipElementWriter,
+              "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceFrame/stopAssignments/PassengerStopAssignment/QuayRef" to quayRefWriter,
               "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween" to validBetweenWriter,
               "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/FromDate" to validBetweenFromDateWriter,
               "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/ToDate" to validBetweenToDateWriter,

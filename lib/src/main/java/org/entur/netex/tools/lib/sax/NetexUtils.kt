@@ -30,7 +30,9 @@ object NetexUtils {
         "lines",
         "journeyPatterns",
         "vehicleJourneys",
-        "journeyInterchanges"
+        "journeyInterchanges",
+        "serviceLinks",
+        "notices"
     )
 
     fun isCollectionElement(elementName: String): Boolean = elementName in netexCollectionElementNames
