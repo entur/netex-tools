@@ -4,15 +4,11 @@ import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.output.DefaultLocaleWriter
-import org.entur.netex.tools.lib.output.DefaultXMLElementWriter
+import org.entur.netex.tools.lib.output.DelegatingXMLElementWriter
 import org.entur.netex.tools.lib.output.NetexFileWriter
 import org.entur.netex.tools.lib.plugin.NetexFileWriterContext
 import org.entur.netex.tools.lib.plugin.NetexPlugin
-import org.entur.netex.tools.lib.output.SkipElementWriter
-import org.entur.netex.tools.lib.output.ValidBetweenFromDateWriter
-import org.entur.netex.tools.lib.output.ValidBetweenToDateWriter
-import org.entur.netex.tools.lib.output.ValidBetweenWriter
+import org.entur.netex.tools.lib.output.XmlContext
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
@@ -107,7 +103,8 @@ data class FilterNetexApp(
         logger.info("Writing filtered xml files to ${target.absolutePath}")
         parseXmlDocuments(input) { file ->
             val outFile = getOutputXmlFile(target, file)
-            createNetexSaxWriteHandler(outFile, entitySelection, refSelection)
+            val xmlContext = XmlContext(xmlFile = outFile)
+            createNetexSaxWriteHandler(xmlContext, entitySelection, refSelection)
         }
         logger.info("Done writing filtered xml files to ${target.absolutePath}")
     }
@@ -151,29 +148,23 @@ data class FilterNetexApp(
             )
         )
 
-    private fun createNetexSaxWriteHandler(file: File, entitySelection: EntitySelection, refSelection: RefSelection): OutputNetexSaxHandler {
+    private fun createNetexSaxWriteHandler(xmlContext: XmlContext, entitySelection: EntitySelection, refSelection: RefSelection): OutputNetexSaxHandler {
         val netexFileWriterContext = NetexFileWriterContext(
-            file = file,
             useSelfClosingTagsWhereApplicable = filterConfig.useSelfClosingTagsWhereApplicable,
             removeEmptyCollections = true,
             preserveComments = filterConfig.preserveComments,
             period = filterConfig.period,
         )
 
-        val outputFileContent = StringBuilder()
-        val bufferedWhitespace = StringBuilder()
-        val fileWriter = file.bufferedWriter(Charsets.UTF_8)
         val defaultNetexFileWriter = NetexFileWriter(
             netexFileWriterContext = netexFileWriterContext,
-            writer = fileWriter,
-            outputFileContent = outputFileContent
+            xmlContext = xmlContext,
         )
 
-        val skipElementWriter = SkipElementWriter(outputFileContent, bufferedWhitespace)
-        val validBetweenWriter = ValidBetweenWriter(outputFileContent, bufferedWhitespace)
-        val validBetweenFromDateWriter = ValidBetweenFromDateWriter(outputFileContent, bufferedWhitespace, filterConfig.period.start!!)
-        val validBetweenToDateWriter = ValidBetweenToDateWriter(outputFileContent, bufferedWhitespace, filterConfig.period.end!!)
-        val defaultLocaleWriter = DefaultLocaleWriter(outputFileContent, bufferedWhitespace)
+        val delegatingXMLElementWriter = DelegatingXMLElementWriter(
+            handlers = filterConfig.customElementHandlers,
+            xmlContext = xmlContext,
+        )
 
         return OutputNetexSaxHandler(
             entityModel = model,
@@ -185,18 +176,8 @@ data class FilterNetexApp(
                 skipElements = filterConfig.skipElements
             ),
             fileWriter = defaultNetexFileWriter,
-            outputFile = file,
-            defaultElementWriter = DefaultXMLElementWriter(outputFileContent,bufferedWhitespace),
-            elementWriters = mapOf(
-                "/PublicationDelivery/dataObjects/ServiceCalendarFrame/ServiceFrame" to skipElementWriter,
-                "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceCalendarFrame/ServiceFrame" to skipElementWriter,
-                "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween" to validBetweenWriter,
-                "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/FromDate" to validBetweenFromDateWriter,
-                "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/ToDate" to validBetweenToDateWriter,
-                "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale/TimeZone" to skipElementWriter,
-                "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale/DefaultLanguage" to skipElementWriter,
-                "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale" to defaultLocaleWriter,
-            )
+            outputFile = xmlContext.xmlFile,
+            elementWriter = delegatingXMLElementWriter,
         )
     }
 }
