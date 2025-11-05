@@ -7,7 +7,7 @@ object NetexIdGenerator {
     private val counters = ConcurrentHashMap<String, AtomicLong>()
 
     fun next(codespace: String, type: String): String {
-        val prefix = "$codespace:$type"
+        val prefix = "${codespace.uppercase()}:$type"
         val newValue = if (counters.containsKey(prefix)) {
             counters[prefix]!!.incrementAndGet()
         } else {

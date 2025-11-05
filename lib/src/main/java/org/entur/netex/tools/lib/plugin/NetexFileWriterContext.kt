@@ -9,4 +9,6 @@ data class NetexFileWriterContext(
     val removeEmptyCollections: Boolean,
     val preserveComments: Boolean,
     val period: TimePeriod,
+    val outputFileContent: StringBuilder = StringBuilder(),
+    val bufferedWhitespace: StringBuilder = StringBuilder(),
 )

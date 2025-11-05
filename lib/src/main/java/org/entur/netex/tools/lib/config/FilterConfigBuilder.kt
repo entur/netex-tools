@@ -1,5 +1,7 @@
 package org.entur.netex.tools.lib.config
 
+import org.entur.netex.tools.lib.output.XMLElementHandler
+
 class FilterConfigBuilder(
     private val filterConfig: FilterConfig = FilterConfig()
 ) {
@@ -55,6 +57,11 @@ class FilterConfigBuilder(
 
     fun withRenameFiles(renameFiles: Boolean): FilterConfigBuilder {
         filterConfig.renameFiles = renameFiles
+        return this
+    }
+
+    fun withCustomElementHandlers(customElementHandlers: Map<String, XMLElementHandler>): FilterConfigBuilder {
+        filterConfig.customElementHandlers = customElementHandlers
         return this
     }
 

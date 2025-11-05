@@ -6,6 +6,7 @@ package org.entur.netex.tools.lib.model
  * library.
  */
 object NetexTypes {
+    const val AVAILABILITY_CONDITION = "AvailabilityCondition"
     const val AUTHORITY = "Authority"
     const val ACCESSIBILITY_ASSESSMENT = "AccessibilityAssessment"
     const val ALTERNATIVE_NAME = "AlternativeName"

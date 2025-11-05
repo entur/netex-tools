@@ -4,15 +4,16 @@ import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.output.DefaultLocaleWriter
-import org.entur.netex.tools.lib.output.DefaultXMLElementWriter
+import org.entur.netex.tools.lib.output.DefaultLocaleHandler
+import org.entur.netex.tools.lib.output.DelegatingXMLElementWriter
 import org.entur.netex.tools.lib.output.NetexFileWriter
+import org.entur.netex.tools.lib.output.QuayRefHandler
 import org.entur.netex.tools.lib.plugin.NetexFileWriterContext
 import org.entur.netex.tools.lib.plugin.NetexPlugin
-import org.entur.netex.tools.lib.output.SkipElementWriter
-import org.entur.netex.tools.lib.output.ValidBetweenFromDateWriter
-import org.entur.netex.tools.lib.output.ValidBetweenToDateWriter
-import org.entur.netex.tools.lib.output.ValidBetweenWriter
+import org.entur.netex.tools.lib.output.SkipElementHandler
+import org.entur.netex.tools.lib.output.ValidBetweenFromDateHandler
+import org.entur.netex.tools.lib.output.ValidBetweenHandler
+import org.entur.netex.tools.lib.output.ValidBetweenToDateHandler
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
@@ -160,20 +161,34 @@ data class FilterNetexApp(
             period = filterConfig.period,
         )
 
-        val outputFileContent = StringBuilder()
-        val bufferedWhitespace = StringBuilder()
         val fileWriter = file.bufferedWriter(Charsets.UTF_8)
+
         val defaultNetexFileWriter = NetexFileWriter(
             netexFileWriterContext = netexFileWriterContext,
             writer = fileWriter,
-            outputFileContent = outputFileContent
         )
 
-        val skipElementWriter = SkipElementWriter(outputFileContent, bufferedWhitespace)
-        val validBetweenWriter = ValidBetweenWriter(outputFileContent, bufferedWhitespace)
-        val validBetweenFromDateWriter = ValidBetweenFromDateWriter(outputFileContent, bufferedWhitespace, filterConfig.period.start!!)
-        val validBetweenToDateWriter = ValidBetweenToDateWriter(outputFileContent, bufferedWhitespace, filterConfig.period.end!!)
-        val defaultLocaleWriter = DefaultLocaleWriter(outputFileContent, bufferedWhitespace)
+        val skipElementHandler = SkipElementHandler()
+        val validBetweenHandler = ValidBetweenHandler(codespace = "NWY")
+        val validBetweenFromDateHandler = ValidBetweenFromDateHandler(filterConfig.period.start!!)
+        val validBetweenToDateWriter = ValidBetweenToDateHandler(filterConfig.period.end!!)
+        val defaultLocaleHandler = DefaultLocaleHandler()
+        val quayRefHandler = QuayRefHandler()
+
+        val delegatingXMLElementWriter = DelegatingXMLElementWriter(
+            handlers = mapOf(
+                "/PublicationDelivery/dataObjects/ServiceCalendarFrame/ServiceCalendar" to skipElementHandler,
+                "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceCalendarFrame/ServiceCalendar" to skipElementHandler,
+                "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceFrame/stopAssignments/PassengerStopAssignment/QuayRef" to quayRefHandler,
+                "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween" to validBetweenHandler,
+                "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/FromDate" to validBetweenFromDateHandler,
+                "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/ToDate" to validBetweenToDateWriter,
+                "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale/TimeZone" to skipElementHandler,
+                "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale/DefaultLanguage" to skipElementHandler,
+                "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale" to defaultLocaleHandler,
+            ),
+            netexFileWriterContext = netexFileWriterContext,
+        )
 
         return OutputNetexSaxHandler(
             entityModel = model,
@@ -186,17 +201,7 @@ data class FilterNetexApp(
             ),
             fileWriter = defaultNetexFileWriter,
             outputFile = file,
-            defaultElementWriter = DefaultXMLElementWriter(outputFileContent,bufferedWhitespace),
-            elementWriters = mapOf(
-                "/PublicationDelivery/dataObjects/ServiceCalendarFrame/ServiceFrame" to skipElementWriter,
-                "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceCalendarFrame/ServiceFrame" to skipElementWriter,
-                "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween" to validBetweenWriter,
-                "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/FromDate" to validBetweenFromDateWriter,
-                "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/ToDate" to validBetweenToDateWriter,
-                "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale/TimeZone" to skipElementWriter,
-                "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale/DefaultLanguage" to skipElementWriter,
-                "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale" to defaultLocaleWriter,
-            )
+            elementWriter = delegatingXMLElementWriter,
         )
     }
 }

@@ -4,9 +4,8 @@ import org.entur.netex.tools.lib.extensions.toMap
 import org.entur.netex.tools.lib.model.CompositeEntityId
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.output.DefaultXMLElementWriter
+import org.entur.netex.tools.lib.output.DelegatingXMLElementWriter
 import org.entur.netex.tools.lib.output.NetexFileWriter
-import org.entur.netex.tools.lib.output.XMLElementWriter
 import org.entur.netex.tools.lib.report.FileIndex
 import org.entur.netex.tools.lib.selections.InclusionPolicy
 import org.xml.sax.Attributes
@@ -20,8 +19,7 @@ class OutputNetexSaxHandler(
     private val inclusionPolicy: InclusionPolicy,
     private val outputFile: File,
     private val fileWriter: NetexFileWriter,
-    private val defaultElementWriter: DefaultXMLElementWriter,
-    private val elementWriters: Map<String, XMLElementWriter>,
+    private val elementWriter: DelegatingXMLElementWriter,
 ) : NetexToolsSaxHandler(), LexicalHandler {
     protected var currentElement : Element? = null
     protected var inSkipMode: Boolean = false
@@ -43,9 +41,6 @@ class OutputNetexSaxHandler(
     private fun currentPath(): String {
         return "/" + elementStack.joinToString(separator = "/")
     }
-
-    private fun elementWriter(path: String = currentPath()): XMLElementWriter =
-        elementWriters[path] ?: defaultElementWriter
 
     protected fun updateCurrentElement(attributes: Attributes?, qName: String) {
         if (attributes?.getValue("id") != null) {
@@ -80,9 +75,10 @@ class OutputNetexSaxHandler(
             val elementShouldBeIncluded = inclusionPolicy.shouldInclude(element, currentPath())
 
             if (elementShouldBeIncluded) {
-                elementWriter().writeStartElement(
-                    qName = qName,
-                    attributes = attributes,
+                elementWriter.writeStartElement(
+                    type = qName,
+                    attributes = attributes?.toMap() ?: mapOf(),
+                    currentPath = currentPath(),
                 )
                 indexElementIfEntity(element)
             } else {
@@ -105,12 +101,12 @@ class OutputNetexSaxHandler(
             return
         }
 
-        elementWriter().writeCharacters(ch, start, length)
+        elementWriter.writeCharacters(ch, start, length, currentPath = currentPath())
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
         if (!inSkipMode) {
-            elementWriter().writeEndElement(qName)
+            elementWriter.writeEndElement(type = qName!!, currentPath = currentPath())
         }
 
         if (elementStack.isNotEmpty()) {

@@ -1,8 +1,9 @@
 package org.entur.netex.tools.lib.sax
 
 import org.entur.netex.tools.lib.data.TestDataFactory
+import org.entur.netex.tools.lib.extensions.toMap
 import org.entur.netex.tools.lib.model.Entity
-import org.entur.netex.tools.lib.output.DefaultXMLElementWriter
+import org.entur.netex.tools.lib.output.DelegatingXMLElementWriter
 import org.entur.netex.tools.lib.output.NetexFileWriter
 import org.entur.netex.tools.lib.report.FileIndex
 import org.entur.netex.tools.lib.selections.InclusionPolicy
@@ -35,7 +36,7 @@ class OutputNetexSaxHandlerTest {
     private val testFile = File("test.xml")
 
     private val fileWriter = mock<NetexFileWriter>()
-    private val defaultElementWriter = mock<DefaultXMLElementWriter>()
+    private val delegatingXmlElementWriter = mock<DelegatingXMLElementWriter>()
 
     private lateinit var outputNetexSaxHandler: OutputNetexSaxHandler
 
@@ -47,8 +48,7 @@ class OutputNetexSaxHandlerTest {
             inclusionPolicy = inclusionPolicy,
             fileWriter = fileWriter,
             outputFile = testFile,
-            defaultElementWriter = defaultElementWriter,
-            elementWriters = mapOf() // todo: should be tested
+            elementWriter = delegatingXmlElementWriter,
         )
     }
 
@@ -86,20 +86,20 @@ class OutputNetexSaxHandlerTest {
     fun startElementDoesNotWriteTagIfElementShouldBeSkipped() {
         val blockAttrs = getAttributesForEntity(blockEntity)
         outputNetexSaxHandler.startElement("", "", "Block", blockAttrs)
-        verify(defaultElementWriter, never()).writeStartElement(qName = "Block", attributes = blockAttrs)
+        verify(delegatingXmlElementWriter, never()).writeStartElement(type = "Block", attributes = blockAttrs.toMap(), currentPath = "/Block")
 
         // Verifies that children of skipped elements are also skipped, regardless of selection
         val serviceJourneyAttrs = AttributesImpl()
         serviceJourneyAttrs.addAttribute("", "id", "id", "CDATA", serviceJourneyId)
         outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
-        verify(defaultElementWriter, never()).writeStartElement(qName = "ServiceJourney", attributes = serviceJourneyAttrs)
+        verify(delegatingXmlElementWriter, never()).writeStartElement(type = "ServiceJourney", attributes = serviceJourneyAttrs.toMap(), currentPath = "/Block/ServiceJourney")
     }
 
     @Test
     fun startElementWritesTagIfElementShouldBeIncluded() {
         val serviceJourneyAttrs = getAttributesForEntity(serviceJourneyEntity)
         outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
-        verify(defaultElementWriter).writeStartElement(qName = "ServiceJourney", attributes = serviceJourneyAttrs)
+        verify(delegatingXmlElementWriter).writeStartElement(type = "ServiceJourney", attributes = serviceJourneyAttrs.toMap(), currentPath = "/ServiceJourney")
     }
 
     @Test
@@ -109,14 +109,14 @@ class OutputNetexSaxHandlerTest {
 
         val chars = "some characters".toCharArray()
         outputNetexSaxHandler.characters(chars, 0, chars.size)
-        verify(defaultElementWriter, never()).writeCharacters(chars, 0, chars.size)
+        verify(delegatingXmlElementWriter, never()).writeCharacters(chars, 0, chars.size, currentPath = "/Block")
     }
 
     @Test
     fun charactersWritesIfElementShouldBeIncluded() {
         val chars = "some characters".toCharArray()
         outputNetexSaxHandler.characters(chars, 0, chars.size)
-        verify(defaultElementWriter).writeCharacters(chars, 0, chars.size)
+        verify(delegatingXmlElementWriter).writeCharacters(chars, 0, chars.size, currentPath = "/")
     }
 
     @Test
@@ -125,13 +125,13 @@ class OutputNetexSaxHandlerTest {
         outputNetexSaxHandler.startElement("", "", "Block", blockAttrs)
 
         outputNetexSaxHandler.endElement("", "", "Block")
-        verify(defaultElementWriter, never()).writeEndElement("Block")
+        verify(delegatingXmlElementWriter, never()).writeEndElement(type = "Block", currentPath = "/Block")
     }
 
     @Test
     fun endElementWritesIfElementShouldBeIncluded() {
         outputNetexSaxHandler.endElement("", "", "ServiceJourney")
-        verify(defaultElementWriter).writeEndElement("ServiceJourney")
+        verify(delegatingXmlElementWriter).writeEndElement(type = "ServiceJourney", currentPath = "/")
     }
 
     @Test
@@ -142,14 +142,14 @@ class OutputNetexSaxHandlerTest {
         outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
         outputNetexSaxHandler.endElement("", "", "ServiceJourney")
         outputNetexSaxHandler.endElement("", "", "Block")
-        verify(defaultElementWriter, never()).writeStartElement(qName = "Block", attributes = blockAttrs)
-        verify(defaultElementWriter, never()).writeStartElement(qName = "ServiceJourney", attributes = serviceJourneyAttrs)
-        verify(defaultElementWriter, never()).writeEndElement("ServiceJourney")
-        verify(defaultElementWriter, never()).writeEndElement("Block")
+        verify(delegatingXmlElementWriter, never()).writeStartElement(type = "Block", attributes = blockAttrs.toMap(), currentPath = "/Block")
+        verify(delegatingXmlElementWriter, never()).writeStartElement(type = "ServiceJourney", attributes = serviceJourneyAttrs.toMap(), currentPath = "/Block/ServiceJourney")
+        verify(delegatingXmlElementWriter, never()).writeEndElement(type = "ServiceJourney", currentPath = "/Block/ServiceJourney")
+        verify(delegatingXmlElementWriter, never()).writeEndElement(type = "Block", currentPath = "/Block")
 
         // After the skipped Block ends, we should be out of skip mode, and writing should resume
         outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
-        verify(defaultElementWriter).writeStartElement(qName = "ServiceJourney", attributes = serviceJourneyAttrs)
+        verify(delegatingXmlElementWriter).writeStartElement(type = "ServiceJourney", attributes = serviceJourneyAttrs.toMap(), currentPath = "/ServiceJourney")
     }
 
     @Test

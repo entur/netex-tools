@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.config
 
 import kotlinx.serialization.Serializable
+import org.entur.netex.tools.lib.output.XMLElementHandler
 
 @Serializable
 data class FilterConfig(
@@ -18,6 +19,7 @@ data class FilterConfig(
     var removeInterchangesWithoutServiceJourneys: Boolean = true,
     var removePassengerStopAssignmentsWithUnreferredScheduledStopPoint: Boolean = true,
     var renameFiles: Boolean = true,
+    var customElementHandlers: Map<String, XMLElementHandler> = mapOf(),
 ) {
     fun toBuilder() : FilterConfigBuilder {
         return FilterConfigBuilder(filterConfig = this)

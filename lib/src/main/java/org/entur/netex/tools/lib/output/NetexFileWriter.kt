@@ -6,9 +6,8 @@ import org.entur.netex.tools.lib.sax.NetexUtils
 import java.io.BufferedWriter
 
 open class NetexFileWriter(
-    netexFileWriterContext: NetexFileWriterContext,
+    val netexFileWriterContext: NetexFileWriterContext,
     val writer: BufferedWriter,
-    val outputFileContent: StringBuilder,
 ): AbstractNetexFileWriter() {
     private val useSelfClosingTagsWhereApplicable = netexFileWriterContext.useSelfClosingTagsWhereApplicable
     private val removeEmptyCollections = netexFileWriterContext.removeEmptyCollections
@@ -29,10 +28,10 @@ open class NetexFileWriter(
 
     override fun endDocument() {
         if (useSelfClosingTagsWhereApplicable) {
-            val processedOutput = removeEmptyCollections(outputFileContent.toString())
+            val processedOutput = removeEmptyCollections(netexFileWriterContext.outputFileContent.toString())
             writer.write(processedOutput)
         } else {
-            writer.write(outputFileContent.toString())
+            writer.write(netexFileWriterContext.outputFileContent.toString())
         }
         writer.flush()
         writer.close()
@@ -53,6 +52,6 @@ open class NetexFileWriter(
     }
 
     protected fun write(text : String) {
-        outputFileContent.append(text)
+        netexFileWriterContext.outputFileContent.append(text)
     }
 }
