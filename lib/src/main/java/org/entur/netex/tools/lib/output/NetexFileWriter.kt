@@ -3,18 +3,17 @@ package org.entur.netex.tools.lib.output
 import org.entur.netex.tools.lib.plugin.AbstractNetexFileWriter
 import org.entur.netex.tools.lib.plugin.NetexFileWriterContext
 import org.entur.netex.tools.lib.sax.NetexUtils
-import java.io.BufferedWriter
 
 open class NetexFileWriter(
     val netexFileWriterContext: NetexFileWriterContext,
-    val writer: BufferedWriter,
+    val xmlContext: XmlContext,
 ): AbstractNetexFileWriter() {
     private val useSelfClosingTagsWhereApplicable = netexFileWriterContext.useSelfClosingTagsWhereApplicable
     private val removeEmptyCollections = netexFileWriterContext.removeEmptyCollections
     private val preserveComments = netexFileWriterContext.preserveComments
 
     override fun startDocument() {
-        write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+        xmlContext.xmlWriter.characters("\n".toCharArray(), 0, 1)
     }
 
     override fun writeComments(ch: CharArray?, start: Int, length: Int) {
@@ -23,22 +22,21 @@ open class NetexFileWriter(
         }
 
         val commentText = String(ch!!, start, length)
-        write("<!--$commentText-->")
+        xmlContext.stringWriter.write("<!--$commentText-->")
     }
 
     override fun endDocument() {
         if (useSelfClosingTagsWhereApplicable) {
-            val processedOutput = removeEmptyCollections(netexFileWriterContext.outputFileContent.toString())
-            writer.write(processedOutput)
-        } else {
-            writer.write(netexFileWriterContext.outputFileContent.toString())
+            val output = xmlContext.stringWriter.toString()
+            val processedOutput = removeEmptyCollections(output)
+            xmlContext.stringWriter.buffer.setLength(0)
+            xmlContext.stringWriter.write(processedOutput)
         }
-        writer.flush()
-        writer.close()
+        XMLFileWriter().writeToFile(context = xmlContext)
     }
 
     private fun removeEmptyCollections(xmlContent: String): String {
-        val collectionPattern = Regex("""<(\w+)(\s+[^>]*?|)>\s*</\1>""", RegexOption.MULTILINE)
+        val collectionPattern = Regex("""<(\w+)(\s+[^>]*)?/>""", RegexOption.MULTILINE)
 
         return collectionPattern.replace(xmlContent) { matchResult ->
             val tagName = matchResult.groupValues[1]
@@ -49,9 +47,5 @@ open class NetexFileWriter(
                 "<$tagName$attributes/>"
             }
         }
-    }
-
-    protected fun write(text : String) {
-        netexFileWriterContext.outputFileContent.append(text)
     }
 }

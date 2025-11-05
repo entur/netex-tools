@@ -4,16 +4,11 @@ import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.config.CliConfig
 import org.entur.netex.tools.lib.io.XMLFiles.parseXmlDocuments
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.output.DefaultLocaleHandler
 import org.entur.netex.tools.lib.output.DelegatingXMLElementWriter
 import org.entur.netex.tools.lib.output.NetexFileWriter
-import org.entur.netex.tools.lib.output.QuayRefHandler
 import org.entur.netex.tools.lib.plugin.NetexFileWriterContext
 import org.entur.netex.tools.lib.plugin.NetexPlugin
-import org.entur.netex.tools.lib.output.SkipElementHandler
-import org.entur.netex.tools.lib.output.ValidBetweenFromDateHandler
-import org.entur.netex.tools.lib.output.ValidBetweenHandler
-import org.entur.netex.tools.lib.output.ValidBetweenToDateHandler
+import org.entur.netex.tools.lib.output.XmlContext
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
 import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
@@ -108,7 +103,8 @@ data class FilterNetexApp(
         logger.info("Writing filtered xml files to ${target.absolutePath}")
         parseXmlDocuments(input) { file ->
             val outFile = getOutputXmlFile(target, file)
-            createNetexSaxWriteHandler(outFile, entitySelection, refSelection)
+            val xmlContext = XmlContext(xmlFile = outFile)
+            createNetexSaxWriteHandler(xmlContext, entitySelection, refSelection)
         }
         logger.info("Done writing filtered xml files to ${target.absolutePath}")
     }
@@ -152,42 +148,22 @@ data class FilterNetexApp(
             )
         )
 
-    private fun createNetexSaxWriteHandler(file: File, entitySelection: EntitySelection, refSelection: RefSelection): OutputNetexSaxHandler {
+    private fun createNetexSaxWriteHandler(xmlContext: XmlContext, entitySelection: EntitySelection, refSelection: RefSelection): OutputNetexSaxHandler {
         val netexFileWriterContext = NetexFileWriterContext(
-            file = file,
             useSelfClosingTagsWhereApplicable = filterConfig.useSelfClosingTagsWhereApplicable,
             removeEmptyCollections = true,
             preserveComments = filterConfig.preserveComments,
             period = filterConfig.period,
         )
 
-        val fileWriter = file.bufferedWriter(Charsets.UTF_8)
-
         val defaultNetexFileWriter = NetexFileWriter(
             netexFileWriterContext = netexFileWriterContext,
-            writer = fileWriter,
+            xmlContext = xmlContext,
         )
 
-        val skipElementHandler = SkipElementHandler()
-        val validBetweenHandler = ValidBetweenHandler(codespace = "NWY")
-        val validBetweenFromDateHandler = ValidBetweenFromDateHandler(filterConfig.period.start!!)
-        val validBetweenToDateWriter = ValidBetweenToDateHandler(filterConfig.period.end!!)
-        val defaultLocaleHandler = DefaultLocaleHandler()
-        val quayRefHandler = QuayRefHandler()
-
         val delegatingXMLElementWriter = DelegatingXMLElementWriter(
-            handlers = mapOf(
-                "/PublicationDelivery/dataObjects/ServiceCalendarFrame/ServiceCalendar" to skipElementHandler,
-                "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceCalendarFrame/ServiceCalendar" to skipElementHandler,
-                "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceFrame/stopAssignments/PassengerStopAssignment/QuayRef" to quayRefHandler,
-                "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween" to validBetweenHandler,
-                "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/FromDate" to validBetweenFromDateHandler,
-                "/PublicationDelivery/dataObjects/CompositeFrame/validityConditions/ValidBetween/ToDate" to validBetweenToDateWriter,
-                "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale/TimeZone" to skipElementHandler,
-                "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale/DefaultLanguage" to skipElementHandler,
-                "/PublicationDelivery/dataObjects/CompositeFrame/FrameDefaults/DefaultLocale" to defaultLocaleHandler,
-            ),
-            netexFileWriterContext = netexFileWriterContext,
+            handlers = filterConfig.customElementHandlers,
+            xmlContext = xmlContext,
         )
 
         return OutputNetexSaxHandler(
@@ -200,7 +176,7 @@ data class FilterNetexApp(
                 skipElements = filterConfig.skipElements
             ),
             fileWriter = defaultNetexFileWriter,
-            outputFile = file,
+            outputFile = xmlContext.xmlFile,
             elementWriter = delegatingXMLElementWriter,
         )
     }

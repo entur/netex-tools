@@ -75,9 +75,11 @@ class OutputNetexSaxHandler(
             val elementShouldBeIncluded = inclusionPolicy.shouldInclude(element, currentPath())
 
             if (elementShouldBeIncluded) {
-                elementWriter.writeStartElement(
-                    type = qName,
-                    attributes = attributes?.toMap() ?: mapOf(),
+                elementWriter.handleStartElement(
+                    uri = uri,
+                    localName = localName,
+                    attributes = attributes,
+                    qName = qName,
                     currentPath = currentPath(),
                 )
                 indexElementIfEntity(element)
@@ -101,12 +103,17 @@ class OutputNetexSaxHandler(
             return
         }
 
-        elementWriter.writeCharacters(ch, start, length, currentPath = currentPath())
+        elementWriter.handleCharacters(ch, start, length, currentPath = currentPath())
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
         if (!inSkipMode) {
-            elementWriter.writeEndElement(type = qName!!, currentPath = currentPath())
+            elementWriter.handleEndElement(
+                uri = uri,
+                localName = localName,
+                qName = qName,
+                currentPath = currentPath()
+            )
         }
 
         if (elementStack.isNotEmpty()) {

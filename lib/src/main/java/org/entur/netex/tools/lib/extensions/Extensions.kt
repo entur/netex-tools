@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.extensions
 
 import org.xml.sax.Attributes
+import org.xml.sax.helpers.AttributesImpl
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -28,6 +29,10 @@ fun Attributes.toMap(): Map<String, String> {
         map[this.getQName(i)] = this.getValue(i)
     }
     return map
+}
+
+fun AttributesImpl.addNewAttribute(attributeName: String, value: String) {
+    this.addAttribute("", attributeName, attributeName, "CDATA", value)
 }
 
 fun LocalDate.toISO8601(): String = this.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'00:00:00"))
