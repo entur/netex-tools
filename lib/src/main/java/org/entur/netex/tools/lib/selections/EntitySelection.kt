@@ -9,6 +9,8 @@ class EntitySelection(
     val selection: MutableMap<String, MutableMap<String, Entity>>,
     val model: EntityModel
 ): Selection() {
+    val allIds = selection.values.flatMap { it.keys }.toHashSet()
+
     fun isSelected(e : Entity?) : Boolean {
         if (e == null) { return false }
         return isSelected(e.type, e.id)
@@ -36,13 +38,17 @@ class EntitySelection(
         return entitiesOfType?.containsKey(entity.id) ?: false
     }
 
+    fun includes(id: String) : Boolean {
+        return allIds.contains(id)
+    }
+
     fun hasEntitiesReferringTo(entity: Entity): Boolean {
         val entities = model.getEntitiesReferringTo(entity)
         return entities.any { includes(it) }
     }
 
     fun allIds(): Set<String> {
-        return selection.values.flatMap { it.keys }.toHashSet()
+        return allIds
     }
 
     private fun getIdsByType(type: String): Set<String> {

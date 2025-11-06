@@ -101,6 +101,20 @@ class CompositeEntitySelector(
         return entitySelectionWithAssignmentsRemoved
     }
 
+    fun removeNoticeAssignmentsWithoutNoticedObjectRef(
+        entityModel: EntityModel,
+        entitySelection: EntitySelection
+    ): EntitySelection {
+        logger.info("Removing notice assignments without noticed object ref...")
+        val (noticeObjectRefSelection, ms) = timedMs {
+            NoticeAssignmentSelector(entitySelection)
+                .selectEntities(entityModel)
+                .intersectWith(entitySelection)
+        }
+        logger.info("Removed notice assignments without noticed object ref in ${ms}ms")
+        return noticeObjectRefSelection
+    }
+
     override fun selectEntities(model: EntityModel): EntitySelection {
         var entitySelection = runInitialEntitySelection(model, filterConfig)
         if (filterConfig.hasSpecifiedEntitiesToPrune()) {
@@ -111,6 +125,9 @@ class CompositeEntitySelector(
         }
         if (filterConfig.removePassengerStopAssignmentsWithUnreferredScheduledStopPoint) {
             entitySelection = removePassengerStopAssignmentsWithUnreferredScheduledStopPoint(model, entitySelection)
+        }
+        if (filterConfig.removeNoticeAssignmentWithoutNoticedObjectRef) {
+            entitySelection = removeNoticeAssignmentsWithoutNoticedObjectRef(model, entitySelection)
         }
         return entitySelection
     }

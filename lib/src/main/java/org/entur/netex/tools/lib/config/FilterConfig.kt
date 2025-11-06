@@ -18,6 +18,7 @@ data class FilterConfig(
     var useSelfClosingTagsWhereApplicable : Boolean = true,
     var removeInterchangesWithoutServiceJourneys: Boolean = true,
     var removePassengerStopAssignmentsWithUnreferredScheduledStopPoint: Boolean = true,
+    var removeNoticeAssignmentWithoutNoticedObjectRef: Boolean = true,
     var renameFiles: Boolean = true,
     var customElementHandlers: Map<String, XMLElementHandler> = mapOf(),
 ) {
