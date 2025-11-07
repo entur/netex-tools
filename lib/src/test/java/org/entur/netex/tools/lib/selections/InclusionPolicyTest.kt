@@ -70,6 +70,12 @@ class InclusionPolicyTest {
     }
 
     @Test
+    fun testShouldNotIncludeElementIfCurrentPathStartsWithSkipElement() {
+        val element = TestDataFactory.defaultElement(name = "TestElement")
+        assertFalse { inclusionPolicy.shouldInclude(element, "/some/path/to/skip/A") }
+    }
+
+    @Test
     fun testShouldNotIncludeElementIfCurrentPathShouldBeSkipped() {
         val element = TestDataFactory.defaultElement(name = "TestElement")
         val entityElement = TestDataFactory.defaultElement(name = "TestElement", id = "entityId")

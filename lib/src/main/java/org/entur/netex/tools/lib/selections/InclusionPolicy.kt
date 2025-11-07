@@ -33,11 +33,14 @@ class InclusionPolicy(
         return shouldInclude(parentEntity, entitySelection)
     }
 
+    fun matchesSkipElementsPath(currentPath: String) =
+        skipElements.any { element -> currentPath.startsWith(element) }
+
     fun shouldInclude(element: Element?, currentPath: String): Boolean {
         if (element == null) {
             return true
         }
-        if (skipElements.contains(currentPath)) {
+        if (matchesSkipElementsPath(currentPath)) {
             return false
         }
         if (element.isEntity() && entitySelection != null) {
