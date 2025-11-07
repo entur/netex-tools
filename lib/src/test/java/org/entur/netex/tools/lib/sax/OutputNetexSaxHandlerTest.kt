@@ -28,7 +28,8 @@ class OutputNetexSaxHandlerTest {
         skipElements = listOf(
             "/PublicationDelivery/dataObjects/CompositeFrame/frames/VehicleScheduleFrame",
             "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceFrame/lines/Line/routes",
-            "/PublicationDelivery/dataObjects/CompositeFrame/frames/TimetableFrame/vehicleJourneys/DeadRun"
+            "/PublicationDelivery/dataObjects/CompositeFrame/frames/TimetableFrame/vehicleJourneys/DeadRun",
+            "/Parent/Child"
         )
     )
 
@@ -58,9 +59,9 @@ class OutputNetexSaxHandlerTest {
 
     init {
         entityModel.addEntity(serviceJourneyEntity)
-        entitySelection.selection["ServiceJourney"] = mutableMapOf(serviceJourneyId to serviceJourneyEntity)
-
         entityModel.addEntity(blockEntity)
+
+        entitySelection.selection["ServiceJourney"] = mutableMapOf(serviceJourneyId to serviceJourneyEntity)
     }
 
     private fun getAttributesForEntity(entity: Entity): AttributesImpl {
@@ -225,5 +226,27 @@ class OutputNetexSaxHandlerTest {
 
         outputNetexSaxHandler.comment("some comment".toCharArray(), 0, 0)
         verify(fileWriter, never()).writeComments("some comment".toCharArray(), 0, 0)
+    }
+
+    @Test
+    fun endElementDoesNotWriteIfElementIsInSkippedElements() {
+        val attrs = AttributesImpl()
+
+        outputNetexSaxHandler.startElement("", "", "Parent", attrs)
+        outputNetexSaxHandler.startElement("", "", "Child", attrs)
+        outputNetexSaxHandler.startElement("", "", "Child", attrs)
+        outputNetexSaxHandler.startElement("", "", "GrandChild", attrs)
+
+        outputNetexSaxHandler.endElement("", "", "GrandChild")
+        outputNetexSaxHandler.endElement("", "", "Child")
+        outputNetexSaxHandler.endElement("", "", "Child")
+        outputNetexSaxHandler.endElement("", "", "Parent")
+
+        verify(delegatingXmlElementWriter).handleStartElement("", "", "Parent", attrs, "/Parent")
+        verify(delegatingXmlElementWriter, never()).handleStartElement("", "", "Child", attrs, "/Parent/Child")
+        verify(delegatingXmlElementWriter, never()).handleStartElement("", "", "GrandChild", attrs, "/Parent/Child/GrandChild")
+        verify(delegatingXmlElementWriter, never()).handleEndElement("", "", "GrandChild", "/Parent/Child/GrandChild")
+        verify(delegatingXmlElementWriter, never()).handleEndElement("", "", "Child", "/Parent/Child")
+        verify(delegatingXmlElementWriter).handleEndElement("", "", "Parent", "/Parent")
     }
 }

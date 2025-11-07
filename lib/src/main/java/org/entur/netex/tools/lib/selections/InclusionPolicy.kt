@@ -4,6 +4,7 @@ import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.model.Ref
+import java.util.Stack
 
 class InclusionPolicy(
     private val entityModel: EntityModel,
@@ -25,36 +26,44 @@ class InclusionPolicy(
         return false
     }
 
-    fun shouldInclude(element: Element, entitySelection: EntitySelection?): Boolean {
-        if (element.currentEntityId == null || entitySelection == null) {
-            return true
-        }
-        val parentEntity = entityModel.getEntity(element.currentEntityId)
-        return shouldInclude(parentEntity, entitySelection)
+    fun shouldInclude(elementStack: Stack<Element>, entitySelection: EntitySelection): Boolean =
+        elementStack.filter { it.isEntity() }.all { element -> entitySelection.includes(element) }
+
+    fun shouldInclude(elementStack: Stack<Element>, entitySelection: EntitySelection, refSelection: RefSelection): Boolean {
+        val allEntitiesOnStackAreIncluded = shouldInclude(elementStack, entitySelection)
+        return allEntitiesOnStackAreIncluded && refSelection.includes(elementStack.peek().attributes.getValue("ref"))
     }
 
-    fun matchesSkipElementsPath(currentPath: String) =
+    fun matchesSkipElements(currentPath: String) =
         skipElements.any { element -> currentPath.startsWith(element) }
 
-    fun shouldInclude(element: Element?, currentPath: String): Boolean {
-        if (element == null) {
+    fun currentPath(elementStack: Stack<Element>): String = "/" + elementStack.joinToString(separator = "/") { it.name }
+
+    fun shouldInclude(elementStack: Stack<Element>): Boolean {
+        if (elementStack.isEmpty()) {
             return true
         }
-        if (matchesSkipElementsPath(currentPath)) {
+        if (matchesSkipElements(currentPath(elementStack))) {
             return false
         }
-        if (element.isEntity() && entitySelection != null) {
+
+        val currentElement = elementStack.peek()
+
+        if (currentElement.isRef() && refSelection != null && entitySelection != null) {
             return shouldInclude(
-                entity = entityModel.getEntity(element),
+                elementStack = elementStack,
                 entitySelection = entitySelection,
-            )
-        }
-        if (element.isRef() && refSelection != null) {
-            return shouldInclude(
-                ref = entityModel.getRef(element),
                 refSelection = refSelection,
             )
         }
-        return shouldInclude(element, entitySelection)
+
+        if (entitySelection != null) {
+            return shouldInclude(
+                elementStack = elementStack,
+                entitySelection = entitySelection,
+            )
+        }
+
+        return true
     }
 }

@@ -3,7 +3,10 @@ package org.entur.netex.tools.lib.sax
 import org.entur.netex.tools.lib.extensions.toMap
 import org.entur.netex.tools.lib.model.CompositeEntityId
 import org.entur.netex.tools.lib.model.Element
+import org.entur.netex.tools.lib.model.Entity
+import org.entur.netex.tools.lib.model.Entity.Companion.EMPTY
 import org.entur.netex.tools.lib.model.EntityModel
+import org.entur.netex.tools.lib.model.NetexTypes
 import org.entur.netex.tools.lib.output.DelegatingXMLElementWriter
 import org.entur.netex.tools.lib.output.NetexFileWriter
 import org.entur.netex.tools.lib.report.FileIndex
@@ -21,36 +24,27 @@ class OutputNetexSaxHandler(
     private val fileWriter: NetexFileWriter,
     private val elementWriter: DelegatingXMLElementWriter,
 ) : NetexToolsSaxHandler(), LexicalHandler {
-    protected var currentElement : Element? = null
-    protected var inSkipMode: Boolean = false
 
-    private val elementStack = Stack<String>()
-
-    protected fun startSkipMode() {
-        inSkipMode = true
-    }
-
-    protected fun endSkipMode() {
-        inSkipMode = false
-    }
+    private val elementStack = Stack<Element>()
+    private val entityStack = Stack<Entity>()
 
     override fun startDocument() {
         fileWriter.startDocument()
     }
 
     private fun currentPath(): String {
-        return "/" + elementStack.joinToString(separator = "/")
+        return "/" + elementStack.joinToString(separator = "/") { it.name }
     }
 
-    protected fun updateCurrentElement(attributes: Attributes?, qName: String) {
+    protected fun createCurrentElement(attributes: Attributes?, qName: String): Element {
         if (attributes?.getValue("id") != null) {
             val attributesAsMap = attributes.toMap()
             val id = getIdByQNameAndAttributes(qName = qName, attributes = attributesAsMap)
-            currentElement = Element(qName, currentElement, attributesAsMap, id)
+            return Element(qName, null, attributesAsMap, id)
         } else {
             // not an entity. Use parent's currentEntityId
             val attributesAsMap = attributes?.toMap() ?: mapOf()
-            currentElement = Element(qName, currentElement, attributesAsMap, currentElement?.currentEntityId)
+            return Element(qName, null, attributesAsMap, currentEntity()?.id)
         }
     }
 
@@ -66,26 +60,59 @@ class OutputNetexSaxHandler(
         }
     }
 
+    private fun currentEntity(): Entity? {
+        if (entityStack.isNotEmpty()) {
+            return entityStack.peek()
+        }
+        return null
+    }
+
+    fun shouldIncludeCurrentElement(): Boolean {
+        return inclusionPolicy.shouldInclude(elementStack)
+    }
+
+    private fun createEntityId(type: String, attributes: Attributes): String {
+        val id = attributes.getValue("id")
+        return if (type == NetexTypes.DAY_TYPE_ASSIGNMENT || type == NetexTypes.PASSENGER_STOP_ASSIGNMENT) {
+            val version = attributes.getValue("version")
+            val order = attributes.getValue("order")
+            CompositeEntityId.ByIdVersionAndOrder(
+                baseId = id,
+                version = nn(version),
+                order = nn(order)
+            ).id
+        } else id
+    }
+    private fun nn(value : String?) = value ?: EMPTY
+
+    private fun createEntity(type: String, attributes: Attributes): Entity {
+        val publication = attributes.getValue("publication") ?: "public"
+
+        return Entity(
+            id = createEntityId(type, attributes),
+            type = type,
+            publication = publication,
+            parent = currentEntity(),
+        )
+    }
+
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
-        elementStack.push(qName)
-        updateCurrentElement(attributes, qName!!)
+        val currentElement = createCurrentElement(attributes, qName!!)
+        elementStack.push(currentElement)
 
-        if (!inSkipMode) {
-            val element = currentElement!!
-            val elementShouldBeIncluded = inclusionPolicy.shouldInclude(element, currentPath())
+        if (shouldIncludeCurrentElement()) {
+            elementWriter.handleStartElement(
+                uri = uri,
+                localName = localName,
+                attributes = attributes,
+                qName = qName,
+                currentPath = currentPath(),
+            )
+            indexElementIfEntity(currentElement)
+        }
 
-            if (elementShouldBeIncluded) {
-                elementWriter.handleStartElement(
-                    uri = uri,
-                    localName = localName,
-                    attributes = attributes,
-                    qName = qName,
-                    currentPath = currentPath(),
-                )
-                indexElementIfEntity(element)
-            } else {
-                startSkipMode()
-            }
+        if (currentElement.isEntity()) {
+            entityStack.push(createEntity(qName, attributes!!))
         }
     }
 
@@ -99,41 +126,36 @@ class OutputNetexSaxHandler(
     }
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
-        if(inSkipMode) {
-            return
+        if (shouldIncludeCurrentElement()) {
+            elementWriter.handleCharacters(ch, start, length, currentPath = currentPath())
         }
+    }
 
-        elementWriter.handleCharacters(ch, start, length, currentPath = currentPath())
+    private fun currentElement(): Element? {
+        if (elementStack.isNotEmpty()) {
+            return elementStack.peek()
+        }
+        return null
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        if (!inSkipMode) {
-            elementWriter.handleEndElement(
-                uri = uri,
-                localName = localName,
-                qName = qName,
-                currentPath = currentPath()
-            )
+        if (shouldIncludeCurrentElement()) {
+            elementWriter.handleEndElement(uri, localName, qName, currentPath = currentPath())
+        }
+
+        if (currentElement()?.isEntity() == true) {
+            entityStack.pop()
         }
 
         if (elementStack.isNotEmpty()) {
             elementStack.pop()
         }
-
-        val parent = currentElement?.parent
-        if (parent == null || inclusionPolicy.shouldInclude(parent, currentPath())) {
-            endSkipMode()
-        }
-
-        currentElement = currentElement?.parent
     }
 
     override fun comment(ch: CharArray?, start: Int, length: Int) {
-        if(inSkipMode) {
-            return
+        if (shouldIncludeCurrentElement()) {
+            fileWriter.writeComments(ch, start, length)
         }
-
-        fileWriter.writeComments(ch, start, length)
     }
 
     override fun endDocument() {

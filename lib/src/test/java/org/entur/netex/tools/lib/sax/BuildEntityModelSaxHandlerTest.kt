@@ -93,26 +93,6 @@ class BuildEntityModelSaxHandlerTest {
     }
 
     @Test
-    fun testStartElementShouldSkipElementWhenPathIsInSkipElements() {
-        setUpSkippingState()
-        Assertions.assertNull(entityModel.getEntity("someId"))
-        Assertions.assertEquals(skipElements[0], buildEntityModelHandler.elementBeingSkipped)
-    }
-
-    @Test
-    fun testEndElementShouldStopSkippingWhenEndOfSkippedElementIsReached() {
-        setUpSkippingState()
-        Assertions.assertEquals(skipElements[0], buildEntityModelHandler.elementBeingSkipped)
-
-        buildEntityModelHandler.endElement(
-            uri = "",
-            localName = "element2",
-            qName = "element2"
-        )
-        Assertions.assertNull(buildEntityModelHandler.elementBeingSkipped)
-    }
-
-    @Test
     fun testStartElementShouldCallPluginsForNonSkippedElements() {
         val entityElement = TestDataFactory.defaultElement(name = testNetexPlugin.supportedElementType)
         val attrs = TestDataFactory.defaultAttributes(id = "id")

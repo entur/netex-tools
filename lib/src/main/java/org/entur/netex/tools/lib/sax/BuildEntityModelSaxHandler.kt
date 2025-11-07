@@ -20,12 +20,8 @@ class BuildEntityModelSaxHandler(
     val inclusionPolicy: InclusionPolicy,
     plugins: List<NetexPlugin> = emptyList(),
 ) : NetexToolsSaxHandler() {
-    var currentEntity : Entity? = null
-    var currentElement : Element? = null
-
-    var elementBeingSkipped: String? = null
-
-    private val elementStack = Stack<String>()
+    private val elementStack = Stack<Element>()
+    private val entityStack = Stack<Entity>()
 
     private val pluginRegistry = PluginRegistry()
 
@@ -35,8 +31,42 @@ class BuildEntityModelSaxHandler(
         }
     }
 
-    private fun currentPath(): String {
-        return "/" + elementStack.joinToString(separator = "/")
+    protected fun getIdByQNameAndAttributes(qName: String, attributes: Map<String, String>): String? {
+        return when (qName) {
+            "DayTypeAssignment", "PassengerStopAssignment" -> {
+                val version = attributes.getValue("version")
+                val order = attributes.getValue("order")
+                val id = attributes.getValue("id")
+                CompositeEntityId.ByIdVersionAndOrder(id, version, order).id
+            }
+            else -> attributes.getValue("id")
+        }
+    }
+
+    protected fun createCurrentElement(attributes: Attributes?, qName: String): Element {
+        if (attributes?.getValue("id") != null) {
+            val attributesAsMap = attributes.toMap()
+            val id = getIdByQNameAndAttributes(qName = qName, attributes = attributesAsMap)
+            return Element(qName, null, attributesAsMap, id)
+        } else {
+            // not an entity. Use parent's currentEntityId
+            val attributesAsMap = attributes?.toMap() ?: mapOf()
+            return Element(qName, null, attributesAsMap, currentEntity()?.id)
+        }
+    }
+
+    private fun currentEntity(): Entity? {
+        if (entityStack.isNotEmpty()) {
+            return entityStack.peek()
+        }
+        return null
+    }
+
+    private fun currentElement(): Element? {
+        if (elementStack.isNotEmpty()) {
+            return elementStack.peek()
+        }
+        return null
     }
 
     private fun createEntityId(type: String, attributes: Attributes): String {
@@ -52,68 +82,54 @@ class BuildEntityModelSaxHandler(
         } else id
     }
 
-    private fun registerEntity(type: String, attributes: Attributes) {
+    private fun createEntity(type: String, attributes: Attributes): Entity {
         val publication = attributes.getValue("publication") ?: "public"
 
-        val entity = Entity(
+        return Entity(
             id = createEntityId(type, attributes),
             type = type,
             publication = publication,
-            parent = currentEntity,
+            parent = currentEntity(),
         )
-        currentEntity = entity
+    }
 
+    private fun registerEntity(entity: Entity) {
         entityModel.addEntity(entity)
+        entityStack.push(entity)
     }
 
     private fun registerRef(type: String, attributes: Attributes) {
         val ref = attributes.getValue("ref")
-        val refObject = Ref(nn(type), currentEntity!!, ref)
+        val refObject = Ref(nn(type), currentEntity()!!, ref)
         entityModel.addRef(refObject)
     }
 
-    private fun inSkipMode() = elementBeingSkipped != null
-
-    private fun startSkippingCurrentElement() {
-        elementBeingSkipped = currentPath()
-    }
-
-    private fun stopSkippingCurrentElement() {
-        elementBeingSkipped = null
-    }
-
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
-        elementStack.push(qName)
-        val type = qName!!
-        currentElement = Element(type, currentElement, attributes?.toMap() ?: mapOf())
+        val currentElement = createCurrentElement(attributes, qName!!)
+        elementStack.push(currentElement)
 
-        if (inSkipMode()) {
-            return
-        }
-
-        if (inclusionPolicy.shouldInclude(currentElement!!, currentPath())) {
+        if (inclusionPolicy.shouldInclude(elementStack)) {
             val isEntity = attributes?.hasAttribute("id") ?: false
             val isRef = attributes?.hasAttribute("ref") ?: false
             if (isEntity) {
-                registerEntity(type, attributes)
+                val entity = createEntity(qName, attributes)
+                registerEntity(entity)
             } else if (isRef) {
-                registerRef(type, attributes)
+                registerRef(qName, attributes)
             }
 
-            pluginRegistry.getPluginsForElement(type).forEach { plugin ->
-                plugin.startElement(type, attributes, currentEntity)
+            pluginRegistry.getPluginsForElement(qName).forEach { plugin ->
+                plugin.startElement(qName, attributes, currentEntity())
             }
-        } else {
-            startSkippingCurrentElement()
         }
     }
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
-        if (inSkipMode()) {
+        if (!inclusionPolicy.shouldInclude(elementStack)) {
             return
         }
 
-        val currentElementName = currentElement?.name
+        val currentElementName = currentElement()?.name
         if (currentElementName != null) {
             pluginRegistry.getPluginsForElement(currentElementName).forEach { plugin ->
                 plugin.characters(currentElementName, ch, start, length)
@@ -122,25 +138,19 @@ class BuildEntityModelSaxHandler(
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        if (elementBeingSkipped == currentPath()) {
-            stopSkippingCurrentElement()
-        }
-
-        elementStack.pop()
-
-        val currentElementName = currentElement?.name
-        if (currentElementName != null && !inSkipMode()) {
-            pluginRegistry.getPluginsForElement(currentElementName).forEach { plugin ->
-                plugin.endElement(currentElementName, currentEntity)
+        if (inclusionPolicy.shouldInclude(elementStack)) {
+            val currentElement = currentElement()
+            if (currentElement?.name != null) {
+                pluginRegistry.getPluginsForElement(currentElement.name).forEach { plugin ->
+                    plugin.endElement(currentElement.name, currentEntity())
+                }
             }
         }
 
-        currentElement = currentElement?.parent
-
-
-        if (currentEntity?.type == qName) {
-            currentEntity = currentEntity?.parent
+        if (currentElement()?.isEntity() == true && entityStack.isNotEmpty()) {
+            entityStack.pop()
         }
+        elementStack.pop()
     }
 
     override fun endDocument() {
