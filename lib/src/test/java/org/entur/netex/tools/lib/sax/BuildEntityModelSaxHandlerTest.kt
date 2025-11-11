@@ -41,7 +41,6 @@ class BuildEntityModelSaxHandlerTest {
         entityModel = TestDataFactory.defaultEntityModel()
 
         val inclusionPolicy = InclusionPolicy(
-            entityModel = entityModel,
             entitySelection = null,
             refSelection = null,
             skipElements = skipElements
@@ -49,8 +48,8 @@ class BuildEntityModelSaxHandlerTest {
 
         buildEntityModelHandler = BuildEntityModelSaxHandler(
             entityModel = entityModel,
+            plugins = listOf(testNetexPlugin),
             inclusionPolicy = inclusionPolicy,
-            plugins = listOf(testNetexPlugin)
         )
     }
 

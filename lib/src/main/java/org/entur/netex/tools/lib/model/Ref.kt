@@ -2,9 +2,9 @@ package org.entur.netex.tools.lib.model
 
 import org.entur.netex.tools.lib.model.Entity.Companion.EMPTY
 
-data class Ref(
+class Ref(
     val type : String,
-    val source : Entity,
+    @Transient val source : Entity,
     val ref : String,
 ) {
     fun toString(idToStr : (v : String) -> String?): String {

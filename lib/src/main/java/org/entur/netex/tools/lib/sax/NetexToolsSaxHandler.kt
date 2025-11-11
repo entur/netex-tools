@@ -13,6 +13,7 @@ import java.util.Stack
 abstract class NetexToolsSaxHandler : DefaultHandler() {
     protected val elementStack = Stack<Element>()
     protected val entityStack = Stack<Entity>()
+
     protected var currentElement: Element? = null
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
@@ -32,15 +33,20 @@ abstract class NetexToolsSaxHandler : DefaultHandler() {
         if (elementStack.isNotEmpty()) {
             elementStack.pop()
         }
+
+        if (elementStack.isNotEmpty()) {
+            currentElement = elementStack.peek()
+        }
     }
 
     protected fun createEntity(type: String, attributes: Attributes): Entity {
+        val currentEntity = currentEntity()
         val publication = attributes.getValue("publication") ?: "public"
         return Entity(
             id = EntityId.from(type, attributes),
             type = type,
             publication = publication,
-            parent = currentEntity(),
+            parent = currentEntity,
         )
     }
 

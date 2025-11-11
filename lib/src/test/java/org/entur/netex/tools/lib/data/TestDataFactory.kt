@@ -21,7 +21,7 @@ object TestDataFactory {
         id = id,
         type = type,
         publication = publication,
-        parent = null
+        parent = null,
     )
 
     fun defaultRef(id: String): Ref = Ref(
@@ -73,7 +73,7 @@ object TestDataFactory {
             name = name,
             attributes = attributes,
             parent = null,
-            currentEntityId = currentEntityId,
+            currentEntityId = id,
         )
     }
 

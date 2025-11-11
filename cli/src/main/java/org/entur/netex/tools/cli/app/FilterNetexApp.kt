@@ -139,13 +139,12 @@ data class FilterNetexApp(
     private fun createNetexSaxReadHandler(file: File): BuildEntityModelSaxHandler =
         BuildEntityModelSaxHandler(
             entityModel = model,
-            plugins = getPluginsBy(filterConfig, file),
             inclusionPolicy = InclusionPolicy(
-                entityModel = model,
                 entitySelection = null,
                 refSelection = null,
                 skipElements = filterConfig.skipElements
-            )
+            ),
+            plugins = getPluginsBy(filterConfig, file),
         )
 
     private fun createNetexSaxWriteHandler(xmlContext: XmlContext, entitySelection: EntitySelection, refSelection: RefSelection): OutputNetexSaxHandler {
@@ -170,7 +169,6 @@ data class FilterNetexApp(
             entityModel = model,
             fileIndex = fileIndex,
             inclusionPolicy = InclusionPolicy(
-                entityModel = model,
                 entitySelection = entitySelection,
                 refSelection = refSelection,
                 skipElements = filterConfig.skipElements

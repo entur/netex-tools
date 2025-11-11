@@ -73,8 +73,8 @@ class EntityModel(private val alias: Alias) {
             "SELECTED ENTITIES",
             entities.listAll(),
             alias,
-            { it.fullPath() },
-            { selection.isSelected(it) }
+            { it.type },
+            { selection.includes(it.id) }
         ).report()
 
     fun getRefsKeptReport(selection : EntitySelection): String =

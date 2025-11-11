@@ -56,7 +56,7 @@ data class FilterNetexApp(
             entitiesToKeep
         }
 
-        printReport(entitySelection, seconds)
+//        printReport(entitySelection, seconds)
 
         return FilterReport(
             entitiesByFile = fileIndex.entitiesByFile,
@@ -74,6 +74,7 @@ data class FilterNetexApp(
     private fun buildEntityModel() {
         logger.info("Load xml files for building entity model")
         parseXmlDocuments(input) {
+            logger.info("Building entity model for file ${it.name}")
             createNetexSaxReadHandler(it)
         }
         logger.info("Done reading xml files for building entity model. Model contains ${model.listAllEntities().size} entities and ${model.listAllRefs().size} references.")
@@ -141,7 +142,6 @@ data class FilterNetexApp(
             entityModel = model,
             plugins = getPluginsBy(filterConfig, file),
             inclusionPolicy = InclusionPolicy(
-                entityModel = model,
                 entitySelection = null,
                 refSelection = null,
                 skipElements = filterConfig.skipElements
@@ -170,7 +170,6 @@ data class FilterNetexApp(
             entityModel = model,
             fileIndex = fileIndex,
             inclusionPolicy = InclusionPolicy(
-                entityModel = model,
                 entitySelection = entitySelection,
                 refSelection = refSelection,
                 skipElements = filterConfig.skipElements

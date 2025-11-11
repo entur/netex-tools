@@ -9,6 +9,7 @@ import org.entur.netex.tools.lib.selections.InclusionPolicy
 import org.xml.sax.Attributes
 import org.xml.sax.ext.LexicalHandler
 import java.io.File
+import java.util.Stack
 
 class OutputNetexSaxHandler(
     private val entityModel: EntityModel,
@@ -18,6 +19,8 @@ class OutputNetexSaxHandler(
     private val fileWriter: NetexFileWriter,
     private val elementWriter: DelegatingXMLElementWriter,
 ) : NetexToolsSaxHandler(), LexicalHandler {
+
+    private val inclusionStack: Stack<Boolean> = Stack()
 
     override fun startDocument() {
         fileWriter.startDocument()
@@ -30,7 +33,11 @@ class OutputNetexSaxHandler(
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         super.startElement(uri, localName, qName, attributes)
 
-        if (shouldIncludeCurrentElement()) {
+        val ancestorsIncluded = if(inclusionStack.isNotEmpty()) inclusionStack.peek() else true
+        val shouldIncludeCurrentElement = ancestorsIncluded && inclusionPolicy.shouldInclude(elementStack)
+        inclusionStack.push(shouldIncludeCurrentElement)
+
+        if (shouldIncludeCurrentElement) {
             elementWriter.handleStartElement(
                 uri = uri,
                 localName = localName,
@@ -52,14 +59,17 @@ class OutputNetexSaxHandler(
     }
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
-        if (shouldIncludeCurrentElement()) {
+        if (inclusionStack.peek()) {
             elementWriter.handleCharacters(ch, start, length, currentPath = currentPath())
         }
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        if (shouldIncludeCurrentElement()) {
+        if (inclusionStack.peek()) {
             elementWriter.handleEndElement(uri, localName, qName, currentPath = currentPath())
+        }
+        if (inclusionStack.isNotEmpty()) {
+            inclusionStack.pop()
         }
         super.endElement(uri, localName, qName)
     }

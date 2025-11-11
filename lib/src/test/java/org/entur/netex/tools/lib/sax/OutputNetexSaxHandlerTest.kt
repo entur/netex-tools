@@ -22,7 +22,6 @@ class OutputNetexSaxHandlerTest {
 
     private val fileIndex = FileIndex()
     private val inclusionPolicy = InclusionPolicy(
-        entityModel = entityModel,
         entitySelection = entitySelection,
         refSelection = refSelection,
         skipElements = listOf(
@@ -62,6 +61,7 @@ class OutputNetexSaxHandlerTest {
         entityModel.addEntity(blockEntity)
 
         entitySelection.selection["ServiceJourney"] = mutableMapOf(serviceJourneyId to serviceJourneyEntity)
+        entitySelection.allIds.add(serviceJourneyId)
     }
 
     private fun getAttributesForEntity(entity: Entity): AttributesImpl {
@@ -137,13 +137,16 @@ class OutputNetexSaxHandlerTest {
 
     @Test
     fun charactersWritesIfElementShouldBeIncluded() {
+        val serviceJourneyAttrs = AttributesImpl()
+        serviceJourneyAttrs.addAttribute("", "id", "id", "CDATA", serviceJourneyId)
+        outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
         val chars = "some characters".toCharArray()
         outputNetexSaxHandler.characters(chars, 0, chars.size)
         verify(delegatingXmlElementWriter).handleCharacters(
             chars,
             0,
             chars.size,
-            currentPath = "/"
+            currentPath = "/ServiceJourney"
         )
     }
 
@@ -164,12 +167,15 @@ class OutputNetexSaxHandlerTest {
 
     @Test
     fun endElementWritesIfElementShouldBeIncluded() {
+        val serviceJourneyAttrs = AttributesImpl()
+        serviceJourneyAttrs.addAttribute("", "id", "id", "CDATA", serviceJourneyId)
+        outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
         outputNetexSaxHandler.endElement("", "", "ServiceJourney")
         verify(delegatingXmlElementWriter).handleEndElement(
             uri = "",
             localName = "",
             qName = "ServiceJourney",
-            currentPath = "/"
+            currentPath = "/ServiceJourney"
         )
     }
 

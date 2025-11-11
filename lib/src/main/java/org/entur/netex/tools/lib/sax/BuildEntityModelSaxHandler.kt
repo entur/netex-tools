@@ -9,6 +9,7 @@ import org.entur.netex.tools.lib.plugin.NetexPlugin
 import org.entur.netex.tools.lib.plugin.PluginRegistry
 import org.entur.netex.tools.lib.selections.InclusionPolicy
 import org.xml.sax.Attributes
+import java.util.Stack
 
 class BuildEntityModelSaxHandler(
     val entityModel : EntityModel,
@@ -17,6 +18,7 @@ class BuildEntityModelSaxHandler(
 ) : NetexToolsSaxHandler() {
 
     private val pluginRegistry = PluginRegistry()
+    private val inclusionStack: Stack<Boolean> = Stack()
 
     init {
         plugins.forEach { plugin ->
@@ -26,7 +28,6 @@ class BuildEntityModelSaxHandler(
 
     private fun registerEntity(entity: Entity) {
         entityModel.addEntity(entity)
-        entityStack.push(entity)
     }
 
     private fun registerRef(type: String, attributes: Attributes) {
@@ -35,15 +36,25 @@ class BuildEntityModelSaxHandler(
         entityModel.addRef(refObject)
     }
 
+    fun ancestorsIncluded(): Boolean {
+        if (inclusionStack.isEmpty()) {
+            return true
+        }
+        return inclusionStack.peek()
+    }
+
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         super.startElement(uri, localName, qName, attributes)
 
-        if (inclusionPolicy.shouldInclude(elementStack)) {
+        val ancestorsIncluded = if(inclusionStack.isNotEmpty()) inclusionStack.peek() else true
+        val shouldIncludeCurrentElement = ancestorsIncluded && inclusionPolicy.shouldInclude(elementStack)
+        inclusionStack.push(shouldIncludeCurrentElement)
+
+        if (shouldIncludeCurrentElement) {
             val isEntity = attributes?.hasAttribute("id") ?: false
             val isRef = attributes?.hasAttribute("ref") ?: false
             if (isEntity) {
-                val entity = createEntity(type = qName!!, attributes = attributes)
-                registerEntity(entity)
+                registerEntity(currentEntity()!!)
             } else if (isRef) {
                 registerRef(type = qName!!, attributes = attributes)
             }
@@ -55,7 +66,7 @@ class BuildEntityModelSaxHandler(
     }
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
-        if (inclusionPolicy.shouldInclude(elementStack)) {
+        if (inclusionStack.peek()) {
             val currentElementName = currentElement()?.name
             if (currentElementName != null) {
                 pluginRegistry.getPluginsForElement(currentElementName).forEach { plugin ->
@@ -66,13 +77,17 @@ class BuildEntityModelSaxHandler(
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        if (inclusionPolicy.shouldInclude(elementStack)) {
+        if (inclusionStack.peek()) {
             val currentElement = currentElement()
             if (currentElement?.name != null) {
                 pluginRegistry.getPluginsForElement(currentElement.name).forEach { plugin ->
                     plugin.endElement(currentElement.name, currentEntity())
                 }
             }
+        }
+
+        if (inclusionStack.isNotEmpty()) {
+            inclusionStack.pop()
         }
 
         super.endElement(uri, localName, qName)

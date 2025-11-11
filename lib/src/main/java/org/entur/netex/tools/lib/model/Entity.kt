@@ -1,16 +1,18 @@
 package org.entur.netex.tools.lib.model
 
-data class Entity(
+class Entity(
     val id : String,
     val type : String,
     val publication : String,
-    val parent : Entity? = null,
+    @Transient val parent : Entity? = null,
 ) {
     companion object {
         val EMPTY = "Ø"
     }
 
     override fun toString() : String = "($id ${fullPath()})"
+
+    override fun hashCode(): Int = id.hashCode()
 
     fun path(): String {
         if(parent == null) {
