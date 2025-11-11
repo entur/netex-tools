@@ -1,12 +1,10 @@
 package org.entur.netex.tools.lib.sax
 
 import org.entur.netex.tools.lib.data.TestDataFactory
-import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.output.DelegatingXMLElementWriter
 import org.entur.netex.tools.lib.output.NetexFileWriter
 import org.entur.netex.tools.lib.report.FileIndex
 import org.entur.netex.tools.lib.selections.InclusionPolicy
-import org.entur.netex.tools.lib.selections.RefSelection
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -16,28 +14,22 @@ import org.xml.sax.helpers.AttributesImpl
 import java.io.File
 
 class OutputNetexSaxHandlerTest {
-    private val entityModel = TestDataFactory.defaultEntityModel()
-    private val entitySelection = TestDataFactory.entitySelection(entityModel.listAllEntities())
-    private val refSelection = RefSelection(setOf())
 
-    private val fileIndex = FileIndex()
     private val inclusionPolicy = InclusionPolicy(
-        entityModel = entityModel,
-        entitySelection = entitySelection,
-        refSelection = refSelection,
+        entitySelection = null,
+        refSelection = null,
         skipElements = listOf(
-            "/PublicationDelivery/dataObjects/CompositeFrame/frames/VehicleScheduleFrame",
-            "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceFrame/lines/Line/routes",
-            "/PublicationDelivery/dataObjects/CompositeFrame/frames/TimetableFrame/vehicleJourneys/DeadRun"
+            "/PublicationDelivery/dataObjects/VehicleScheduleFrame"
         )
     )
 
-    private val testFile = File("test.xml")
+    private lateinit var outputNetexSaxHandler: OutputNetexSaxHandler
 
+    private val fileIndex = FileIndex()
     private val fileWriter = mock<NetexFileWriter>()
     private val delegatingXmlElementWriter = mock<DelegatingXMLElementWriter>()
-
-    private lateinit var outputNetexSaxHandler: OutputNetexSaxHandler
+    private val testFile = File("test.xml")
+    private val defaultAttributes = AttributesImpl()
 
     @BeforeEach
     fun setUp() {
@@ -51,23 +43,6 @@ class OutputNetexSaxHandlerTest {
         )
     }
 
-    private val serviceJourneyId = "service_journey_id"
-    private val serviceJourneyEntity = TestDataFactory.defaultEntity(id = serviceJourneyId, type = "ServiceJourney")
-    private val blockId = "block_id"
-    private val blockEntity = TestDataFactory.defaultEntity(id = blockId, type = "Block")
-
-    init {
-        entityModel.addEntity(serviceJourneyEntity)
-        entitySelection.selection["ServiceJourney"] = mutableMapOf(serviceJourneyId to serviceJourneyEntity)
-
-        entityModel.addEntity(blockEntity)
-    }
-
-    private fun getAttributesForEntity(entity: Entity): AttributesImpl {
-        val attrs = AttributesImpl()
-        attrs.addAttribute("", "id", "id", "CDATA", entity.id)
-        return attrs
-    }
 
     @Test
     fun startDocument() {
@@ -82,148 +57,119 @@ class OutputNetexSaxHandlerTest {
     }
 
     @Test
-    fun startElementDoesNotWriteTagIfElementShouldBeSkipped() {
-        val blockAttrs = getAttributesForEntity(blockEntity)
-        outputNetexSaxHandler.startElement("", "", "Block", blockAttrs)
-        verify(delegatingXmlElementWriter, never()).handleStartElement(
-            uri = "",
-            localName = "",
-            qName = "Block",
-            attributes = blockAttrs,
-            currentPath = "/Block"
-        )
+    fun handlerWritesElementsThatShouldNotBeSkipped() {
+        outputNetexSaxHandler.startElement("", "", "PublicationDelivery", defaultAttributes)
+        outputNetexSaxHandler.startElement("", "", "dataObjects", defaultAttributes)
+        outputNetexSaxHandler.comment("".toCharArray(), 0, 0)
 
-        // Verifies that children of skipped elements are also skipped, regardless of selection
-        val serviceJourneyAttrs = AttributesImpl()
-        serviceJourneyAttrs.addAttribute("", "id", "id", "CDATA", serviceJourneyId)
-        outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
-        verify(delegatingXmlElementWriter, never()).handleStartElement(
-            uri = "",
-            localName = "",
-            qName = "ServiceJourney",
-            attributes = serviceJourneyAttrs,
-            currentPath = "/Block/ServiceJourney"
-        )
-    }
-
-    @Test
-    fun startElementWritesTagIfElementShouldBeIncluded() {
-        val serviceJourneyAttrs = getAttributesForEntity(serviceJourneyEntity)
-        outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
         verify(delegatingXmlElementWriter).handleStartElement(
             uri = "",
             localName = "",
-            qName = "ServiceJourney",
-            attributes = serviceJourneyAttrs,
-            currentPath = "/ServiceJourney"
+            qName = "PublicationDelivery",
+            attributes = defaultAttributes,
+            currentPath = "/PublicationDelivery"
         )
-    }
-
-    @Test
-    fun charactersDoesNotWriteIfElementShouldBeSkipped() {
-        val blockAttrs = getAttributesForEntity(blockEntity)
-        outputNetexSaxHandler.startElement("", "", "Block", blockAttrs)
-
-        val chars = "some characters".toCharArray()
-        outputNetexSaxHandler.characters(chars, 0, chars.size)
-        verify(delegatingXmlElementWriter, never()).handleCharacters(
-            chars,
-            0,
-            chars.size,
-            currentPath = "/Block"
+        verify(delegatingXmlElementWriter).handleStartElement(
+            uri = "",
+            localName = "",
+            qName = "dataObjects",
+            attributes = defaultAttributes,
+            currentPath = "/PublicationDelivery/dataObjects"
         )
-    }
+        verify(fileWriter).writeComments("".toCharArray(), 0, 0)
 
-    @Test
-    fun charactersWritesIfElementShouldBeIncluded() {
-        val chars = "some characters".toCharArray()
-        outputNetexSaxHandler.characters(chars, 0, chars.size)
+        outputNetexSaxHandler.characters("".toCharArray(), 0, 0)
         verify(delegatingXmlElementWriter).handleCharacters(
-            chars,
-            0,
-            chars.size,
-            currentPath = "/"
+            ch = "".toCharArray(),
+            start = 0,
+            length = 0,
+            currentPath = "/PublicationDelivery/dataObjects"
         )
-    }
 
-    @Test
-    fun endElementDoesNotWriteIfElementShouldBeSkipped() {
-        val blockAttrs = getAttributesForEntity(blockEntity)
-        outputNetexSaxHandler.startElement("", "", "Block", blockAttrs)
-
-        outputNetexSaxHandler.endElement("", "", "Block")
-        verify(delegatingXmlElementWriter, never())
-            .handleEndElement(
-                uri = "",
-                localName = "",
-                qName = "Block",
-                currentPath = "/Block"
-            )
-    }
-
-    @Test
-    fun endElementWritesIfElementShouldBeIncluded() {
-        outputNetexSaxHandler.endElement("", "", "ServiceJourney")
+        outputNetexSaxHandler.endElement("", "", "dataObjects")
+        outputNetexSaxHandler.endElement("", "", "PublicationDelivery")
         verify(delegatingXmlElementWriter).handleEndElement(
-            uri = "",
-            localName = "",
-            qName = "ServiceJourney",
-            currentPath = "/"
+            "",
+            "",
+            "dataObjects",
+            currentPath = "/PublicationDelivery/dataObjects"
+        )
+        verify(delegatingXmlElementWriter).handleEndElement(
+            "",
+            "",
+            "PublicationDelivery",
+            currentPath = "/PublicationDelivery"
         )
     }
 
     @Test
-    fun endElementStopsSkippingWhenSkippedElementEnds() {
-        val blockAttrs = getAttributesForEntity(blockEntity)
-        val serviceJourneyAttrs = getAttributesForEntity(serviceJourneyEntity)
-        outputNetexSaxHandler.startElement("", "", "Block", blockAttrs)
-        outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
-        outputNetexSaxHandler.endElement("", "", "ServiceJourney")
+    fun handlerDoesNotWriteElementsThatShouldBeSkipped() {
+        outputNetexSaxHandler.startElement("", "", "PublicationDelivery", defaultAttributes)
+        outputNetexSaxHandler.startElement("", "", "dataObjects", defaultAttributes)
+
+        // Verifies that VehicleScheduleFrame starting tag and characters are not written
+        outputNetexSaxHandler.startElement("", "", "VehicleScheduleFrame", defaultAttributes)
+        outputNetexSaxHandler.characters("".toCharArray(), 0, 0)
+        verify(delegatingXmlElementWriter, never()).handleStartElement(
+            uri = "",
+            localName = "",
+            qName = "VehicleScheduleFrame",
+            attributes = defaultAttributes,
+            currentPath = "/PublicationDelivery/dataObjects/VehicleScheduleFrame"
+        )
+        verify(delegatingXmlElementWriter, never()).characters("".toCharArray(), 0, 0)
+
+        // Verifies that Block starting tag and characters are not written
+        outputNetexSaxHandler.startElement("", "", "Block", defaultAttributes)
+        outputNetexSaxHandler.characters("".toCharArray(), 0, 0)
+        verify(delegatingXmlElementWriter, never()).handleStartElement(
+            uri = "",
+            localName = "",
+            qName = "Block",
+            attributes = defaultAttributes,
+            currentPath = "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block"
+        )
+        verify(delegatingXmlElementWriter, never()).handleCharacters("".toCharArray(), 0, 0, "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block")
+
+        // Verifies that comments in a Block tag are not written
+        outputNetexSaxHandler.comment("".toCharArray(), 0, 0)
+        verify(fileWriter, never()).writeComments("".toCharArray(), 0, 0)
+
+        // Verifies that Block end tag is not written
+        outputNetexSaxHandler.endElement("", "", "Block")
+        verify(delegatingXmlElementWriter, never()).handleEndElement(
+            uri = "",
+            localName = "",
+            qName = "Block",
+            currentPath = "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block"
+        )
+
+        // Verifies that Blocks are not written if there are Block siblings
+        outputNetexSaxHandler.startElement("", "", "Block", defaultAttributes)
+        outputNetexSaxHandler.characters("".toCharArray(), 0, 0)
         outputNetexSaxHandler.endElement("", "", "Block")
         verify(delegatingXmlElementWriter, never()).handleStartElement(
             uri = "",
             localName = "",
             qName = "Block",
-            attributes = blockAttrs,
-            currentPath = "/Block"
+            attributes = defaultAttributes,
+            currentPath = "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block"
         )
-        verify(delegatingXmlElementWriter, never()).handleStartElement(
-            uri = "",
-            localName = "",
-            qName = "ServiceJourney",
-            attributes = serviceJourneyAttrs,
-            currentPath = "/Block/ServiceJourney"
-        )
-        verify(delegatingXmlElementWriter, never()).handleEndElement(
-            uri = "",
-            localName = "",
-            qName = "ServiceJourney",
-            currentPath = "/Block/ServiceJourney"
-        )
+        verify(delegatingXmlElementWriter, never()).handleCharacters("".toCharArray(), 0, 0, "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block")
         verify(delegatingXmlElementWriter, never()).handleEndElement(
             uri = "",
             localName = "",
             qName = "Block",
-            currentPath = "/Block"
+            currentPath = "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block"
         )
 
-        // After the skipped Block ends, we should be out of skip mode, and writing should resume
-        outputNetexSaxHandler.startElement("", "", "ServiceJourney", serviceJourneyAttrs)
-        verify(delegatingXmlElementWriter).handleStartElement(
+        // Verifies that VehicleScheduleFrame end tag is not written
+        outputNetexSaxHandler.endElement("", "", "VehicleScheduleFrame")
+        verify(delegatingXmlElementWriter, never()).handleEndElement(
             uri = "",
             localName = "",
-            qName = "ServiceJourney",
-            attributes = serviceJourneyAttrs,
-            currentPath = "/ServiceJourney"
+            qName = "VehicleScheduleFrame",
+            currentPath = "/PublicationDelivery/dataObjects/VehicleScheduleFrame"
         )
-    }
-
-    @Test
-    fun commentDoesNotWriteIfElementShouldBeSkipped() {
-        val blockAttrs = getAttributesForEntity(blockEntity)
-        outputNetexSaxHandler.startElement("", "", "Block", blockAttrs)
-
-        outputNetexSaxHandler.comment("some comment".toCharArray(), 0, 0)
-        verify(fileWriter, never()).writeComments("some comment".toCharArray(), 0, 0)
     }
 }

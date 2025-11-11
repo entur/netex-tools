@@ -2,7 +2,7 @@ package org.entur.netex.tools.lib.model
 
 data class Element(
     val name : String,
-    val parent : Element? = null,
+    @Transient val parent : Element? = null,
     val attributes: Map<String, String> = mapOf(),
     val currentEntityId : String? = null
 ) {
@@ -16,5 +16,13 @@ data class Element(
 
     fun getAttribute(name: String): String {
         return attributes[name] ?: ""
+    }
+
+    fun ref(): String? {
+        return attributes["ref"]
+    }
+
+    fun id(): String? {
+        return attributes["id"]
     }
 }

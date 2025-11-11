@@ -34,14 +34,14 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
         }
 
         val datedServiceJourneys = entityModel.getEntitiesOfType(NetexTypes.DATED_SERVICE_JOURNEY)
-        datedServiceJourneys.forEach { (datedServiceJourneyId) ->
-            val serviceJourneyRefs = entityModel.getRefsOfTypeFrom(datedServiceJourneyId, NetexTypes.SERVICE_JOURNEY_REF)
+        datedServiceJourneys.forEach {
+            val serviceJourneyRefs = entityModel.getRefsOfTypeFrom(it.id, NetexTypes.SERVICE_JOURNEY_REF)
             if (serviceJourneyRefs.size != 1) {
                 // Invalid dated service journey, skip processing
                 return@forEach
             }
             val serviceJourneyId = serviceJourneyRefs[0].ref
-            val operatingDayRefs = entityModel.getRefsOfTypeFrom(datedServiceJourneyId, NetexTypes.OPERATING_DAY_REF)
+            val operatingDayRefs = entityModel.getRefsOfTypeFrom(it.id, NetexTypes.OPERATING_DAY_REF)
             if (operatingDayRefs.size != 1) {
                 // Invalid dated service journey, skip processing
                 return@forEach
@@ -53,7 +53,7 @@ class ActiveDatesCalculator(private val repository: ActiveDatesRepository) {
                 activeEntities,
                 timePeriod
             )) {
-                activeEntities.addDatedServiceJourney(datedServiceJourneyId)
+                activeEntities.addDatedServiceJourney(it.id)
             }
         }
 

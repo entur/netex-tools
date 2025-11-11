@@ -41,7 +41,6 @@ class BuildEntityModelSaxHandlerTest {
         entityModel = TestDataFactory.defaultEntityModel()
 
         val inclusionPolicy = InclusionPolicy(
-            entityModel = entityModel,
             entitySelection = null,
             refSelection = null,
             skipElements = skipElements
@@ -49,8 +48,8 @@ class BuildEntityModelSaxHandlerTest {
 
         buildEntityModelHandler = BuildEntityModelSaxHandler(
             entityModel = entityModel,
+            plugins = listOf(testNetexPlugin),
             inclusionPolicy = inclusionPolicy,
-            plugins = listOf(testNetexPlugin)
         )
     }
 
@@ -90,26 +89,6 @@ class BuildEntityModelSaxHandlerTest {
         )
 
         Assertions.assertNotNull(entityModel.getRef(refElement))
-    }
-
-    @Test
-    fun testStartElementShouldSkipElementWhenPathIsInSkipElements() {
-        setUpSkippingState()
-        Assertions.assertNull(entityModel.getEntity("someId"))
-        Assertions.assertEquals(skipElements[0], buildEntityModelHandler.elementBeingSkipped)
-    }
-
-    @Test
-    fun testEndElementShouldStopSkippingWhenEndOfSkippedElementIsReached() {
-        setUpSkippingState()
-        Assertions.assertEquals(skipElements[0], buildEntityModelHandler.elementBeingSkipped)
-
-        buildEntityModelHandler.endElement(
-            uri = "",
-            localName = "element2",
-            qName = "element2"
-        )
-        Assertions.assertNull(buildEntityModelHandler.elementBeingSkipped)
     }
 
     @Test

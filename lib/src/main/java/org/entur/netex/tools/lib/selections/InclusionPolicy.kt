@@ -1,60 +1,65 @@
 package org.entur.netex.tools.lib.selections
 
 import org.entur.netex.tools.lib.model.Element
-import org.entur.netex.tools.lib.model.Entity
-import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.model.Ref
+import java.util.Stack
 
+/**
+ * Implements logic used to determine whether to keep a certain element or not, using
+ * a list of paths that should be skipped entirely - and optionally, selections of entities and refs.
+ * */
 class InclusionPolicy(
-    private val entityModel: EntityModel,
     private val entitySelection: EntitySelection?,
     private val refSelection: RefSelection?,
     private val skipElements: List<String>
 ) {
-    fun shouldInclude(ref: Ref?, refSelection: RefSelection): Boolean {
-        if (ref != null) {
-            return refSelection.includes(ref)
-        }
-        return false
-    }
-
-    fun shouldInclude(entity: Entity?, entitySelection: EntitySelection): Boolean {
-        if (entity != null) {
-            return entitySelection.includes(entity)
-        }
-        return false
-    }
-
-    fun shouldInclude(element: Element, entitySelection: EntitySelection?): Boolean {
-        if (element.currentEntityId == null || entitySelection == null) {
-            return true
-        }
-        val parentEntity = entityModel.getEntity(element.currentEntityId)
-        return shouldInclude(parentEntity, entitySelection)
-    }
-
-    fun matchesSkipElementsPath(currentPath: String) =
+    private fun matchesSkipElements(currentPath: String) =
         skipElements.any { element -> currentPath.startsWith(element) }
 
-    fun shouldInclude(element: Element?, currentPath: String): Boolean {
-        if (element == null) {
+    private fun pathOf(element: Element, ancestors: Stack<Pair<Element, Boolean>>): String {
+        if (ancestors.isEmpty()) return "/${element.name}"
+
+        return "/" + ancestors.joinToString(separator = "/") { it.first.name } + "/${element.name}"
+    }
+
+    private fun shouldBeSkippedBySkipElements(element: Element, ancestors: Stack<Pair<Element, Boolean>>): Boolean {
+        val currentPath = pathOf(element, ancestors)
+        return matchesSkipElements(currentPath)
+    }
+
+    /**
+     * Determines whether to include an element or not.
+     *
+     * Note: Assumes the root element should be kept
+     *
+     * @param element The element to determine whether to keep
+     * @param ancestors A Stack of ancestors to the current element, mapping every ancestor to whether the ancestor is included or not.
+     * */
+    fun shouldInclude(element: Element, ancestors: Stack<Pair<Element, Boolean>>): Boolean {
+        // Assumes the root element should be kept
+        if (ancestors.isEmpty()) {
             return true
         }
-        if (matchesSkipElementsPath(currentPath)) {
+
+        // If the closest ancestor is not included, this element should not be included either
+        if (!ancestors.peek().second) {
             return false
         }
+
+        if (shouldBeSkippedBySkipElements(element, ancestors)) {
+            return false
+        }
+
+        if (element.isRef() && refSelection != null && entitySelection != null) {
+            return refSelection.includes(element.ref()!!)
+        }
+
         if (element.isEntity() && entitySelection != null) {
-            return shouldInclude(
-                entity = entityModel.getEntity(element),
-                entitySelection = entitySelection,
-            )
+            return entitySelection.includes(element.currentEntityId!!)
         }
-        if (element.isRef() && refSelection != null) {
-            return shouldInclude(
-                ref = entityModel.getRef(element),
-                refSelection = refSelection,
-            )
-        }
-        return shouldInclude(element, entitySelection)
+
+        // In this case, the element should be included because we are dealing with an ordinary element that is:
+        // 1. not skipped through a path of skipElements
+        // 2. not encapsulated by an element that has been excluded
+        return true
     }
 }

@@ -24,7 +24,7 @@ class PassengerStopAssignmentSelector(
 
         val referringEntities = model.getEntitiesReferringTo(scheduledStopPointId)
         val referringEntitiesExcludingAssignments = excludePassengerStopAssignments(referringEntities)
-        val referringEntitiesInSelection = referringEntitiesExcludingAssignments.filter { entitySelection.includes(it) }
+        val referringEntitiesInSelection = referringEntitiesExcludingAssignments.filter { entitySelection.includes(it.id) }
         return referringEntitiesInSelection.isNotEmpty()
     }
 

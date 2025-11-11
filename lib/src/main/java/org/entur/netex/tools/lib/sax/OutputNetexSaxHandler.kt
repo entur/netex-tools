@@ -1,7 +1,5 @@
 package org.entur.netex.tools.lib.sax
 
-import org.entur.netex.tools.lib.extensions.toMap
-import org.entur.netex.tools.lib.model.CompositeEntityId
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.output.DelegatingXMLElementWriter
@@ -21,76 +19,33 @@ class OutputNetexSaxHandler(
     private val fileWriter: NetexFileWriter,
     private val elementWriter: DelegatingXMLElementWriter,
 ) : NetexToolsSaxHandler(), LexicalHandler {
-    protected var currentElement : Element? = null
-    protected var inSkipMode: Boolean = false
 
-    private val elementStack = Stack<String>()
-
-    protected fun startSkipMode() {
-        inSkipMode = true
-    }
-
-    protected fun endSkipMode() {
-        inSkipMode = false
-    }
+    private val inclusionStack: Stack<Pair<Element, Boolean>> = Stack()
 
     override fun startDocument() {
         fileWriter.startDocument()
     }
 
-    private fun currentPath(): String {
-        return "/" + elementStack.joinToString(separator = "/")
-    }
-
-    protected fun updateCurrentElement(attributes: Attributes?, qName: String) {
-        if (attributes?.getValue("id") != null) {
-            val attributesAsMap = attributes.toMap()
-            val id = getIdByQNameAndAttributes(qName = qName, attributes = attributesAsMap)
-            currentElement = Element(qName, currentElement, attributesAsMap, id)
-        } else {
-            // not an entity. Use parent's currentEntityId
-            val attributesAsMap = attributes?.toMap() ?: mapOf()
-            currentElement = Element(qName, currentElement, attributesAsMap, currentElement?.currentEntityId)
-        }
-    }
-
-    protected fun getIdByQNameAndAttributes(qName: String, attributes: Map<String, String>): String? {
-        return when (qName) {
-            "DayTypeAssignment", "PassengerStopAssignment" -> {
-                val version = attributes.getValue("version")
-                val order = attributes.getValue("order")
-                val id = attributes.getValue("id")
-                CompositeEntityId.ByIdVersionAndOrder(id, version, order).id
-            }
-            else -> attributes.getValue("id")
-        }
-    }
-
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
-        elementStack.push(qName)
-        updateCurrentElement(attributes, qName!!)
+        super.startElement(uri, localName, qName, attributes)
 
-        if (!inSkipMode) {
-            val element = currentElement!!
-            val elementShouldBeIncluded = inclusionPolicy.shouldInclude(element, currentPath())
+        val shouldIncludeCurrentElement = inclusionPolicy.shouldInclude(currentElement!!, inclusionStack)
+        inclusionStack.push(Pair(currentElement!!, shouldIncludeCurrentElement))
 
-            if (elementShouldBeIncluded) {
-                elementWriter.handleStartElement(
-                    uri = uri,
-                    localName = localName,
-                    attributes = attributes,
-                    qName = qName,
-                    currentPath = currentPath(),
-                )
-                indexElementIfEntity(element)
-            } else {
-                startSkipMode()
-            }
+        if (shouldIncludeCurrentElement) {
+            elementWriter.handleStartElement(
+                uri = uri,
+                localName = localName,
+                attributes = attributes,
+                qName = qName,
+                currentPath = currentPath(),
+            )
+            indexElementIfEntity(currentElement)
         }
     }
 
-    private fun indexElementIfEntity(element: Element) {
-        if (element.isEntity()) {
+    private fun indexElementIfEntity(element: Element?) {
+        if (element?.isEntity() == true) {
             val entity = entityModel.getEntity(element)
             if (entity != null) {
                 fileIndex.add(entity, outputFile)
@@ -98,42 +53,28 @@ class OutputNetexSaxHandler(
         }
     }
 
-    override fun characters(ch: CharArray?, start: Int, length: Int) {
-        if(inSkipMode) {
-            return
-        }
+    private fun shouldIncludeCurrentElement(): Boolean = inclusionStack.peek().second
 
-        elementWriter.handleCharacters(ch, start, length, currentPath = currentPath())
+    override fun characters(ch: CharArray?, start: Int, length: Int) {
+        if (shouldIncludeCurrentElement()) {
+            elementWriter.handleCharacters(ch, start, length, currentPath = currentPath())
+        }
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        if (!inSkipMode) {
-            elementWriter.handleEndElement(
-                uri = uri,
-                localName = localName,
-                qName = qName,
-                currentPath = currentPath()
-            )
+        if (shouldIncludeCurrentElement()) {
+            elementWriter.handleEndElement(uri, localName, qName, currentPath = currentPath())
         }
-
-        if (elementStack.isNotEmpty()) {
-            elementStack.pop()
+        if (inclusionStack.isNotEmpty()) {
+            inclusionStack.pop()
         }
-
-        val parent = currentElement?.parent
-        if (parent == null || inclusionPolicy.shouldInclude(parent, currentPath())) {
-            endSkipMode()
-        }
-
-        currentElement = currentElement?.parent
+        super.endElement(uri, localName, qName)
     }
 
     override fun comment(ch: CharArray?, start: Int, length: Int) {
-        if(inSkipMode) {
-            return
+        if (shouldIncludeCurrentElement()) {
+            fileWriter.writeComments(ch, start, length)
         }
-
-        fileWriter.writeComments(ch, start, length)
     }
 
     override fun endDocument() {

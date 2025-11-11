@@ -23,6 +23,7 @@ class EntityModel(private val alias: Alias) {
     fun getRef(element: Element): Ref? {
         val refAttributeValue = element.getAttribute("ref")
         return getRefOfTypeFromSourceIdAndRef(
+            // Assumes ref always has an entity ancestor
             element.currentEntityId!!,
             element.name,
             refAttributeValue
@@ -73,8 +74,8 @@ class EntityModel(private val alias: Alias) {
             "SELECTED ENTITIES",
             entities.listAll(),
             alias,
-            { it.fullPath() },
-            { selection.isSelected(it) }
+            { it.type },
+            { selection.includes(it.id) }
         ).report()
 
     fun getRefsKeptReport(selection : EntitySelection): String =
