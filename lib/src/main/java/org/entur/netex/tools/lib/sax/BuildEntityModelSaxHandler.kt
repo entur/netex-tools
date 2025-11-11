@@ -1,6 +1,7 @@
 package org.entur.netex.tools.lib.sax
 
 import org.entur.netex.tools.lib.extensions.hasAttribute
+import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.Entity.Companion.EMPTY
 import org.entur.netex.tools.lib.model.EntityModel
@@ -18,7 +19,7 @@ class BuildEntityModelSaxHandler(
 ) : NetexToolsSaxHandler() {
 
     private val pluginRegistry = PluginRegistry()
-    private val inclusionStack: Stack<Boolean> = Stack()
+    private val inclusionStack: Stack<Pair<Element, Boolean>> = Stack()
 
     init {
         plugins.forEach { plugin ->
@@ -36,19 +37,11 @@ class BuildEntityModelSaxHandler(
         entityModel.addRef(refObject)
     }
 
-    fun ancestorsIncluded(): Boolean {
-        if (inclusionStack.isEmpty()) {
-            return true
-        }
-        return inclusionStack.peek()
-    }
-
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         super.startElement(uri, localName, qName, attributes)
 
-        val ancestorsIncluded = if(inclusionStack.isNotEmpty()) inclusionStack.peek() else true
-        val shouldIncludeCurrentElement = ancestorsIncluded && inclusionPolicy.shouldInclude(elementStack)
-        inclusionStack.push(shouldIncludeCurrentElement)
+        val shouldIncludeCurrentElement = inclusionPolicy.shouldInclude(currentElement!!, inclusionStack)
+        inclusionStack.push(Pair(currentElement!!, shouldIncludeCurrentElement))
 
         if (shouldIncludeCurrentElement) {
             val isEntity = attributes?.hasAttribute("id") ?: false
@@ -65,8 +58,10 @@ class BuildEntityModelSaxHandler(
         }
     }
 
+    private fun shouldIncludeCurrentElement(): Boolean = inclusionStack.peek().second
+
     override fun characters(ch: CharArray?, start: Int, length: Int) {
-        if (inclusionStack.peek()) {
+        if (shouldIncludeCurrentElement()) {
             val currentElementName = currentElement()?.name
             if (currentElementName != null) {
                 pluginRegistry.getPluginsForElement(currentElementName).forEach { plugin ->
@@ -77,7 +72,7 @@ class BuildEntityModelSaxHandler(
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        if (inclusionStack.peek()) {
+        if (shouldIncludeCurrentElement()) {
             val currentElement = currentElement()
             if (currentElement?.name != null) {
                 pluginRegistry.getPluginsForElement(currentElement.name).forEach { plugin ->

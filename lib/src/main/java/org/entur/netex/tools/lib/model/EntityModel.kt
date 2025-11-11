@@ -23,6 +23,7 @@ class EntityModel(private val alias: Alias) {
     fun getRef(element: Element): Ref? {
         val refAttributeValue = element.getAttribute("ref")
         return getRefOfTypeFromSourceIdAndRef(
+            // Assumes ref always has an entity ancestor
             element.currentEntityId!!,
             element.name,
             refAttributeValue

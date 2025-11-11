@@ -20,22 +20,17 @@ class OutputNetexSaxHandler(
     private val elementWriter: DelegatingXMLElementWriter,
 ) : NetexToolsSaxHandler(), LexicalHandler {
 
-    private val inclusionStack: Stack<Boolean> = Stack()
+    private val inclusionStack: Stack<Pair<Element, Boolean>> = Stack()
 
     override fun startDocument() {
         fileWriter.startDocument()
     }
 
-    fun shouldIncludeCurrentElement(): Boolean {
-        return inclusionPolicy.shouldInclude(elementStack)
-    }
-
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         super.startElement(uri, localName, qName, attributes)
 
-        val ancestorsIncluded = if(inclusionStack.isNotEmpty()) inclusionStack.peek() else true
-        val shouldIncludeCurrentElement = ancestorsIncluded && inclusionPolicy.shouldInclude(elementStack)
-        inclusionStack.push(shouldIncludeCurrentElement)
+        val shouldIncludeCurrentElement = inclusionPolicy.shouldInclude(currentElement!!, inclusionStack)
+        inclusionStack.push(Pair(currentElement!!, shouldIncludeCurrentElement))
 
         if (shouldIncludeCurrentElement) {
             elementWriter.handleStartElement(
@@ -58,14 +53,16 @@ class OutputNetexSaxHandler(
         }
     }
 
+    private fun shouldIncludeCurrentElement(): Boolean = inclusionStack.peek().second
+
     override fun characters(ch: CharArray?, start: Int, length: Int) {
-        if (inclusionStack.peek()) {
+        if (shouldIncludeCurrentElement()) {
             elementWriter.handleCharacters(ch, start, length, currentPath = currentPath())
         }
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        if (inclusionStack.peek()) {
+        if (shouldIncludeCurrentElement()) {
             elementWriter.handleEndElement(uri, localName, qName, currentPath = currentPath())
         }
         if (inclusionStack.isNotEmpty()) {

@@ -104,6 +104,7 @@ data class FilterNetexApp(
         logger.info("Writing filtered xml files to ${target.absolutePath}")
         parseXmlDocuments(input) { file ->
             val outFile = getOutputXmlFile(target, file)
+            logger.info("Writing output XML to ${outFile.name}")
             val xmlContext = XmlContext(xmlFile = outFile)
             createNetexSaxWriteHandler(xmlContext, entitySelection, refSelection)
         }

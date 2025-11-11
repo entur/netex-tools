@@ -10,109 +10,112 @@ import kotlin.test.assertTrue
 
 class InclusionPolicyTest {
 
-    private val skipElements = listOf("/some/path/to/skip", "/another/path/to/skip", "/TestElement")
-    private lateinit var inclusionPolicy: InclusionPolicy
+    private val skipElements = listOf("/Skip")
+
+    private lateinit var inclusionPolicyWithSelections: InclusionPolicy
+    private lateinit var inclusionPolicyWithoutSelections: InclusionPolicy
+
+    private val selectedEntity = TestDataFactory.defaultEntity(id = "SelectedEntityId")
+    private val nonSelectedEntity = TestDataFactory.defaultEntity(id = "NonSelectedEntityId")
+
+    private val selectedRef = TestDataFactory.defaultRef(id = "SelectedRef")
+    private val nonSelectedRef = TestDataFactory.defaultRef(id = "NonSelectedRef")
 
     @BeforeEach
     fun setUp() {
-        inclusionPolicy = InclusionPolicy(
+        inclusionPolicyWithoutSelections = InclusionPolicy(
             entitySelection = null,
             refSelection = null,
             skipElements = skipElements
         )
-    }
 
-    @Test
-    fun testShouldIncludeRefOnlyWhenRefIsInRefSelection() {
-        val existingEntity = TestDataFactory.defaultEntity("existing-entity")
-        val entitySelection = TestDataFactory.entitySelection(listOf(existingEntity))
-        val ref = TestDataFactory.defaultRef("existing-entity")
-        val refSelection = RefSelection(selection = setOf(ref))
+        val entitySelection = TestDataFactory.entitySelection(listOf(selectedEntity))
+        val refSelection = RefSelection(selection = setOf(selectedRef))
 
-        val inclusionPolicy = InclusionPolicy(
+        inclusionPolicyWithSelections = InclusionPolicy(
             entitySelection = entitySelection,
             refSelection = refSelection,
             skipElements = skipElements
         )
+    }
 
-        val existingRef = TestDataFactory.defaultElement(ref = "existing-entity", name="Ref")
-        val missingRef = TestDataFactory.defaultElement(ref = "missing-entity", name="Ref")
-        assertTrue { inclusionPolicy.shouldInclude(Stack<Element>().apply { add(existingRef) }) }
-        assertFalse { inclusionPolicy.shouldInclude(Stack<Element>().apply { add(missingRef) }) }
+    private fun createEntityElement(id: String) = TestDataFactory.defaultElement(name = "Entity", id = id, currentEntityId = id)
+    private fun createRefElement(ref: String) = TestDataFactory.defaultElement(name = "Ref", ref = ref)
+
+    private fun createSkippedElementStack(): Stack<Pair<Element, Boolean>> {
+        val stack = Stack<Pair<Element, Boolean>>()
+        stack.push(Pair(TestDataFactory.defaultElement(name = "Skip"), true))
+        return stack
+    }
+
+    private fun createNonSkippedElementStack(): Stack<Pair<Element, Boolean>> {
+        val stack = Stack<Pair<Element, Boolean>>()
+        stack.push(Pair(TestDataFactory.defaultElement(name = "IncludedElement"), true))
+        return stack
+    }
+
+    private fun createNonIncludedElementStack(): Stack<Pair<Element, Boolean>> {
+        val stack = Stack<Pair<Element, Boolean>>()
+        stack.push(Pair(TestDataFactory.defaultElement(name = "ExcludedElement"), false))
+        return stack
+    }
+
+    @Test
+    fun testShouldIncludeRefOnlyWhenRefIsInRefSelection() {
+        val elementStack = createNonSkippedElementStack()
+
+        val existingRef = createRefElement(ref = selectedRef.ref)
+        assertTrue(inclusionPolicyWithSelections.shouldInclude(existingRef, elementStack))
+
+        val missingRef = createRefElement(ref = nonSelectedRef.ref)
+        assertFalse(inclusionPolicyWithSelections.shouldInclude(missingRef, elementStack))
     }
 
     @Test
     fun testShouldIncludeEntityOnlyWhenEntityIsInEntitySelection() {
-        val existingEntity = TestDataFactory.defaultEntity("existing-entity")
-        val missingEntity = TestDataFactory.defaultEntity("missing-entity")
+        val elementStack = createNonSkippedElementStack()
 
-        val entitySelection = TestDataFactory.entitySelection(listOf(existingEntity))
-        val inclusionPolicy = InclusionPolicy(
-            entitySelection = entitySelection,
-            refSelection = null,
-            skipElements = skipElements
-        )
+        val existingEntity = createEntityElement(id = selectedEntity.id)
+        assertTrue(inclusionPolicyWithSelections.shouldInclude(existingEntity, elementStack))
 
-        val existingEntityElement = TestDataFactory.defaultElement(id = existingEntity.id, name="Entity")
-        val existingEntityElementStack = Stack<Element>().apply { add(existingEntityElement) }
-        assertTrue { inclusionPolicy.shouldInclude(existingEntityElementStack) }
-
-        val missingEntityElement = TestDataFactory.defaultElement(id = missingEntity.id, name="Entity")
-        val missingEntityElementStack = Stack<Element>().apply { add(missingEntityElement) }
-        assertFalse { inclusionPolicy.shouldInclude(missingEntityElementStack) }
+        val missingEntity = createEntityElement(id = nonSelectedEntity.id)
+        assertFalse(inclusionPolicyWithSelections.shouldInclude(missingEntity, elementStack))
     }
 
     @Test
-    fun testShouldIncludeElementIfNoEntitySelectionIsProvided() {
-        val elementStack = Stack<Element>()
-        elementStack.push(TestDataFactory.defaultElement(name = "NonSkipTestElement", id = "element-id"))
-        assertTrue { inclusionPolicy.shouldInclude(elementStack) }
-    }
-
-
-//    @Test
-//    fun testShouldNotIncludeElementIfCurrentEntityIsNotInEntitySelection() {
-//        val elementStack = Stack<Element>()
-//        val entity = TestDataFactory.defaultElement(name = "TestEntity", id = "nonExistingId")
-//        val element = TestDataFactory.elementWithParentEntity(name = "TestElement", currentEntityId = "nonExistingId")
-//        elementStack.push(entity)
-//        elementStack.push(element)
-//        assertFalse {
-//            inclusionPolicy.shouldInclude(
-//                elementStack
-//            )
-//        }
-//    }
-
-    @Test
-    fun testShouldIncludeElementIfStackIsEmpty() {
-        val elementStack = Stack<Element>()
-        assertTrue { inclusionPolicy.shouldInclude(elementStack) }
+    fun testShouldIncludeElementWhenItsNotOnSkippedElementsPath() {
+        val elementStack = createNonSkippedElementStack()
+        val simpleElement = TestDataFactory.defaultElement(name = "TestElement")
+        assertTrue(inclusionPolicyWithSelections.shouldInclude(simpleElement, elementStack))
+        assertTrue(inclusionPolicyWithoutSelections.shouldInclude(simpleElement, elementStack))
     }
 
     @Test
-    fun testShouldNotIncludeElementIfCurrentPathStartsWithSkipElement() {
-        val elementStack = Stack<Element>()
+    fun testShouldExcludeElementsOnSkippedElementsPaths() {
+        val elementStack = createSkippedElementStack()
+        val simpleElement = TestDataFactory.defaultElement(name = "Element")
+        assertFalse(inclusionPolicyWithSelections.shouldInclude(simpleElement, elementStack))
+        assertFalse(inclusionPolicyWithoutSelections.shouldInclude(simpleElement, elementStack))
+
+        elementStack.push(simpleElement to true)
+        val nestedElement = TestDataFactory.defaultElement(name = "NestedElement")
+        assertFalse(inclusionPolicyWithSelections.shouldInclude(nestedElement, elementStack))
+        assertFalse(inclusionPolicyWithoutSelections.shouldInclude(nestedElement, elementStack))
+    }
+
+    @Test
+    fun testAlwaysIncludeRootElement() {
         val element = TestDataFactory.defaultElement(name = "TestElement")
-        elementStack.push(element)
-        assertFalse { inclusionPolicy.shouldInclude(elementStack) }
+        val stack = Stack<Pair<Element, Boolean>>()
+        assertTrue(inclusionPolicyWithSelections.shouldInclude(element, stack))
+        assertTrue(inclusionPolicyWithoutSelections.shouldInclude(element, stack))
     }
 
     @Test
-    fun testShouldNotIncludeElementIfCurrentPathShouldBeSkipped() {
+    fun shouldExcludeElementsWithExcludedAncestor() {
         val element = TestDataFactory.defaultElement(name = "TestElement")
-        val stack1 = Stack<Element>()
-        stack1.push(element)
-        assertFalse { inclusionPolicy.shouldInclude(stack1) }
-
-        val entityElement = TestDataFactory.defaultElement(name = "TestElement", id = "entityId")
-        val stack2 = Stack<Element>()
-        stack2.push(entityElement)
-        assertFalse { inclusionPolicy.shouldInclude(stack2) }
-
-        val refElement = TestDataFactory.defaultElement(name = "TestElement", ref = "referredId")
-        val stack3 = Stack<Element>()
-        stack3.push(refElement)
-        assertFalse { inclusionPolicy.shouldInclude(stack3) }
+        val stack = createNonIncludedElementStack()
+        assertFalse(inclusionPolicyWithSelections.shouldInclude(element, stack))
+        assertFalse(inclusionPolicyWithoutSelections.shouldInclude(element, stack))
     }
 }

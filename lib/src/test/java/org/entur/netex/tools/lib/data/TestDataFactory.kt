@@ -73,7 +73,7 @@ object TestDataFactory {
             name = name,
             attributes = attributes,
             parent = null,
-            currentEntityId = id,
+            currentEntityId = currentEntityId,
         )
     }
 
