@@ -56,7 +56,7 @@ data class FilterNetexApp(
             entitiesToKeep
         }
 
-//        printReport(entitySelection, seconds)
+        printReport(entitySelection, seconds)
 
         return FilterReport(
             entitiesByFile = fileIndex.entitiesByFile,
