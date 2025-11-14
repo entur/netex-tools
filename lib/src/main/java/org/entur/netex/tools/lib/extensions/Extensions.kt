@@ -31,6 +31,14 @@ fun Attributes.toMap(): Map<String, String> {
     return map
 }
 
+fun Map<String, String>.toAttributes(): Attributes {
+    val attributes = AttributesImpl()
+    for ((key, value) in this) {
+        attributes.addAttribute("", key, key, "CDATA", value)
+    }
+    return attributes
+}
+
 fun AttributesImpl.addNewAttribute(attributeName: String, value: String) {
     this.addAttribute("", attributeName, attributeName, "CDATA", value)
 }
