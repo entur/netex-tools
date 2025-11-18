@@ -2,6 +2,7 @@ package org.entur.netex.tools.lib.plugin
 
 import org.entur.netex.tools.lib.model.Entity
 import org.xml.sax.Attributes
+import java.io.File
 
 /**
  * Plugin interface that defines the contract for data collection plugins.
@@ -42,7 +43,7 @@ interface NetexPlugin {
     /**
      * Called when an XML document ends
      * */
-    fun endDocument()
+    fun endDocument(file: File)
 
     /**
      * Gets the data collected by this plugin (plugin-specific format)

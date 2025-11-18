@@ -1,6 +1,9 @@
 package org.entur.netex.tools.lib.config
 
 import org.entur.netex.tools.lib.output.XMLElementHandler
+import org.entur.netex.tools.lib.plugin.NetexPlugin
+import org.entur.netex.tools.lib.selectors.entities.EntitySelector
+import org.entur.netex.tools.lib.selectors.refs.RefSelector
 
 class FilterConfigBuilder(
     private val filterConfig: FilterConfig = FilterConfig()
@@ -12,11 +15,6 @@ class FilterConfigBuilder(
 
     fun withRemovePrivateData(removePrivateData: Boolean): FilterConfigBuilder {
         filterConfig.removePrivateData = removePrivateData
-        return this
-    }
-
-    fun withPeriod(period: TimePeriod): FilterConfigBuilder {
-        filterConfig.period = period
         return this
     }
 
@@ -45,23 +43,28 @@ class FilterConfigBuilder(
         return this
     }
 
-    fun withRemoveInterchangesWithoutServiceJourneys(removeInterchangesWithoutServiceJourneys: Boolean): FilterConfigBuilder {
-        filterConfig.removeInterchangesWithoutServiceJourneys = removeInterchangesWithoutServiceJourneys
-        return this
-    }
-
-    fun withRemovePassengerStopAssignmentsWithUnreferredScheduledStopPoint(removePassengerStopAssignmentsWithUnreferredScheduledStopPoint: Boolean): FilterConfigBuilder {
-        filterConfig.removePassengerStopAssignmentsWithUnreferredScheduledStopPoint = removePassengerStopAssignmentsWithUnreferredScheduledStopPoint
-        return this
-    }
-
-    fun withRenameFiles(renameFiles: Boolean): FilterConfigBuilder {
-        filterConfig.renameFiles = renameFiles
+    fun withFileNameMap(fileNameMap: Map<String, String>): FilterConfigBuilder {
+        filterConfig.fileNameMap = fileNameMap
         return this
     }
 
     fun withCustomElementHandlers(customElementHandlers: Map<String, XMLElementHandler>): FilterConfigBuilder {
         filterConfig.customElementHandlers = customElementHandlers
+        return this
+    }
+
+    fun withPlugins(plugins: List<NetexPlugin>): FilterConfigBuilder {
+        filterConfig.plugins = plugins
+        return this
+    }
+
+    fun withEntitySelectors(entitySelectors: List<EntitySelector>): FilterConfigBuilder {
+        filterConfig.entitySelectors = entitySelectors
+        return this
+    }
+
+    fun withRefSelectors(refSelectors: List<RefSelector>): FilterConfigBuilder {
+        filterConfig.refSelectors = refSelectors
         return this
     }
 

@@ -2,7 +2,6 @@ package org.entur.netex.tools.lib.selectors.refs
 
 import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
 import org.entur.netex.tools.lib.utils.timedMs
@@ -11,17 +10,14 @@ import org.slf4j.LoggerFactory
 class CompositeRefSelector(
     val filterConfig: FilterConfig,
     val entitySelection: EntitySelection,
-    val activeDatesPlugin: ActiveDatesPlugin,
-): RefSelector() {
+): RefSelector {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     private fun setupRefSelectors(): List<RefSelector> {
         val selectors = mutableListOf<RefSelector>(AllRefsSelector())
+        selectors.addAll(filterConfig.refSelectors)
         if (filterConfig.pruneReferences) {
             selectors.add(RefPruningSelector(entitySelection, filterConfig.referencesToExcludeFromPruning))
-        }
-        if (filterConfig.period.start != null || filterConfig.period.end != null) {
-            selectors.add(ActiveDatesRefSelector(activeDatesPlugin, filterConfig.period))
         }
         return selectors
     }

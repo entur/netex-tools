@@ -3,6 +3,6 @@ package org.entur.netex.tools.lib.selectors.entities
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
 
-abstract class EntitySelector {
-    abstract fun selectEntities(model: EntityModel): EntitySelection
+interface EntitySelector {
+    fun selectEntities(model: EntityModel, currentEntitySelection: EntitySelection? = null): EntitySelection
 }

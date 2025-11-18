@@ -10,11 +10,13 @@ import org.entur.netex.tools.lib.plugin.NetexPlugin
 import org.entur.netex.tools.lib.plugin.PluginRegistry
 import org.entur.netex.tools.lib.selections.InclusionPolicy
 import org.xml.sax.Attributes
+import java.io.File
 import java.util.Stack
 
 class BuildEntityModelSaxHandler(
     val entityModel : EntityModel,
     val inclusionPolicy: InclusionPolicy,
+    val file: File,
     plugins: List<NetexPlugin> = emptyList(),
 ) : NetexToolsSaxHandler() {
 
@@ -89,7 +91,7 @@ class BuildEntityModelSaxHandler(
     }
 
     override fun endDocument() {
-        pluginRegistry.getAllPlugins().forEach { it.endDocument() }
+        pluginRegistry.getAllPlugins().forEach { it.endDocument(file) }
     }
 
     private fun nn(value : String?) = value ?: EMPTY

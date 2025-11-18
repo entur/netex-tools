@@ -11,6 +11,14 @@ class EntitySelection(
 ): Selection() {
     val allIds = selection.values.flatMap { it.keys }.toHashSet()
 
+    fun copy(): EntitySelection {
+        return EntitySelection(selection.toMutableMap(), model)
+    }
+
+    fun isEqualTo(otherEntitySelection: EntitySelection): Boolean {
+        return allIds.containsAll(otherEntitySelection.allIds) && allIds.size == otherEntitySelection.allIds.size
+    }
+
     fun isSelected(e : Entity?) : Boolean {
         if (e == null) { return false }
         return isSelected(e.type, e.id)
