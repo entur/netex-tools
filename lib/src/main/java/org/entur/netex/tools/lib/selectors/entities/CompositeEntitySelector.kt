@@ -2,133 +2,116 @@ package org.entur.netex.tools.lib.selectors.entities
 
 import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.model.EntityModel
-import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.utils.timedMs
 import org.slf4j.LoggerFactory
 
 class CompositeEntitySelector(
     private val filterConfig: FilterConfig,
-    private val activeDatesPlugin: ActiveDatesPlugin,
-): EntitySelector() {
+): EntitySelector {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    fun getInitialEntitySelectors(filterConfig: FilterConfig): List<EntitySelector> {
-        val selectors = mutableListOf<EntitySelector>(AllEntitiesSelector())
-        if (filterConfig.removePrivateData) {
-            selectors.add(PublicEntitiesSelector())
-        }
-        if (filterConfig.period.start != null || filterConfig.period.end != null) {
-            selectors.add(
-                ActiveDatesSelector(
-                    period = filterConfig.period,
-                    activeDatesPlugin = activeDatesPlugin,
-                )
-            )
-        }
-
-        return selectors
-    }
-
-    fun runSelector(selector: EntitySelector, entityModel: EntityModel): EntitySelection {
-        logger.info("Running entity selector: ${selector::class.simpleName}")
-        return selector.selectEntities(entityModel)
-    }
-
-    fun selectEntitiesToKeep(selectors: List<EntitySelector>, entityModel: EntityModel): EntitySelection =
-        selectors
-            .map { runSelector(it, entityModel) }
-            .reduce { acc, selection -> selection.intersectWith(acc) }
-
-
-    fun runInitialEntitySelection(
-        entityModel: EntityModel,
-        filterConfig: FilterConfig,
+    fun runSelector(
+        selector: EntitySelector,
+        model: EntityModel,
+        currentEntitySelection: EntitySelection
     ): EntitySelection {
-        logger.info("Starting initial entity selection...")
+        val context = EntitySelectorContext(
+            entityModel = model,
+            currentEntitySelection = currentEntitySelection
+        )
         val (entitySelection, ms) = timedMs {
-            val selectors = getInitialEntitySelectors(filterConfig = filterConfig)
-            selectEntitiesToKeep(
-                entityModel = entityModel,
-                selectors = selectors
-            )
+            logger.info("Running entity selector: ${selector::class.simpleName}")
+            selector.selectEntities(context)
         }
-        logger.info("Initial entity collection done in ${ms}ms. Collected a total of ${entitySelection.allIds().size} entities")
-        return entitySelection
+        val accumulatedEntitySelection = entitySelection.intersectWith(currentEntitySelection)
+        logger.info("Entity selector ${selector::class.simpleName} finished in ${ms}ms")
+        return accumulatedEntitySelection
     }
+
+    fun removeRestrictedEntities(
+        model: EntityModel,
+        currentEntitySelection: EntitySelection
+    ): EntitySelection =
+        runSelector(
+            selector = PublicEntitiesSelector(),
+            model = model,
+            currentEntitySelection = currentEntitySelection
+        )
 
     fun pruneUnreferencedEntities(
-        entityModel: EntityModel,
-        entitySelection: EntitySelection,
-        filterConfig: FilterConfig,
+        model: EntityModel,
+        currentEntitySelection: EntitySelection,
+        unreferencedEntitiesToPrune: Set<String>,
     ): EntitySelection {
-        logger.info("Pruning unreferenced entities...")
-        val (prunedEntitySelection, ms) = timedMs {
-            val selector = EntityPruningSelector(
-                entitySelection = entitySelection,
-                typesToRemove = filterConfig.unreferencedEntitiesToPrune
+        val selector = EntityPruningSelector(
+            entitySelection = currentEntitySelection,
+            typesToRemove = unreferencedEntitiesToPrune
+        )
+        return runSelector(
+            selector = selector,
+            model = model,
+            currentEntitySelection = currentEntitySelection
+        )
+    }
+
+    fun filterAndPruneSelectionUntilTheyAreEqual(
+        entitySelection: EntitySelection,
+        entitySelectors: List<EntitySelector>,
+        model: EntityModel
+    ): EntitySelection {
+        var prunedEntitySelection: EntitySelection? = null
+        var filteredEntitySelection = entitySelection.copy()
+        do {
+            if (prunedEntitySelection != null) {
+                filteredEntitySelection = prunedEntitySelection.copy()
+            }
+
+            for (entitySelector in entitySelectors) {
+                filteredEntitySelection = runSelector(
+                    model = model,
+                    currentEntitySelection = filteredEntitySelection,
+                    selector = entitySelector
+                )
+            }
+
+            prunedEntitySelection = pruneUnreferencedEntities(
+                model = model,
+                currentEntitySelection = filteredEntitySelection,
+                unreferencedEntitiesToPrune = filterConfig.unreferencedEntitiesToPrune
             )
-            runSelector(selector, entityModel).intersectWith(entitySelection)
-        }
-        logger.info("Pruned unreferenced entities in ${ms}ms")
+        } while (!filteredEntitySelection.isEqualTo(prunedEntitySelection))
+
         return prunedEntitySelection
     }
 
-    fun removeInterchangesWithoutServiceJourneys(
-        entityModel: EntityModel,
-        entitySelection: EntitySelection
-    ): EntitySelection {
-        logger.info("Removing interchanges without service journeys...")
-        val (entitySelectionWithInterchangesRemoved, ms) = timedMs {
-            val selector = ServiceJourneyInterchangeSelector(entitySelection)
-            runSelector(selector, entityModel).intersectWith(entitySelection)
-        }
-        logger.info("Removed interchanges without service journeys in ${ms}ms")
-        return entitySelectionWithInterchangesRemoved
-    }
+    override fun selectEntities(context: EntitySelectorContext): EntitySelection {
+        var allEntitiesSelection = AllEntitiesSelector().selectEntities(context)
+        var publicEntitySelection: EntitySelection? = null
 
-    fun removePassengerStopAssignmentsWithUnreferredScheduledStopPoint(
-        entityModel: EntityModel,
-        entitySelection: EntitySelection
-    ): EntitySelection {
-        logger.info("Removing passenger stop assignments with unreferred ScheduledStopPoint...")
-        val (entitySelectionWithAssignmentsRemoved, ms) = timedMs {
-            PassengerStopAssignmentSelector(entitySelection)
-                .selectEntities(entityModel)
-                .intersectWith(entitySelection)
+        if (filterConfig.removePrivateData) {
+            publicEntitySelection = removeRestrictedEntities(
+                model = context.entityModel,
+                currentEntitySelection = allEntitiesSelection
+            )
         }
-        logger.info("Removed passenger stop assignments with unreferred ScheduledStopPoint in ${ms}ms")
-        return entitySelectionWithAssignmentsRemoved
-    }
 
-    fun removeNoticeAssignmentsWithoutNoticedObjectRef(
-        entityModel: EntityModel,
-        entitySelection: EntitySelection
-    ): EntitySelection {
-        logger.info("Removing notice assignments without noticed object ref...")
-        val (noticeObjectRefSelection, ms) = timedMs {
-            NoticeAssignmentSelector(entitySelection)
-                .selectEntities(entityModel)
-                .intersectWith(entitySelection)
-        }
-        logger.info("Removed notice assignments without noticed object ref in ${ms}ms")
-        return noticeObjectRefSelection
-    }
+        val prunedEntitySelection = pruneUnreferencedEntities(
+            model = context.entityModel,
+            currentEntitySelection = publicEntitySelection?.copy() ?: allEntitiesSelection.copy(),
+            unreferencedEntitiesToPrune = filterConfig.unreferencedEntitiesToPrune
+        )
 
-    override fun selectEntities(model: EntityModel): EntitySelection {
-        var entitySelection = runInitialEntitySelection(model, filterConfig)
-        if (filterConfig.hasSpecifiedEntitiesToPrune()) {
-            entitySelection = pruneUnreferencedEntities(model, entitySelection, filterConfig)
+        val filteredEntitySelection = if (filterConfig.entitySelectors.isNotEmpty() && filterConfig.hasSpecifiedEntitiesToPrune()) {
+            filterAndPruneSelectionUntilTheyAreEqual(
+                entitySelection = prunedEntitySelection.copy(),
+                filterConfig.entitySelectors,
+                model = context.entityModel
+            )
+        } else {
+            prunedEntitySelection
         }
-        if (filterConfig.removeInterchangesWithoutServiceJourneys) {
-            entitySelection = removeInterchangesWithoutServiceJourneys(model, entitySelection)
-        }
-        if (filterConfig.removePassengerStopAssignmentsWithUnreferredScheduledStopPoint) {
-            entitySelection = removePassengerStopAssignmentsWithUnreferredScheduledStopPoint(model, entitySelection)
-        }
-        if (filterConfig.removeNoticeAssignmentWithoutNoticedObjectRef) {
-            entitySelection = removeNoticeAssignmentsWithoutNoticedObjectRef(model, entitySelection)
-        }
-        return entitySelection
+
+        return filteredEntitySelection
     }
 }

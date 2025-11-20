@@ -2,6 +2,7 @@ package org.entur.netex.tools.lib.plugin
 
 import org.entur.netex.tools.lib.model.Entity
 import org.xml.sax.Attributes
+import java.io.File
 
 class TestNetexPlugin: NetexPlugin {
     var hasCalledStartElement = false
@@ -49,7 +50,7 @@ class TestNetexPlugin: NetexPlugin {
         hasCalledEndElement = true
     }
 
-    override fun endDocument() {
+    override fun endDocument(file: File) {
         TODO("Not yet implemented")
     }
 

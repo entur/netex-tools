@@ -5,7 +5,7 @@ import org.xml.sax.Attributes
 object EntityId {
     fun from(type: String, attributes: Attributes) =
         when (type) {
-            "DayTypeAssignment", "PassengerStopAssignment" -> {
+            "DayTypeAssignment", "PassengerStopAssignment", "NoticeAssignment" -> {
                 val version = attributes.getValue("version")
                 val order = attributes.getValue("order")
                 val id = attributes.getValue("id")

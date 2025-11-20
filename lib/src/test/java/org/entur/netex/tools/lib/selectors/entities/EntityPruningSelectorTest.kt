@@ -18,7 +18,11 @@ class EntityPruningSelectorTest {
             typesToRemove = setOf("JourneyPattern"),
             entitySelection,
         )
-        val selection = selector.selectEntities(EntityModel(Alias.of(emptyMap())))
+        val selection = selector.selectEntities(
+            EntitySelectorContext(
+                entityModel = EntityModel(Alias.of(emptyMap()))
+            )
+        )
         assertEquals(0, selection.selection.size)
     }
 
@@ -29,7 +33,11 @@ class EntityPruningSelectorTest {
             typesToRemove = setOf("unreferencedType"),
             entitySelection,
         )
-        val selection = selector.selectEntities(EntityModel(Alias.of(emptyMap())))
+        val selection = selector.selectEntities(
+            EntitySelectorContext(
+                entityModel = EntityModel(Alias.of(emptyMap()))
+            )
+        )
 
         assertNotNull(selection)
 
@@ -44,7 +52,11 @@ class EntityPruningSelectorTest {
             typesToRemove = setOf(),
             entitySelection,
         )
-        val selection = selector.selectEntities(EntityModel(Alias.of(emptyMap())))
+        val selection = selector.selectEntities(
+            context = EntitySelectorContext(
+                entityModel = EntityModel(Alias.of(emptyMap()))
+            )
+        )
 
         assertNotNull(selection)
 

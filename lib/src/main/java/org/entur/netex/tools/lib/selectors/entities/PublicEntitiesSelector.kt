@@ -6,10 +6,11 @@ import org.entur.netex.tools.lib.model.PublicationEnumeration
 import org.entur.netex.tools.lib.selections.EntitySelection
 import kotlin.collections.set
 
-class PublicEntitiesSelector: EntitySelector() {
+class PublicEntitiesSelector: EntitySelector {
 
-    override fun selectEntities(model: EntityModel): EntitySelection {
+    override fun selectEntities(context: EntitySelectorContext): EntitySelection {
         val publicEntitiesMap = mutableMapOf<String, MutableMap<String, Entity>>()
+        val model = context.entityModel
         for (entity in model.listAllEntities()) {
             if (entity.publication == PublicationEnumeration.PUBLIC.value) {
                 val typeMap = publicEntitiesMap.getOrPut(entity.type) { HashMap() }

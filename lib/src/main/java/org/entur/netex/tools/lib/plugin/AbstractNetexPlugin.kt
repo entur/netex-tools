@@ -2,6 +2,7 @@ package org.entur.netex.tools.lib.plugin
 
 import org.entur.netex.tools.lib.model.Entity
 import org.xml.sax.Attributes
+import java.io.File
 
 /**
  * Abstract base class for NetEx plugins that provides default implementations
@@ -21,7 +22,7 @@ abstract class AbstractNetexPlugin : NetexPlugin {
         // Default implementation - do nothing
     }
 
-    override fun endDocument() {
+    override fun endDocument(file: File) {
         // Default implementation - do nothing
     }
     

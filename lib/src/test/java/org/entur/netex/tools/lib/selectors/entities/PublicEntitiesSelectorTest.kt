@@ -14,7 +14,11 @@ class PublicEntitiesSelectorTest {
         val restrictedEntity = Entity("2", "Line", PublicationEnumeration.RESTRICTED.value)
         entityModel.addEntity(publicEntity)
         entityModel.addEntity(restrictedEntity)
-        val selection = PublicEntitiesSelector().selectEntities(entityModel)
+        val selection = PublicEntitiesSelector().selectEntities(
+            context = EntitySelectorContext(
+                entityModel = entityModel
+            )
+        )
 
         assertEquals(1, selection.selection.size)
         assertTrue(selection.selection.containsKey(publicEntity.type))

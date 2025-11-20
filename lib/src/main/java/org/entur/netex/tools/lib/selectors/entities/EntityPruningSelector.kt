@@ -4,7 +4,7 @@ import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
 
-class EntityPruningSelector(private val typesToRemove: Set<String>, private val entitySelection: EntitySelection): EntitySelector() {
+class EntityPruningSelector(private val typesToRemove: Set<String>, private val entitySelection: EntitySelection): EntitySelector {
     private fun shouldKeep(entity: Entity, currentEntitySelection: EntitySelection): Boolean {
         if (entity.parent != null && !currentEntitySelection.includes(entity.parent)) {
             return false
@@ -18,7 +18,7 @@ class EntityPruningSelector(private val typesToRemove: Set<String>, private val 
         return currentEntitySelection.hasEntitiesReferringTo(entity)
     }
 
-    override fun selectEntities(model: EntityModel): EntitySelection {
+    override fun selectEntities(context: EntitySelectorContext): EntitySelection {
         var currentEntitySelection: EntitySelection = entitySelection
         var hasPrunedEntities: Boolean
         do {
@@ -36,7 +36,7 @@ class EntityPruningSelector(private val typesToRemove: Set<String>, private val 
                 .forEach { entity ->
                     entitiesToKeep.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
                 }
-            currentEntitySelection = EntitySelection(entitiesToKeep, model)
+            currentEntitySelection = EntitySelection(entitiesToKeep, context.entityModel)
         } while (hasPrunedEntities)
 
         return currentEntitySelection

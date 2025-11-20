@@ -7,18 +7,15 @@ import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.output.DelegatingXMLElementWriter
 import org.entur.netex.tools.lib.output.NetexFileWriter
 import org.entur.netex.tools.lib.plugin.NetexFileWriterContext
-import org.entur.netex.tools.lib.plugin.NetexPlugin
 import org.entur.netex.tools.lib.output.XmlContext
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.selections.RefSelection
-import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesRepository
-import org.entur.netex.tools.lib.plugin.activedates.ActiveDatesPlugin
-import org.entur.netex.tools.lib.plugin.file.FileNamePlugin
 import org.entur.netex.tools.lib.report.FileIndex
 import org.entur.netex.tools.lib.report.FilterReport
 import org.entur.netex.tools.lib.sax.*
 import org.entur.netex.tools.lib.selections.InclusionPolicy
 import org.entur.netex.tools.lib.selectors.entities.CompositeEntitySelector
+import org.entur.netex.tools.lib.selectors.entities.EntitySelectorContext
 import org.entur.netex.tools.lib.selectors.refs.CompositeRefSelector
 import org.entur.netex.tools.lib.utils.timedSeconds
 import org.slf4j.LoggerFactory
@@ -35,10 +32,6 @@ data class FilterNetexApp(
     val model = EntityModel(cliConfig.alias())
     val fileIndex = FileIndex()
 
-    // Plugin system
-    private val activeDatesRepository = ActiveDatesRepository()
-    private val activeDatesPlugin = ActiveDatesPlugin(activeDatesRepository)
-
     fun run(): FilterReport {
         setupAndLogStartupInfo()
 
@@ -47,8 +40,10 @@ data class FilterNetexApp(
             buildEntityModel()
 
             // Step 2: select the entities and refs to keep
-            val entitiesToKeep = CompositeEntitySelector(filterConfig, activeDatesPlugin).selectEntities(model)
-            val refsToKeep = CompositeRefSelector(filterConfig, entitiesToKeep, activeDatesPlugin).selectRefs(model)
+            val entitiesToKeep = CompositeEntitySelector(filterConfig).selectEntities(
+                EntitySelectorContext(entityModel = model)
+            )
+            val refsToKeep = CompositeRefSelector(filterConfig, entitiesToKeep).selectRefs(model)
 
             // Step 3: export the filtered data to XML files
             exportXmlFiles(entitiesToKeep, refsToKeep)
@@ -81,9 +76,9 @@ data class FilterNetexApp(
     }
 
     private fun getOutputXmlFile(directory: File, file: File): File {
-        if (filterConfig.renameFiles) {
-            val newFileName = fileIndex.filesToRename[file.name]
-            val outFile = File(target, newFileName ?: file.name)
+        val newFileName = filterConfig.fileNameMap[file.name]
+        if (newFileName != null) {
+            val outFile = File(target, newFileName)
             if (!outFile.exists()) {
                 outFile.createNewFile()
             }
@@ -119,29 +114,11 @@ data class FilterNetexApp(
         logger.info("Filter NeTEx files done in $secondsSpent seconds.")
     }
 
-    private fun getPluginsBy(
-        filterConfig: FilterConfig,
-        file: File
-    ): List<NetexPlugin> {
-        val plugins = mutableListOf<NetexPlugin>()
-        if (filterConfig.renameFiles) {
-            plugins.add(
-                FileNamePlugin(
-                    currentFile = file,
-                    fileIndex = fileIndex,
-                )
-            )
-        }
-        if (filterConfig.period.hasStartOrEnd()) {
-            plugins.add(activeDatesPlugin)
-        }
-        return plugins
-    }
-
     private fun createNetexSaxReadHandler(file: File): BuildEntityModelSaxHandler =
         BuildEntityModelSaxHandler(
             entityModel = model,
-            plugins = getPluginsBy(filterConfig, file),
+            plugins = filterConfig.plugins,
+            file = file,
             inclusionPolicy = InclusionPolicy(
                 entitySelection = null,
                 refSelection = null,
@@ -154,7 +131,6 @@ data class FilterNetexApp(
             useSelfClosingTagsWhereApplicable = filterConfig.useSelfClosingTagsWhereApplicable,
             removeEmptyCollections = true,
             preserveComments = filterConfig.preserveComments,
-            period = filterConfig.period,
         )
 
         val defaultNetexFileWriter = NetexFileWriter(

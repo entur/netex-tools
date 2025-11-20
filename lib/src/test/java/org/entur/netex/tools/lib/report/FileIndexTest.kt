@@ -6,7 +6,6 @@ import java.io.File
 import kotlin.test.assertEquals
 
 class FileIndexTest {
-
     @Test
     fun testAddEntity() {
         val fileIndex = FileIndex()
@@ -27,12 +26,4 @@ class FileIndexTest {
         assertEquals(1, fileIndex.elementTypesByFile[file2]?.get("TestType"))
         assertEquals(1, fileIndex.elementTypesByFile[file1]?.get("TestAnotherType"))
     }
-
-    @Test
-    fun testAddFileToRename() {
-        val fileIndex = FileIndex()
-        fileIndex.addFileToRename("oldName.xml", "newName.xml")
-        assertEquals("newName.xml", fileIndex.filesToRename["oldName.xml"])
-    }
-
 }
