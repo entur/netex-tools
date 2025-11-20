@@ -15,6 +15,7 @@ import org.entur.netex.tools.lib.report.FilterReport
 import org.entur.netex.tools.lib.sax.*
 import org.entur.netex.tools.lib.selections.InclusionPolicy
 import org.entur.netex.tools.lib.selectors.entities.CompositeEntitySelector
+import org.entur.netex.tools.lib.selectors.entities.EntitySelectorContext
 import org.entur.netex.tools.lib.selectors.refs.CompositeRefSelector
 import org.entur.netex.tools.lib.utils.timedSeconds
 import org.slf4j.LoggerFactory
@@ -39,7 +40,11 @@ data class FilterNetexApp(
             buildEntityModel()
 
             // Step 2: select the entities and refs to keep
-            val entitiesToKeep = CompositeEntitySelector(filterConfig).selectEntities(model)
+            val entitiesToKeep = CompositeEntitySelector(filterConfig).selectEntities(
+                EntitySelectorContext(
+                    entityModel = model
+                )
+            )
             val refsToKeep = CompositeRefSelector(filterConfig, entitiesToKeep).selectRefs(model)
 
             // Step 3: export the filtered data to XML files

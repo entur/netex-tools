@@ -8,8 +8,9 @@ import kotlin.collections.set
 
 class PublicEntitiesSelector: EntitySelector {
 
-    override fun selectEntities(model: EntityModel, currentEntitySelection: EntitySelection?): EntitySelection {
+    override fun selectEntities(context: EntitySelectorContext): EntitySelection {
         val publicEntitiesMap = mutableMapOf<String, MutableMap<String, Entity>>()
+        val model = context.entityModel
         for (entity in model.listAllEntities()) {
             if (entity.publication == PublicationEnumeration.PUBLIC.value) {
                 val typeMap = publicEntitiesMap.getOrPut(entity.type) { HashMap() }

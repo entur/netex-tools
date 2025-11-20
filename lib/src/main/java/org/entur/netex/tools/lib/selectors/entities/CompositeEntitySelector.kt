@@ -16,9 +16,13 @@ class CompositeEntitySelector(
         model: EntityModel,
         currentEntitySelection: EntitySelection
     ): EntitySelection {
+        val context = EntitySelectorContext(
+            entityModel = model,
+            currentEntitySelection = currentEntitySelection
+        )
         val (entitySelection, ms) = timedMs {
             logger.info("Running entity selector: ${selector::class.simpleName}")
-            selector.selectEntities(model, currentEntitySelection)
+            selector.selectEntities(context)
         }
         val accumulatedEntitySelection = entitySelection.intersectWith(currentEntitySelection)
         logger.info("Entity selector ${selector::class.simpleName} finished in ${ms}ms")
@@ -81,22 +85,19 @@ class CompositeEntitySelector(
         return prunedEntitySelection
     }
 
-    override fun selectEntities(
-        model: EntityModel,
-        currentEntitySelection: EntitySelection?
-    ): EntitySelection {
-        var allEntitiesSelection = AllEntitiesSelector().selectEntities(model)
+    override fun selectEntities(context: EntitySelectorContext): EntitySelection {
+        var allEntitiesSelection = AllEntitiesSelector().selectEntities(context)
         var publicEntitySelection: EntitySelection? = null
 
         if (filterConfig.removePrivateData) {
             publicEntitySelection = removeRestrictedEntities(
-                model = model,
+                model = context.entityModel,
                 currentEntitySelection = allEntitiesSelection
             )
         }
 
         val prunedEntitySelection = pruneUnreferencedEntities(
-            model = model,
+            model = context.entityModel,
             currentEntitySelection = publicEntitySelection?.copy() ?: allEntitiesSelection.copy(),
             unreferencedEntitiesToPrune = filterConfig.unreferencedEntitiesToPrune
         )
@@ -105,7 +106,7 @@ class CompositeEntitySelector(
             filterAndPruneSelectionUntilTheyAreEqual(
                 entitySelection = prunedEntitySelection.copy(),
                 filterConfig.entitySelectors,
-                model = model
+                model = context.entityModel
             )
         } else {
             prunedEntitySelection

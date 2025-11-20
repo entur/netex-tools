@@ -26,8 +26,9 @@ class CompositeEntitySelectorTest {
 
     private fun createSimpleEntitySelector(entityIdsToKeep: List<String>): EntitySelector {
         return object : EntitySelector {
-            override fun selectEntities(model: EntityModel, currentEntitySelection: EntitySelection?): EntitySelection {
+            override fun selectEntities(context: EntitySelectorContext): EntitySelection {
                 val selectedEntities = mutableMapOf<String, MutableMap<String, Entity>>()
+                val model = context.entityModel
                 for (entity in model.listAllEntities()) {
                     if (entityIdsToKeep.contains(entity.id)) {
                         val typeMap = selectedEntities.getOrPut(entity.type) { HashMap() }

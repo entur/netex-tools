@@ -18,7 +18,7 @@ class EntityPruningSelector(private val typesToRemove: Set<String>, private val 
         return currentEntitySelection.hasEntitiesReferringTo(entity)
     }
 
-    override fun selectEntities(model: EntityModel, currentEntitySelection: EntitySelection?): EntitySelection {
+    override fun selectEntities(context: EntitySelectorContext): EntitySelection {
         var currentEntitySelection: EntitySelection = entitySelection
         var hasPrunedEntities: Boolean
         do {
@@ -36,7 +36,7 @@ class EntityPruningSelector(private val typesToRemove: Set<String>, private val 
                 .forEach { entity ->
                     entitiesToKeep.computeIfAbsent(entity.type) { mutableMapOf() }[entity.id] = entity
                 }
-            currentEntitySelection = EntitySelection(entitiesToKeep, model)
+            currentEntitySelection = EntitySelection(entitiesToKeep, context.entityModel)
         } while (hasPrunedEntities)
 
         return currentEntitySelection
