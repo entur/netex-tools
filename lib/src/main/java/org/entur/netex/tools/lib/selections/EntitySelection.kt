@@ -6,17 +6,27 @@ import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
 
 class EntitySelection(
-    val selection: MutableMap<String, MutableMap<String, Entity>>,
+    val selection: Map<String, Map<String, Entity>>,
     val model: EntityModel
 ): Selection() {
     val allIds = selection.values.flatMap { it.keys }.toHashSet()
 
-    fun copy(): EntitySelection {
-        return EntitySelection(selection.toMutableMap(), model)
+    fun isEqualTo(other: EntitySelection): Boolean {
+        return allIds == other.allIds
     }
 
-    fun isEqualTo(otherEntitySelection: EntitySelection): Boolean {
-        return allIds.containsAll(otherEntitySelection.allIds) && allIds.size == otherEntitySelection.allIds.size
+    fun withReplaced(key: String, newInnerMap: Map<String, Entity>): EntitySelection {
+        val newSelection = selection.toMutableMap().apply {
+            this[key] = newInnerMap
+        }.toMap()
+        return EntitySelection(newSelection, model)
+    }
+
+    fun copy(
+        selection: Map<String, Map<String, Entity>> = this.selection,
+        model: EntityModel = this.model
+    ): EntitySelection {
+        return EntitySelection(selection, model)
     }
 
     fun isSelected(e : Entity?) : Boolean {

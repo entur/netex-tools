@@ -51,40 +51,66 @@ class CompositeEntitySelector(
         )
     }
 
+    fun filterAndPruneSelectionUntilTheyAreEqual(
+        entitySelection: EntitySelection,
+        entitySelectors: List<EntitySelector>,
+        model: EntityModel
+    ): EntitySelection {
+        var prunedEntitySelection: EntitySelection? = null
+        var filteredEntitySelection = entitySelection.copy()
+        do {
+            if (prunedEntitySelection != null) {
+                filteredEntitySelection = prunedEntitySelection.copy()
+            }
+
+            for (entitySelector in entitySelectors) {
+                filteredEntitySelection = runSelector(
+                    model = model,
+                    currentEntitySelection = filteredEntitySelection,
+                    selector = entitySelector
+                )
+            }
+
+            prunedEntitySelection = pruneUnreferencedEntities(
+                model = model,
+                currentEntitySelection = filteredEntitySelection,
+                unreferencedEntitiesToPrune = filterConfig.unreferencedEntitiesToPrune
+            )
+        } while (!filteredEntitySelection.isEqualTo(prunedEntitySelection))
+
+        return prunedEntitySelection
+    }
+
     override fun selectEntities(
         model: EntityModel,
         currentEntitySelection: EntitySelection?
     ): EntitySelection {
-        var entitySelection = AllEntitiesSelector().selectEntities(model)
+        var allEntitiesSelection = AllEntitiesSelector().selectEntities(model)
+        var publicEntitySelection: EntitySelection? = null
+
         if (filterConfig.removePrivateData) {
-            entitySelection = removeRestrictedEntities(
+            publicEntitySelection = removeRestrictedEntities(
                 model = model,
-                currentEntitySelection = entitySelection
+                currentEntitySelection = allEntitiesSelection
             )
         }
 
-        if (filterConfig.hasSpecifiedEntitiesToPrune()) {
-            entitySelection = pruneUnreferencedEntities(
-                model = model,
-                currentEntitySelection = entitySelection,
-                unreferencedEntitiesToPrune = filterConfig.unreferencedEntitiesToPrune
+        val prunedEntitySelection = pruneUnreferencedEntities(
+            model = model,
+            currentEntitySelection = publicEntitySelection?.copy() ?: allEntitiesSelection.copy(),
+            unreferencedEntitiesToPrune = filterConfig.unreferencedEntitiesToPrune
+        )
+
+        val filteredEntitySelection = if (filterConfig.entitySelectors.isNotEmpty() && filterConfig.hasSpecifiedEntitiesToPrune()) {
+            filterAndPruneSelectionUntilTheyAreEqual(
+                entitySelection = prunedEntitySelection.copy(),
+                filterConfig.entitySelectors,
+                model = model
             )
-        }
-        for (entitySelector in filterConfig.entitySelectors) {
-            entitySelection = runSelector(
-                model = model,
-                currentEntitySelection = entitySelection,
-                selector = entitySelector
-            )
-        }
-        if (filterConfig.entitySelectors.isNotEmpty() && filterConfig.hasSpecifiedEntitiesToPrune()) {
-            entitySelection = pruneUnreferencedEntities(
-                model = model,
-                currentEntitySelection = entitySelection,
-                unreferencedEntitiesToPrune = filterConfig.unreferencedEntitiesToPrune
-            )
+        } else {
+            prunedEntitySelection
         }
 
-        return entitySelection
+        return filteredEntitySelection
     }
 }
