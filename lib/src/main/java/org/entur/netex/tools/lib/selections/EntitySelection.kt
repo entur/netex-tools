@@ -5,7 +5,12 @@ import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityModel
 
+/**
+ * EntitySelection contains a collection of selected entities. EntitySelections are immutable and their state should not be
+ * changed directly - use their util functions to make new EntitySelections instead.
+ * */
 class EntitySelection(
+    // selection maps from Type name -> (Entity Id -> Entity)
     val selection: Map<String, Map<String, Entity>>,
     val model: EntityModel
 ): Selection() {
