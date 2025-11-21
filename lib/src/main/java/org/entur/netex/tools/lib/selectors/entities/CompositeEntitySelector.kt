@@ -6,7 +6,7 @@ import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.utils.timedMs
 import org.slf4j.LoggerFactory
 
-open class CompositeEntitySelector(
+class CompositeEntitySelector(
     private val filterConfig: FilterConfig,
 ): EntitySelector {
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -39,7 +39,7 @@ open class CompositeEntitySelector(
             currentEntitySelection = currentEntitySelection
         )
 
-    open fun pruneUnreferencedEntities(
+    fun pruneUnreferencedEntities(
         model: EntityModel,
         currentEntitySelection: EntitySelection,
         unreferencedEntitiesToPrune: Set<String>,
