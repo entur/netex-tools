@@ -6,7 +6,7 @@ import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.utils.timedMs
 import org.slf4j.LoggerFactory
 
-class CompositeEntitySelector(
+open class CompositeEntitySelector(
     private val filterConfig: FilterConfig,
 ): EntitySelector {
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -39,7 +39,7 @@ class CompositeEntitySelector(
             currentEntitySelection = currentEntitySelection
         )
 
-    fun pruneUnreferencedEntities(
+    open fun pruneUnreferencedEntities(
         model: EntityModel,
         currentEntitySelection: EntitySelection,
         unreferencedEntitiesToPrune: Set<String>,
@@ -60,6 +60,9 @@ class CompositeEntitySelector(
         entitySelectors: List<EntitySelector>,
         model: EntityModel
     ): EntitySelection {
+        val maxIterations = 5
+        var iterations = 0
+
         var prunedEntitySelection: EntitySelection? = null
         var filteredEntitySelection = entitySelection.copy()
         do {
@@ -80,6 +83,13 @@ class CompositeEntitySelector(
                 currentEntitySelection = filteredEntitySelection,
                 unreferencedEntitiesToPrune = filterConfig.unreferencedEntitiesToPrune
             )
+
+            iterations++
+
+            if (iterations >= maxIterations) {
+                logger.warn("EntitySelection did not converge after $maxIterations iterations")
+                break
+            }
         } while (!filteredEntitySelection.isEqualTo(prunedEntitySelection))
 
         return prunedEntitySelection
