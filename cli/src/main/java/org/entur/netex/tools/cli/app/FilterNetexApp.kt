@@ -142,6 +142,7 @@ data class FilterNetexApp(
 
         val delegatingXMLElementWriter = DelegatingXMLElementWriter(
             handlers = filterConfig.customElementHandlers,
+            elementsRequiredChildren = filterConfig.elementsRequiredChildren,
             xmlContext = xmlContext,
         )
 

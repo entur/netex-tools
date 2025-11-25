@@ -68,6 +68,11 @@ class FilterConfigBuilder(
         return this
     }
 
+    fun withElementsRequiredChildren(requiredChildren: Map<String, List<String>>): FilterConfigBuilder {
+        filterConfig.elementsRequiredChildren = requiredChildren
+        return this
+    }
+
     fun build(): FilterConfig {
         return filterConfig
     }

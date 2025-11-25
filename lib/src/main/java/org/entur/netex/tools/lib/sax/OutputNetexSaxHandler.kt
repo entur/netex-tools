@@ -18,7 +18,10 @@ class OutputNetexSaxHandler(
     private val outputFile: File,
     private val fileWriter: NetexFileWriter,
     private val elementWriter: DelegatingXMLElementWriter,
+    elementsRequiredChildren: Map<String, List<String>> = mapOf()
 ) : NetexToolsSaxHandler(), LexicalHandler {
+
+    val deferredWriter = RequiredChildrenWriter(elementsRequiredChildren, fileWriter)
 
     private val inclusionStack: Stack<Pair<Element, Boolean>> = Stack()
 
@@ -33,14 +36,23 @@ class OutputNetexSaxHandler(
         inclusionStack.push(Pair(currentElement!!, shouldIncludeCurrentElement))
 
         if (shouldIncludeCurrentElement) {
-            elementWriter.handleStartElement(
-                uri = uri,
-                localName = localName,
-                attributes = attributes,
-                qName = qName,
-                currentPath = currentPath(),
-            )
-            indexElementIfEntity(currentElement)
+            if (deferredWriter.shouldDeferWritingEvent(currentPath())) {
+                deferredWriter.deferStartElementEvent(
+                    uri = uri,
+                    localName = localName,
+                    attributes = attributes,
+                    qName = qName,
+                )
+            } else {
+                elementWriter.handleStartElement(
+                    uri = uri,
+                    localName = localName,
+                    attributes = attributes,
+                    qName = qName,
+                    currentPath = currentPath(),
+                )
+                indexElementIfEntity(currentElement)
+            }
         }
     }
 
@@ -57,13 +69,31 @@ class OutputNetexSaxHandler(
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
         if (shouldIncludeCurrentElement()) {
-            elementWriter.handleCharacters(ch, start, length, currentPath = currentPath())
+            if (deferredWriter.shouldDeferWritingEvent(currentPath())) {
+                deferredWriter.deferCharactersEvent(
+                    ch, start, length
+                )
+            } else {
+                elementWriter.handleCharacters(ch, start, length, currentPath = currentPath())
+            }
         }
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
         if (shouldIncludeCurrentElement()) {
-            elementWriter.handleEndElement(uri, localName, qName, currentPath = currentPath())
+            if (deferredWriter.shouldDeferWritingEvent(currentPath())) {
+                deferredWriter.deferEndElementEvent(
+                    uri = uri,
+                    localName = localName,
+                    qName = qName,
+                )
+
+                if (deferredWriter.rootTagIsClosed()) {
+                    deferredWriter.flush(elementWriter)
+                }
+            } else {
+                elementWriter.handleEndElement(uri, localName, qName, currentPath = currentPath())
+            }
         }
         if (inclusionStack.isNotEmpty()) {
             inclusionStack.pop()
@@ -73,7 +103,13 @@ class OutputNetexSaxHandler(
 
     override fun comment(ch: CharArray?, start: Int, length: Int) {
         if (shouldIncludeCurrentElement()) {
-            fileWriter.writeComments(ch, start, length)
+            if (deferredWriter.shouldDeferWritingEvent(currentPath())) {
+                deferredWriter.deferCharactersEvent(
+                    ch, start, length
+                )
+            } else {
+                fileWriter.writeComments(ch, start, length)
+            }
         }
     }
 

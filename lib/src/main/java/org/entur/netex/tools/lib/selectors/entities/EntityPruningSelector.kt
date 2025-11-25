@@ -1,7 +1,6 @@
 package org.entur.netex.tools.lib.selectors.entities
 
 import org.entur.netex.tools.lib.model.Entity
-import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
 
 class EntityPruningSelector(private val typesToRemove: Set<String>, private val entitySelection: EntitySelection): EntitySelector {
