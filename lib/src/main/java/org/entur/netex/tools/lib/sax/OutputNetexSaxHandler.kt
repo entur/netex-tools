@@ -24,6 +24,7 @@ class OutputNetexSaxHandler(
     val deferredWriter = RequiredChildrenWriter(elementsRequiredChildren, fileWriter)
 
     private val inclusionStack: Stack<Pair<Element, Boolean>> = Stack()
+    private val deferStack: Stack<Pair<Element, Boolean>> = Stack()
 
     override fun startDocument() {
         fileWriter.startDocument()
@@ -35,24 +36,27 @@ class OutputNetexSaxHandler(
         val shouldIncludeCurrentElement = inclusionPolicy.shouldInclude(currentElement!!, inclusionStack)
         inclusionStack.push(Pair(currentElement!!, shouldIncludeCurrentElement))
 
-        if (shouldIncludeCurrentElement) {
-            if (deferredWriter.shouldDeferWritingEvent(currentPath())) {
-                deferredWriter.deferStartElementEvent(
-                    uri = uri,
-                    localName = localName,
-                    attributes = attributes,
-                    qName = qName,
-                )
-            } else {
-                elementWriter.handleStartElement(
-                    uri = uri,
-                    localName = localName,
-                    attributes = attributes,
-                    qName = qName,
-                    currentPath = currentPath(),
-                )
-                indexElementIfEntity(currentElement)
-            }
+        val shouldDeferCurrentEvent = deferredWriter.shouldDeferWritingEvent(currentPath())
+        deferStack.push(Pair(currentElement!!, shouldDeferCurrentEvent))
+
+        if (!shouldIncludeCurrentElement) return
+
+        if (shouldDeferCurrentEvent) {
+            deferredWriter.deferStartElementEvent(
+                uri = uri,
+                localName = localName,
+                attributes = attributes,
+                qName = qName,
+            )
+        } else {
+            elementWriter.handleStartElement(
+                uri = uri,
+                localName = localName,
+                attributes = attributes,
+                qName = qName,
+                currentPath = currentPath(),
+            )
+            indexElementIfEntity(currentElement)
         }
     }
 
@@ -66,50 +70,56 @@ class OutputNetexSaxHandler(
     }
 
     private fun shouldIncludeCurrentElement(): Boolean = inclusionStack.peek().second
+    private fun shouldDeferCurrentElement(): Boolean = deferStack.peek().second
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
-        if (shouldIncludeCurrentElement()) {
-            if (deferredWriter.shouldDeferWritingEvent(currentPath())) {
-                deferredWriter.deferCharactersEvent(
-                    ch, start, length
-                )
-            } else {
-                elementWriter.handleCharacters(ch, start, length, currentPath = currentPath())
-            }
+        if (!shouldIncludeCurrentElement()) return
+
+        if (shouldDeferCurrentElement()) {
+            deferredWriter.deferCharactersEvent(ch, start, length)
+        } else {
+            elementWriter.handleCharacters(ch, start, length, currentPath = currentPath())
         }
     }
 
-    override fun endElement(uri: String?, localName: String?, qName: String?) {
-        if (shouldIncludeCurrentElement()) {
-            if (deferredWriter.shouldDeferWritingEvent(currentPath())) {
-                deferredWriter.deferEndElementEvent(
-                    uri = uri,
-                    localName = localName,
-                    qName = qName,
-                )
-
-                if (deferredWriter.rootTagIsClosed()) {
-                    deferredWriter.flush(elementWriter)
-                }
-            } else {
-                elementWriter.handleEndElement(uri, localName, qName, currentPath = currentPath())
-            }
-        }
+    private fun goToNextElement(uri: String?, localName: String?, qName: String?) {
         if (inclusionStack.isNotEmpty()) {
             inclusionStack.pop()
+            deferStack.pop()
         }
         super.endElement(uri, localName, qName)
     }
 
-    override fun comment(ch: CharArray?, start: Int, length: Int) {
-        if (shouldIncludeCurrentElement()) {
-            if (deferredWriter.shouldDeferWritingEvent(currentPath())) {
-                deferredWriter.deferCharactersEvent(
-                    ch, start, length
-                )
-            } else {
-                fileWriter.writeComments(ch, start, length)
+    override fun endElement(uri: String?, localName: String?, qName: String?) {
+        if (!shouldIncludeCurrentElement()) {
+            goToNextElement(uri, localName, qName)
+            return
+        }
+
+        if (shouldDeferCurrentElement()) {
+            deferredWriter.deferEndElementEvent(
+                uri = uri,
+                localName = localName,
+                qName = qName,
+            )
+
+            if (deferredWriter.reachedEndOfDeferredRoot()) {
+                deferredWriter.flush(elementWriter)
             }
+        } else {
+            elementWriter.handleEndElement(uri, localName, qName, currentPath = currentPath())
+        }
+
+        goToNextElement(uri, localName, qName)
+    }
+
+    override fun comment(ch: CharArray?, start: Int, length: Int) {
+        if (!shouldIncludeCurrentElement()) return
+
+        if (shouldDeferCurrentElement()) {
+            deferredWriter.deferCommentsEvent(ch, start, length)
+        } else {
+            fileWriter.writeComments(ch, start, length)
         }
     }
 

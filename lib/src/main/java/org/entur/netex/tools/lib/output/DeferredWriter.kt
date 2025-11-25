@@ -4,16 +4,27 @@ import org.entur.netex.tools.lib.extensions.toAttributes
 import org.entur.netex.tools.lib.extensions.toMap
 import org.xml.sax.Attributes
 
+/**
+ * Simplifies deferring of SAX event handling. Used for cases where we cannot determine whether to write XML elements
+ * before we reach the end of the element.
+ **/
 abstract class DeferredWriter(
     val fileWriter: NetexFileWriter,
     val deferredEvents: MutableList<Event> = mutableListOf(),
 ) {
+    /**
+     * Implement this function to decide whether or not to defer an event
+     **/
     abstract fun shouldDeferWritingEvent(currentPath: String): Boolean
+
+    /**
+     * Implement this function to decide whether or not to write the deferred events when flush() is called
+     **/
     abstract fun shouldWriteDeferredEvents(): Boolean
 
     private var depth = 0
 
-    fun rootTagIsClosed() = depth == 0 && deferredEvents.isNotEmpty()
+    fun reachedEndOfDeferredRoot() = depth == 0 && deferredEvents.isNotEmpty()
 
     fun write(event: Event, writer: DelegatingXMLElementWriter) {
         when (event) {
