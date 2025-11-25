@@ -53,7 +53,7 @@ fun main(args : Array<String>) {
         )
         .withElementsRequiredChildren(
             mapOf(
-                "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceFrame/noticeAssignments/NoticeAssignment" to listOf("NoticeRef", "NoticedObjectRef")
+                "NoticeAssignment" to listOf("NoticeRef", "NoticedObjectRef")
             )
         ).build()
 

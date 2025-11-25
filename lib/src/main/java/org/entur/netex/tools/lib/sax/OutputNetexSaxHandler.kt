@@ -1,9 +1,16 @@
 package org.entur.netex.tools.lib.sax
 
+import org.entur.netex.tools.lib.extensions.toAttributes
+import org.entur.netex.tools.lib.extensions.toMap
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.EntityModel
+import org.entur.netex.tools.lib.output.Characters
+import org.entur.netex.tools.lib.output.Comments
 import org.entur.netex.tools.lib.output.DelegatingXMLElementWriter
+import org.entur.netex.tools.lib.output.EndElement
+import org.entur.netex.tools.lib.output.Event
 import org.entur.netex.tools.lib.output.NetexFileWriter
+import org.entur.netex.tools.lib.output.StartElement
 import org.entur.netex.tools.lib.report.FileIndex
 import org.entur.netex.tools.lib.selections.InclusionPolicy
 import org.xml.sax.Attributes
@@ -21,10 +28,47 @@ class OutputNetexSaxHandler(
     elementsRequiredChildren: Map<String, List<String>> = mapOf()
 ) : NetexToolsSaxHandler(), LexicalHandler {
 
-    val deferredWriter = RequiredChildrenWriter(elementsRequiredChildren, fileWriter)
+    val parentsWithRequiredChildrenDeferringRule = ParentsWithRequiredChildrenDeferringRule(
+        parentsWithRequiredChildren = elementsRequiredChildren
+    )
+
+    fun write(event: Event) {
+        when (event) {
+            is StartElement -> {
+                elementWriter.startElement(
+                    uri = event.uri,
+                    localName = event.localName,
+                    qName = event.qName,
+                    attributes = event.attributes?.toAttributes()
+                )
+                indexElementIfEntity(currentElement)
+            }
+
+            is Characters ->
+                elementWriter.characters(
+                    ch = event.ch,
+                    start = event.start,
+                    length = event.length,
+                )
+
+            is EndElement ->
+                elementWriter.endElement(
+                    uri = event.uri,
+                    localName = event.localName,
+                    qName = event.qName,
+                )
+
+            is Comments ->
+                fileWriter.writeComments(
+                    ch = event.ch,
+                    start = event.start,
+                    length = event.length,
+                )
+        }
+    }
 
     private val inclusionStack: Stack<Pair<Element, Boolean>> = Stack()
-    private val deferStack: Stack<Pair<Element, Boolean>> = Stack()
+    private val eventBuffer: DeferredEventsBuffer = DeferredEventsBuffer()
 
     override fun startDocument() {
         fileWriter.startDocument()
@@ -36,17 +80,25 @@ class OutputNetexSaxHandler(
         val shouldIncludeCurrentElement = inclusionPolicy.shouldInclude(currentElement!!, inclusionStack)
         inclusionStack.push(Pair(currentElement!!, shouldIncludeCurrentElement))
 
-        val shouldDeferCurrentEvent = deferredWriter.shouldDeferWritingEvent(currentPath())
-        deferStack.push(Pair(currentElement!!, shouldDeferCurrentEvent))
+        val eventRecord = EventRecord(
+            StartElement(
+                uri = uri,
+                localName = localName,
+                qName = qName,
+                attributes = attributes?.toMap()
+            ),
+            element = currentElement!!,
+        )
 
         if (!shouldIncludeCurrentElement) return
 
-        if (shouldDeferCurrentEvent) {
-            deferredWriter.deferStartElementEvent(
+        if (parentsWithRequiredChildrenDeferringRule.shouldDefer(eventRecord, eventBuffer)) {
+            eventBuffer.deferStartElementEvent(
                 uri = uri,
                 localName = localName,
                 attributes = attributes,
                 qName = qName,
+                element = currentElement!!
             )
         } else {
             elementWriter.handleStartElement(
@@ -70,13 +122,20 @@ class OutputNetexSaxHandler(
     }
 
     private fun shouldIncludeCurrentElement(): Boolean = inclusionStack.peek().second
-    private fun shouldDeferCurrentElement(): Boolean = deferStack.peek().second
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
         if (!shouldIncludeCurrentElement()) return
 
-        if (shouldDeferCurrentElement()) {
-            deferredWriter.deferCharactersEvent(ch, start, length)
+        val eventRecord = EventRecord(
+            Characters(
+                ch = ch,
+                start = start,
+                length = length,
+            ),
+            element = currentElement!!,
+        )
+        if (parentsWithRequiredChildrenDeferringRule.shouldDefer(eventRecord, eventBuffer)) {
+            eventBuffer.deferCharactersEvent(ch, start, length, currentElement!!)
         } else {
             elementWriter.handleCharacters(ch, start, length, currentPath = currentPath())
         }
@@ -85,7 +144,6 @@ class OutputNetexSaxHandler(
     private fun goToNextElement(uri: String?, localName: String?, qName: String?) {
         if (inclusionStack.isNotEmpty()) {
             inclusionStack.pop()
-            deferStack.pop()
         }
         super.endElement(uri, localName, qName)
     }
@@ -96,15 +154,30 @@ class OutputNetexSaxHandler(
             return
         }
 
-        if (shouldDeferCurrentElement()) {
-            deferredWriter.deferEndElementEvent(
+        val eventRecord = EventRecord(
+            event = EndElement(
                 uri = uri,
                 localName = localName,
                 qName = qName,
+            ),
+            element = currentElement!!,
+        )
+
+        if (parentsWithRequiredChildrenDeferringRule.shouldDefer(eventRecord, eventBuffer)) {
+            eventBuffer.deferEndElementEvent(
+                uri = uri,
+                localName = localName,
+                qName = qName,
+                element = currentElement!!
             )
 
-            if (deferredWriter.reachedEndOfDeferredRoot()) {
-                deferredWriter.flush(elementWriter)
+            if (eventBuffer.reachedEndOfDeferredElement()) {
+                val shouldWriteElement = parentsWithRequiredChildrenDeferringRule.shouldHandleDeferredEvents(eventBuffer)
+                eventBuffer.flush {
+                    if (shouldWriteElement) {
+                        write(it.event)
+                    }
+                }
             }
         } else {
             elementWriter.handleEndElement(uri, localName, qName, currentPath = currentPath())
@@ -116,9 +189,24 @@ class OutputNetexSaxHandler(
     override fun comment(ch: CharArray?, start: Int, length: Int) {
         if (!shouldIncludeCurrentElement()) return
 
-        if (shouldDeferCurrentElement()) {
-            deferredWriter.deferCommentsEvent(ch, start, length)
-        } else {
+        val eventRecord = EventRecord(
+            event = Comments(
+                ch = ch,
+                start = start,
+                length = length,
+            ),
+            element = currentElement!!,
+        )
+
+        if (parentsWithRequiredChildrenDeferringRule.shouldDefer(eventRecord, eventBuffer)) {
+            eventBuffer.deferCommentsEvent(
+                ch = ch,
+                start = start,
+                length = length,
+                element = currentElement!!
+            )
+        }
+        else {
             fileWriter.writeComments(ch, start, length)
         }
     }
