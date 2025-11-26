@@ -14,10 +14,10 @@ import org.xml.sax.helpers.DefaultHandler
 import java.util.Stack
 
 abstract class NetexToolsSaxHandler : DefaultHandler() {
-    protected val elementStack = Stack<Element>()
-    protected val entityStack = Stack<Entity>()
+    val elementStack = Stack<Element>()
+    val entityStack = Stack<Entity>()
 
-    protected var currentEventRecord: EventRecord? = null
+    var currentEventRecord: EventRecord? = null
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         val currentElement = createCurrentElement(attributes, qName!!)
