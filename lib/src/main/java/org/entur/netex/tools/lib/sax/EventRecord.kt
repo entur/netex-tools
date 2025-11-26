@@ -5,5 +5,5 @@ import org.entur.netex.tools.lib.output.Event
 
 data class EventRecord(
     val event: Event,
-    val element: Element
+    val element: Element,
 )

@@ -42,8 +42,10 @@ class BuildEntityModelSaxHandler(
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         super.startElement(uri, localName, qName, attributes)
 
-        val shouldIncludeCurrentElement = inclusionPolicy.shouldInclude(currentElement!!, inclusionStack)
-        inclusionStack.push(Pair(currentElement!!, shouldIncludeCurrentElement))
+        val currentElement = currentElement()!!
+
+        val shouldIncludeCurrentElement = inclusionPolicy.shouldInclude(currentElement, inclusionStack)
+        inclusionStack.push(Pair(currentElement, shouldIncludeCurrentElement))
 
         if (shouldIncludeCurrentElement) {
             val isEntity = attributes?.hasAttribute("id") ?: false

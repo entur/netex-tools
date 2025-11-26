@@ -4,6 +4,9 @@ import org.entur.netex.tools.lib.extensions.toMap
 import org.entur.netex.tools.lib.model.Element
 import org.entur.netex.tools.lib.model.Entity
 import org.entur.netex.tools.lib.model.EntityId
+import org.entur.netex.tools.lib.output.Characters
+import org.entur.netex.tools.lib.output.Comments
+import org.entur.netex.tools.lib.output.StartElement
 import org.entur.netex.tools.lib.utils.Log
 import org.xml.sax.Attributes
 import org.xml.sax.SAXParseException
@@ -14,28 +17,56 @@ abstract class NetexToolsSaxHandler : DefaultHandler() {
     protected val elementStack = Stack<Element>()
     protected val entityStack = Stack<Entity>()
 
-    protected var currentElement: Element? = null
+    protected var currentEventRecord: EventRecord? = null
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
-        currentElement = createCurrentElement(attributes, qName!!)
-        elementStack.push(currentElement)
+        val currentElement = createCurrentElement(attributes, qName!!)
 
-        if (currentElement?.isEntity() == true) {
+        elementStack.push(currentElement)
+        currentEventRecord = EventRecord(
+            event = StartElement(
+                qName = qName,
+                uri = uri,
+                attributes = attributes?.toMap(),
+                localName = localName
+            ),
+            element = currentElement
+        )
+
+        if (currentElement.isEntity()) {
             entityStack.push(createEntity(qName, attributes!!))
         }
     }
 
+    override fun characters(ch: CharArray?, start: Int, length: Int) {
+        currentEventRecord = EventRecord(
+            event = Characters(
+                ch = ch,
+                start = start,
+                length = length,
+            ),
+            element = currentElement()!!
+        )
+    }
+
+    fun comments(ch: CharArray?, start: Int, length: Int) {
+        currentEventRecord = EventRecord(
+            event = Comments(
+                ch = ch,
+                start = start,
+                length = length,
+            ),
+            element = currentElement()!!
+        )
+    }
+
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        if (currentElement?.isEntity() == true) {
+        if (currentElement()!!.isEntity()) {
             entityStack.pop()
         }
 
         if (elementStack.isNotEmpty()) {
             elementStack.pop()
-        }
-
-        if (elementStack.isNotEmpty()) {
-            currentElement = elementStack.peek()
         }
     }
 
@@ -48,10 +79,6 @@ abstract class NetexToolsSaxHandler : DefaultHandler() {
             publication = publication,
             parent = currentEntity,
         )
-    }
-
-    protected fun currentPath(): String {
-        return "/" + elementStack.joinToString(separator = "/") { it.name }
     }
 
     protected fun currentElement(): Element? {
@@ -69,14 +96,15 @@ abstract class NetexToolsSaxHandler : DefaultHandler() {
     }
 
     protected fun createCurrentElement(attributes: Attributes?, qName: String): Element {
+        val parent = currentElement()
         if (attributes?.getValue("id") != null) {
             val attributesAsMap = attributes.toMap()
             val id = EntityId.from(type = qName, attributes = attributes)
-            return Element(qName, null, attributesAsMap, id)
+            return Element(qName, parent, attributesAsMap, id)
         } else {
             // not an entity. Use parent's currentEntityId
             val attributesAsMap = attributes?.toMap() ?: mapOf()
-            return Element(qName, null, attributesAsMap, currentEntity()?.id)
+            return Element(qName, parent, attributesAsMap, currentEntity()?.id)
         }
     }
 
