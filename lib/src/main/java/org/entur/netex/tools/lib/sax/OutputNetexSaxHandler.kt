@@ -45,12 +45,17 @@ class OutputNetexSaxHandler(
         return shouldDefer(currentEventRecord!!)
     }
 
+    fun shouldInclude(element: Element): Boolean {
+        return inclusionPolicy.shouldInclude(element, inclusionStack)
+    }
+
+    private fun shouldIncludeCurrentElement(): Boolean = inclusionStack.peek().second
+
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         super.startElement(uri, localName, qName, attributes)
 
         val currentElement = currentElement()!!
-
-        val shouldIncludeCurrentElement = inclusionPolicy.shouldInclude(currentElement, inclusionStack)
+        val shouldIncludeCurrentElement = shouldInclude(currentElement)
         inclusionStack.push(Pair(currentElement, shouldIncludeCurrentElement))
 
         if (!shouldIncludeCurrentElement) return
@@ -78,8 +83,6 @@ class OutputNetexSaxHandler(
         }
     }
 
-    private fun shouldIncludeCurrentElement(): Boolean = inclusionStack.peek().second
-
     override fun characters(ch: CharArray?, start: Int, length: Int) {
         super.characters(ch, start, length)
 
@@ -90,13 +93,6 @@ class OutputNetexSaxHandler(
         } else {
             elementWriter.handleCharacters(ch, start, length, path = currentElement()!!.path())
         }
-    }
-
-    private fun goToNextElement(uri: String?, localName: String?, qName: String?) {
-        if (inclusionStack.isNotEmpty()) {
-            inclusionStack.pop()
-        }
-        super.endElement(uri, localName, qName)
     }
 
     fun flushDeferredEvents() {
@@ -115,6 +111,13 @@ class OutputNetexSaxHandler(
                 }
             }
         }
+    }
+
+    private fun goToNextElement(uri: String?, localName: String?, qName: String?) {
+        if (inclusionStack.isNotEmpty()) {
+            inclusionStack.pop()
+        }
+        super.endElement(uri, localName, qName)
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
