@@ -97,16 +97,19 @@ object TestDataFactory {
         return element
     }
 
-    fun startElementEventRecord() =
+    fun startElementEventOfType(type: String): EventRecord =
         EventRecord(
             event = StartElement(
                 uri = "uri",
-                qName = "qName",
+                qName = type,
                 localName = "localName",
                 attributes = mapOf()
             ),
-            element = defaultElement(name = "testType", id = "testType"),
+            element = defaultElement(name = type, id = "testType")
         )
+
+    fun startElementEventRecord(): EventRecord =
+        startElementEventOfType("testType")
 
     fun charactersEventRecord() =
         EventRecord(
@@ -118,13 +121,15 @@ object TestDataFactory {
             element = defaultElement(name = "testType", id = "testType"),
         )
 
-    fun endElementEventRecord() =
+    fun endElementEventOfType(type: String): EventRecord =
         EventRecord(
             event = EndElement(
                 uri = "uri",
-                qName = "qName",
+                qName = type,
                 localName = "localName",
             ),
-            element = defaultElement(name = "testType", id = "testType"),
+            element = defaultElement(name = type, id = "testType")
         )
+
+    fun endElementEventRecord() = endElementEventOfType("testType")
 }
