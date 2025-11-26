@@ -8,10 +8,10 @@ import javax.xml.transform.sax.SAXTransformerFactory
 import javax.xml.transform.stream.StreamResult
 
 class XmlContext(
-    val xmlFile: File
-) {
-    val stringWriter = StringWriter()
+    val xmlFile: File,
+    val stringWriter: StringWriter = StringWriter(),
     val xmlWriter: ContentHandler = createTransformerHandler(stringWriter)
+) {
 
     companion object {
         fun createTransformerHandler(writer: StringWriter): ContentHandler {

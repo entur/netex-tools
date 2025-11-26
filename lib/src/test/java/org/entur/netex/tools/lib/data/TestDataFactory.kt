@@ -7,6 +7,10 @@ import org.entur.netex.tools.lib.model.EntityModel
 import org.entur.netex.tools.lib.selections.EntitySelection
 import org.entur.netex.tools.lib.model.PublicationEnumeration
 import org.entur.netex.tools.lib.model.Ref
+import org.entur.netex.tools.lib.output.Characters
+import org.entur.netex.tools.lib.output.EndElement
+import org.entur.netex.tools.lib.output.StartElement
+import org.entur.netex.tools.lib.sax.EventRecord
 import org.xml.sax.Attributes
 import org.xml.sax.helpers.AttributesImpl
 
@@ -92,4 +96,35 @@ object TestDataFactory {
         val element = defaultElement(name = name, currentEntityId = currentEntityId)
         return element
     }
+
+    fun startElementEventRecord() =
+        EventRecord(
+            event = StartElement(
+                uri = "uri",
+                qName = "qName",
+                localName = "localName",
+                attributes = mapOf()
+            ),
+            element = defaultElement(name = "testType", id = "testType"),
+        )
+
+    fun charactersEventRecord() =
+        EventRecord(
+            event = Characters(
+                ch = "Content".toCharArray(),
+                start = 0,
+                length = "Content".length
+            ),
+            element = defaultElement(name = "testType", id = "testType"),
+        )
+
+    fun endElementEventRecord() =
+        EventRecord(
+            event = EndElement(
+                uri = "uri",
+                qName = "qName",
+                localName = "localName",
+            ),
+            element = defaultElement(name = "testType", id = "testType"),
+        )
 }
