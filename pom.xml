@@ -4,7 +4,7 @@
 
     <groupId>org.entur.ror</groupId>
     <artifactId>netex-tools-root</artifactId>
-    <version>0.0.35-SNAPSHOT</version>
+    <version>0.0.35</version>
     <packaging>pom</packaging>
     <name>NeTEx Tools Root</name>
     <description>NeTEX Utility Tools</description>
