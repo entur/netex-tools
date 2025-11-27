@@ -19,6 +19,8 @@ object NetexTypes {
     const val KEY_VALUES = "KeyValues"
     const val LINE = "Line"
     const val NOTICE_ASSIGNMENT = "NoticeAssignment"
+    const val NOTICE_REF = "NoticeRef"
+    const val NOTICED_OBJECT_REF = "NoticedObjectRef"
     const val OPERATING_PERIOD = "OperatingPeriod"
     const val PARKING = "Parking"
     const val PLACE_EQUIPMENTS = "placeEquipments"

@@ -12,6 +12,9 @@ fun <K, V> MutableMap<K, MutableSet<V>>.putOrAddToSet(
     return this.computeIfAbsent(key) { mutableSetOf() }.add(value)
 }
 
+fun <T> List<T>.middle(): List<T> =
+    if (this.size > 2) this.subList(1, this.size - 1) else emptyList()
+
 fun <K, V> MutableMap<K, MutableList<V>>.putOrAddToList(
     key: K,
     value: V

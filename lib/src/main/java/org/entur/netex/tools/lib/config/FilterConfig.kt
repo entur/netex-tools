@@ -19,6 +19,7 @@ data class FilterConfig(
     var plugins: List<NetexPlugin> = listOf(),
     var entitySelectors: List<EntitySelector> = listOf(),
     var refSelectors: List<RefSelector> = listOf(),
+    var elementsRequiredChildren: Map<String, List<String>> = mapOf(),
     var customElementHandlers: Map<String, XMLElementHandler> = mapOf(),
 ) {
     fun toBuilder() : FilterConfigBuilder {

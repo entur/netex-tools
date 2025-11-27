@@ -154,6 +154,7 @@ data class FilterNetexApp(
             fileWriter = defaultNetexFileWriter,
             outputFile = xmlContext.xmlFile,
             elementWriter = delegatingXMLElementWriter,
+            elementsRequiredChildren = filterConfig.elementsRequiredChildren,
         )
     }
 }

@@ -67,14 +67,14 @@ class OutputNetexSaxHandlerTest {
             localName = "",
             qName = "PublicationDelivery",
             attributes = defaultAttributes,
-            currentPath = "/PublicationDelivery"
+            path = "/PublicationDelivery"
         )
         verify(delegatingXmlElementWriter).handleStartElement(
             uri = "",
             localName = "",
             qName = "dataObjects",
             attributes = defaultAttributes,
-            currentPath = "/PublicationDelivery/dataObjects"
+            path = "/PublicationDelivery/dataObjects"
         )
         verify(fileWriter).writeComments("".toCharArray(), 0, 0)
 
@@ -83,7 +83,7 @@ class OutputNetexSaxHandlerTest {
             ch = "".toCharArray(),
             start = 0,
             length = 0,
-            currentPath = "/PublicationDelivery/dataObjects"
+            path = "/PublicationDelivery/dataObjects"
         )
 
         outputNetexSaxHandler.endElement("", "", "dataObjects")
@@ -92,13 +92,13 @@ class OutputNetexSaxHandlerTest {
             "",
             "",
             "dataObjects",
-            currentPath = "/PublicationDelivery/dataObjects"
+            path = "/PublicationDelivery/dataObjects"
         )
         verify(delegatingXmlElementWriter).handleEndElement(
             "",
             "",
             "PublicationDelivery",
-            currentPath = "/PublicationDelivery"
+            path = "/PublicationDelivery"
         )
     }
 
@@ -115,7 +115,7 @@ class OutputNetexSaxHandlerTest {
             localName = "",
             qName = "VehicleScheduleFrame",
             attributes = defaultAttributes,
-            currentPath = "/PublicationDelivery/dataObjects/VehicleScheduleFrame"
+            path = "/PublicationDelivery/dataObjects/VehicleScheduleFrame"
         )
         verify(delegatingXmlElementWriter, never()).characters("".toCharArray(), 0, 0)
 
@@ -127,7 +127,7 @@ class OutputNetexSaxHandlerTest {
             localName = "",
             qName = "Block",
             attributes = defaultAttributes,
-            currentPath = "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block"
+            path = "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block"
         )
         verify(delegatingXmlElementWriter, never()).handleCharacters("".toCharArray(), 0, 0, "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block")
 
@@ -141,7 +141,7 @@ class OutputNetexSaxHandlerTest {
             uri = "",
             localName = "",
             qName = "Block",
-            currentPath = "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block"
+            path = "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block"
         )
 
         // Verifies that Blocks are not written if there are Block siblings
@@ -153,14 +153,14 @@ class OutputNetexSaxHandlerTest {
             localName = "",
             qName = "Block",
             attributes = defaultAttributes,
-            currentPath = "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block"
+            path = "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block"
         )
         verify(delegatingXmlElementWriter, never()).handleCharacters("".toCharArray(), 0, 0, "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block")
         verify(delegatingXmlElementWriter, never()).handleEndElement(
             uri = "",
             localName = "",
             qName = "Block",
-            currentPath = "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block"
+            path = "/PublicationDelivery/dataObjects/VehicleScheduleFrame/Block"
         )
 
         // Verifies that VehicleScheduleFrame end tag is not written
@@ -169,7 +169,7 @@ class OutputNetexSaxHandlerTest {
             uri = "",
             localName = "",
             qName = "VehicleScheduleFrame",
-            currentPath = "/PublicationDelivery/dataObjects/VehicleScheduleFrame"
+            path = "/PublicationDelivery/dataObjects/VehicleScheduleFrame"
         )
     }
 }

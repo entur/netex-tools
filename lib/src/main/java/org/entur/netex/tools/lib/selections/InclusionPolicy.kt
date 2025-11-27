@@ -6,7 +6,7 @@ import java.util.Stack
 /**
  * Implements logic used to determine whether to keep a certain element or not, using
  * a list of paths that should be skipped entirely - and optionally, selections of entities and refs.
- * */
+ **/
 class InclusionPolicy(
     private val entitySelection: EntitySelection?,
     private val refSelection: RefSelection?,

@@ -25,4 +25,11 @@ data class Element(
     fun id(): String? {
         return attributes["id"]
     }
+
+    fun path(): String {
+        if (parent != null) {
+            return "${parent.path()}/$name"
+        }
+        return "/$name"
+    }
 }
