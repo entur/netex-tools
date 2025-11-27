@@ -6,7 +6,7 @@ import org.entur.netex.tools.lib.utils.Log
 import org.entur.netex.tools.pipeline.app.FilterNetexApp
 import java.io.File
 
-fun main(args : Array<String>) {
+internal fun main(args : Array<String>) {
     val skipElements = listOf(
         "/PublicationDelivery/dataObjects/CompositeFrame/frames/VehicleScheduleFrame",
         "/PublicationDelivery/dataObjects/VehicleScheduleFrame",
