@@ -41,8 +41,8 @@ abstract class NetexToolsSaxHandler : DefaultHandler() {
     override fun characters(ch: CharArray?, start: Int, length: Int) {
         currentEventRecord = EventRecord(
             event = Characters(
-                ch = ch,
-                start = start,
+                ch = ch?.copyOfRange(start, start + length),
+                start = 0,
                 length = length,
             ),
             element = currentElement()!!
@@ -52,8 +52,8 @@ abstract class NetexToolsSaxHandler : DefaultHandler() {
     fun comments(ch: CharArray?, start: Int, length: Int) {
         currentEventRecord = EventRecord(
             event = Comments(
-                ch = ch,
-                start = start,
+                ch = ch?.copyOfRange(start, start + length),
+                start = 0,
                 length = length,
             ),
             element = currentElement()!!
