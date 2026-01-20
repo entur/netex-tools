@@ -17,4 +17,8 @@ data class FilterReport(
             .sorted()
             .toSet()
     }
+
+    fun getNumberOfElementsOfType(type: String): Int {
+        return elementTypesByFile.values.sumOf { it[type] ?: 0 }
+    }
 }
