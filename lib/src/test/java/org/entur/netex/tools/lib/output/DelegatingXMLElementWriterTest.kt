@@ -92,6 +92,18 @@ class DelegatingXMLElementWriterTest {
     }
 
     @Test
+    fun testStartPrefixMapping() {
+        writer.startPrefixMapping("gml", "http://www.opengis.net/gml/3.2")
+        verify(defaultHandler).startPrefixMapping("gml", "http://www.opengis.net/gml/3.2")
+    }
+
+    @Test
+    fun testEndPrefixMapping() {
+        writer.endPrefixMapping("gml")
+        verify(defaultHandler).endPrefixMapping("gml")
+    }
+
+    @Test
     fun testWritePicksHandlingByEventType() {
         val startElementEvent = TestDataFactory.startElementEventRecord().event as StartElement
         writer.write(TestDataFactory.startElementEventRecord())

@@ -1,5 +1,6 @@
 package org.entur.netex.tools.lib.extensions
 
+import org.entur.netex.tools.lib.output.DelegatingXMLElementWriter
 import org.xml.sax.Attributes
 import org.xml.sax.helpers.AttributesImpl
 import java.time.LocalDate
@@ -47,3 +48,13 @@ fun AttributesImpl.addNewAttribute(attributeName: String, value: String) {
 }
 
 fun LocalDate.toISO8601(): String = this.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'00:00:00"))
+
+inline fun DelegatingXMLElementWriter.withNamespace(
+    prefix: String,
+    uri: String,
+    block: () -> Unit
+) {
+    startPrefixMapping(prefix, uri)
+    block()
+    endPrefixMapping(prefix)
+}

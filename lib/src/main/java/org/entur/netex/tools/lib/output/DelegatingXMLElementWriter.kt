@@ -27,6 +27,14 @@ class DelegatingXMLElementWriter(
         xmlWriter.endElement(uri, localName, qName)
     }
 
+    fun startPrefixMapping(prefix: String, uri: String) {
+        xmlWriter.startPrefixMapping(prefix, uri)
+    }
+
+    fun endPrefixMapping(prefix: String) {
+        xmlWriter.endPrefixMapping(prefix)
+    }
+
     fun handleStartElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?, path: String) {
         val handler = elementHandler(path)
         if (handler != null) {
