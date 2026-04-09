@@ -7,6 +7,7 @@ import org.entur.netex.tools.lib.sax.NetexUtils
 open class NetexFileWriter(
     val netexFileWriterContext: NetexFileWriterContext,
     val xmlContext: XmlContext,
+    private val writeOutput: XmlOutputStrategy = XmlOutputStrategy { XMLFileWriter().writeToFile(it) },
 ): AbstractNetexFileWriter() {
     private val useSelfClosingTagsWhereApplicable = netexFileWriterContext.useSelfClosingTagsWhereApplicable
     private val removeEmptyCollections = netexFileWriterContext.removeEmptyCollections
@@ -32,7 +33,7 @@ open class NetexFileWriter(
             xmlContext.stringWriter.buffer.setLength(0)
             xmlContext.stringWriter.write(processedOutput)
         }
-        XMLFileWriter().writeToFile(context = xmlContext)
+        writeOutput.write(xmlContext)
     }
 
     private fun removeEmptyCollections(xmlContent: String): String {

@@ -14,15 +14,36 @@ import org.xml.sax.ext.LexicalHandler
 import java.io.File
 import java.util.Stack
 
-class OutputNetexSaxHandler(
+class OutputNetexSaxHandler private constructor(
     private val entityModel: EntityModel,
     private val fileIndex: FileIndex,
     private val inclusionPolicy: InclusionPolicy,
     private val outputFile: File,
     private val fileWriter: NetexFileWriter,
     private val elementWriter: DelegatingXMLElementWriter,
-    elementsRequiredChildren: Map<String, List<String>> = mapOf()
+    elementsRequiredChildren: Map<String, List<String>>,
+    private val documentName: String?,
 ) : NetexToolsSaxHandler(), LexicalHandler {
+
+    constructor(
+        entityModel: EntityModel,
+        fileIndex: FileIndex,
+        inclusionPolicy: InclusionPolicy,
+        outputFile: File,
+        fileWriter: NetexFileWriter,
+        elementWriter: DelegatingXMLElementWriter,
+        elementsRequiredChildren: Map<String, List<String>> = mapOf(),
+    ) : this(entityModel, fileIndex, inclusionPolicy, outputFile, fileWriter, elementWriter, elementsRequiredChildren, null)
+
+    constructor(
+        entityModel: EntityModel,
+        fileIndex: FileIndex,
+        inclusionPolicy: InclusionPolicy,
+        documentName: String,
+        fileWriter: NetexFileWriter,
+        elementWriter: DelegatingXMLElementWriter,
+        elementsRequiredChildren: Map<String, List<String>> = mapOf(),
+    ) : this(entityModel, fileIndex, inclusionPolicy, File(documentName), fileWriter, elementWriter, elementsRequiredChildren, documentName)
 
     val parentsWithRequiredChildrenDeferringRule = ParentsWithRequiredChildrenDeferEventsRule(
         parentsWithRequiredChildren = elementsRequiredChildren
@@ -78,7 +99,11 @@ class OutputNetexSaxHandler(
         if (element?.isEntity() == true) {
             val entity = entityModel.getEntity(element)
             if (entity != null) {
-                fileIndex.add(entity, outputFile)
+                if (documentName != null) {
+                    fileIndex.add(entity, documentName)
+                } else {
+                    fileIndex.add(entity, outputFile)
+                }
             }
         }
     }

@@ -13,12 +13,27 @@ import org.xml.sax.Attributes
 import java.io.File
 import java.util.Stack
 
-class BuildEntityModelSaxHandler(
+class BuildEntityModelSaxHandler private constructor(
     val entityModel : EntityModel,
     val inclusionPolicy: InclusionPolicy,
     val file: File,
-    plugins: List<NetexPlugin> = emptyList(),
+    plugins: List<NetexPlugin>,
+    private val documentName: String?,
 ) : NetexToolsSaxHandler() {
+
+    constructor(
+        entityModel: EntityModel,
+        inclusionPolicy: InclusionPolicy,
+        file: File,
+        plugins: List<NetexPlugin> = emptyList(),
+    ) : this(entityModel, inclusionPolicy, file, plugins, null)
+
+    constructor(
+        entityModel: EntityModel,
+        inclusionPolicy: InclusionPolicy,
+        documentName: String,
+        plugins: List<NetexPlugin> = emptyList(),
+    ) : this(entityModel, inclusionPolicy, File(documentName), plugins, documentName)
 
     private val pluginRegistry = PluginRegistry()
     private val inclusionStack: Stack<Pair<Element, Boolean>> = Stack()
@@ -93,7 +108,11 @@ class BuildEntityModelSaxHandler(
     }
 
     override fun endDocument() {
-        pluginRegistry.getAllPlugins().forEach { it.endDocument(file) }
+        if (documentName != null) {
+            pluginRegistry.getAllPlugins().forEach { it.endDocument(documentName) }
+        } else {
+            pluginRegistry.getAllPlugins().forEach { it.endDocument(file) }
+        }
     }
 
     private fun nn(value : String?) = value ?: EMPTY

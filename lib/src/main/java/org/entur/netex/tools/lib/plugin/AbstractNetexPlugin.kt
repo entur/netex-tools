@@ -25,6 +25,10 @@ abstract class AbstractNetexPlugin : NetexPlugin {
     override fun endDocument(file: File) {
         // Default implementation - do nothing
     }
+
+    override fun endDocument(documentName: String) {
+        // Default implementation - do nothing
+    }
     
     override fun getCollectedData(): Any? {
         return null

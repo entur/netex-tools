@@ -41,9 +41,17 @@ interface NetexPlugin {
     fun endElement(elementName: String, currentEntity: Entity?)
 
     /**
-     * Called when an XML document ends
-     * */
+     * Called when a file-based XML document ends.
+     */
     fun endDocument(file: File)
+
+    /**
+     * Called when a stream-based XML document ends.
+     * Defaults to delegating to [endDocument] with a synthetic File.
+     */
+    fun endDocument(documentName: String) {
+        endDocument(File(documentName))
+    }
 
     /**
      * Gets the data collected by this plugin (plugin-specific format)
