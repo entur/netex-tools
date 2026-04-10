@@ -19,7 +19,7 @@ import org.entur.netex.tools.lib.selectors.refs.CompositeRefSelector
 import org.slf4j.LoggerFactory
 import java.io.File
 
-class NetexFilter(
+class NetexProcessor(
     val cliConfig: CliConfig = CliConfig(),
     val filterConfig: FilterConfig = FilterConfig(),
 ) {

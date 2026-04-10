@@ -1,6 +1,6 @@
 package org.entur.netex.tools.pipeline.app
 
-import org.entur.netex.tools.lib.NetexFilter
+import org.entur.netex.tools.lib.NetexProcessor
 import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.config.CliConfig
 import org.entur.netex.tools.lib.report.FilterReport
@@ -16,7 +16,7 @@ data class FilterNetexApp(
     val target : File,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
-    private val filter = NetexFilter(cliConfig, filterConfig)
+    private val filter = NetexProcessor(cliConfig, filterConfig)
 
     val model get() = filter.model
     val fileIndex get() = filter.fileIndex

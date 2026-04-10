@@ -28,9 +28,13 @@ conventions:
   - A relation from an entity exists if a child element has a "ref" attribute. The "ref" value 
     should be identical to another entity id.
 
+The main entry point is `NetexProcessor`, which supports both file-based and in-memory
+(`Map<String, ByteArray>`) processing. The pipeline can be decomposed into separate
+passes to allow custom logic between entity model building and export.
+
 Note! Versioning is not supported. 
 
-See tests and the `netex-tools-cli` main for an example on usage.
+See `FilterNetexApp_README.md` for full API documentation, or the tests for usage examples.
 
 
 ## netex-tools-cli

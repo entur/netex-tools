@@ -154,49 +154,75 @@ Controls what gets filtered, pruned, and transformed.
 
 ## Programmatic Usage
 
-### Basic Filtering
+### NetexProcessor (recommended)
+
+`NetexProcessor` is the core API for programmatic use. It supports both file-based and
+in-memory (`Map<String, ByteArray>`) processing, and exposes each pipeline phase
+separately so callers can run custom logic between passes.
+
+#### File-based filtering
 
 ```kotlin
-import org.entur.netex.tools.cli.app.FilterNetexApp
+import org.entur.netex.tools.lib.NetexProcessor
 import org.entur.netex.tools.lib.config.FilterConfigBuilder
 import java.io.File
 
 val filterConfig = FilterConfigBuilder()
-    .withSkipElements(listOf(
-        "/PublicationDelivery/dataObjects/CompositeFrame/frames/VehicleScheduleFrame"
-    ))
     .withPruneReferences(true)
     .withUnreferencedEntitiesToPrune(setOf("Route", "Network", "Line"))
     .build()
 
-val report = FilterNetexApp(
-    filterConfig = filterConfig,
-    input = File("/path/to/netex-input"),
-    target = File("/path/to/netex-output")
-).run()
+val report = NetexProcessor(filterConfig = filterConfig)
+    .run(File("input/"), File("output/"))
 ```
 
-### Remove Private Data
+#### In-memory / byte-array processing
 
 ```kotlin
-val filterConfig = FilterConfigBuilder()
-    .withRemovePrivateData(true)
-    .build()
+val documents: Map<String, ByteArray> = loadFromZipOrGcs()
 
-FilterNetexApp(
+val result = NetexProcessor(filterConfig = filterConfig).run(documents)
+
+result.documents    // Map<String, ByteArray> — filtered XML output
+result.report       // FilterReport
+```
+
+#### Between-pass hooks
+
+The pipeline can be decomposed to run custom logic between passes:
+
+```kotlin
+val filter = NetexProcessor(
+    filterConfig = FilterConfigBuilder()
+        .withPlugins(listOf(myPlugin))
+        .build()
+)
+
+// Pass 1: build entity model and run plugins
+filter.buildEntityModel(documents)
+
+// Between-pass hook: access model and plugin data
+val collectedData = myPlugin.getCollectedData()
+// ... run enrichment, routing, external lookups ...
+
+// Pass 2: select entities and export
+val (entitySelection, refSelection) = filter.selectEntities()
+val result = filter.exportToByteArrays(documents, entitySelection, refSelection)
+```
+
+### FilterNetexApp (CLI wrapper)
+
+`FilterNetexApp` is a thin wrapper around `NetexProcessor` for use with JSON config files
+and directory-based I/O. Available in both `cli` and `pipeline` modules.
+
+```kotlin
+import org.entur.netex.tools.cli.app.FilterNetexApp
+
+val report = FilterNetexApp(
     filterConfig = filterConfig,
     input = File("input/"),
     target = File("output/")
 ).run()
-```
-
-### Strip Comments and Optimize Tags
-
-```kotlin
-val filterConfig = FilterConfigBuilder()
-    .withPreserveComments(false)
-    .withUseSelfClosingTagsWhereApplicable(true)
-    .build()
 ```
 
 ---
@@ -313,9 +339,13 @@ val counter = filterConfig.plugins[0] as ServiceJourneyCounter
 println("Total ServiceJourneys: ${counter.getCollectedData()}")
 ```
 
-**Plugin lifecycle per file:**
+**Plugin lifecycle per document:**
 1. `startElement()` / `characters()` / `endElement()` -- called for each element matching `getSupportedElementTypes()`
-2. `endDocument(file)` -- called when the file has been fully parsed
+2. `endDocument(file: File)` -- called when a file-based document has been fully parsed
+3. `endDocument(documentName: String)` -- called when a stream-based document has been fully parsed
+
+Override whichever variant matches your processing mode. The `String` overload
+defaults to delegating to the `File` overload.
 
 ### XMLElementHandler
 
@@ -363,9 +393,43 @@ val filterConfig = FilterConfigBuilder()
 
 ## Core API Reference
 
+### NetexProcessor
+
+The recommended entry point for programmatic use. Supports both file-based
+and in-memory processing.
+
+```kotlin
+class NetexProcessor(
+    val cliConfig: CliConfig = CliConfig(),
+    val filterConfig: FilterConfig = FilterConfig(),
+)
+```
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `buildEntityModel(inputDir: File)` | | Phase 1 from directory |
+| `buildEntityModel(documents: Map<String, ByteArray>)` | | Phase 1 from byte arrays |
+| `selectEntities()` | `Pair<EntitySelection, RefSelection>` | Phase 2 entity/ref selection |
+| `exportToFiles(inputDir, targetDir, entitySelection, refSelection)` | `FilterReport` | Phase 3 to files |
+| `exportToByteArrays(documents, entitySelection, refSelection)` | `ExportResult` | Phase 3 to byte arrays |
+| `run(inputDir: File, targetDir: File)` | `FilterReport` | Full pipeline (files) |
+| `run(documents: Map<String, ByteArray>)` | `ExportResult` | Full pipeline (byte arrays) |
+
+The `model` and `fileIndex` properties are accessible between passes for inspection.
+State is reset automatically when `buildEntityModel()` or `export*()` is called.
+
+### ExportResult
+
+```kotlin
+data class ExportResult(
+    val documents: Map<String, ByteArray>,  // Output documents keyed by name
+    val report: FilterReport,
+)
+```
+
 ### FilterNetexApp
 
-The main entry point. Available in both `cli` and `pipeline` modules.
+CLI wrapper around `NetexProcessor`. Available in both `cli` and `pipeline` modules.
 
 ```kotlin
 data class FilterNetexApp(
@@ -380,9 +444,12 @@ data class FilterNetexApp(
 |--------|---------|-------------|
 | `run()` | `FilterReport` | Execute the full three-phase pipeline |
 
-The returned `FilterReport` contains:
-- `entitiesByFile` -- map of output files to the set of entities they contain
-- `elementTypesByFile` -- map of output files to element type counts
+### FilterReport
+
+Contains entity and element type counts per output file/document.
+
+- `entitiesByFile` / `elementTypesByFile` -- keyed by `File` (populated in file mode)
+- `entitiesByDocument` / `elementTypesByDocument` -- keyed by `String` (populated in stream mode)
 
 ### EntityModel
 

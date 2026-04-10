@@ -8,7 +8,7 @@ import org.junit.jupiter.api.io.TempDir
 import org.xml.sax.Attributes
 import java.io.File
 
-class NetexFilterTest {
+class NetexProcessorTest {
 
     private val minimalNetexXml = """
         <?xml version="1.0" encoding="UTF-8"?>
@@ -34,7 +34,7 @@ class NetexFilterTest {
 
     @Test
     fun `buildEntityModel from byte arrays populates model`() {
-        val filter = NetexFilter()
+        val filter = NetexProcessor()
         val documents = mapOf("test.xml" to minimalNetexXml.toByteArray())
 
         filter.buildEntityModel(documents)
@@ -48,7 +48,7 @@ class NetexFilterTest {
     fun `buildEntityModel from directory populates model`(@TempDir tempDir: File) {
         File(tempDir, "test.xml").writeText(minimalNetexXml)
 
-        val filter = NetexFilter()
+        val filter = NetexProcessor()
         filter.buildEntityModel(tempDir)
 
         assertTrue(filter.model.listAllEntities().isNotEmpty())
@@ -58,7 +58,7 @@ class NetexFilterTest {
     @Test
     fun `run with byte arrays produces output`() {
         val documents = mapOf("test.xml" to minimalNetexXml.toByteArray())
-        val filter = NetexFilter()
+        val filter = NetexProcessor()
 
         val result = filter.run(documents)
 
@@ -74,7 +74,7 @@ class NetexFilterTest {
         val outputDir = File(tempDir, "output")
         File(inputDir, "test.xml").writeText(minimalNetexXml)
 
-        val filter = NetexFilter()
+        val filter = NetexProcessor()
         val report = filter.run(inputDir, outputDir)
 
         assertTrue(outputDir.exists())
@@ -87,7 +87,7 @@ class NetexFilterTest {
     @Test
     fun `between-pass hook allows accessing model before export`() {
         val documents = mapOf("test.xml" to minimalNetexXml.toByteArray())
-        val filter = NetexFilter()
+        val filter = NetexProcessor()
 
         // Pass 1
         filter.buildEntityModel(documents)
@@ -113,7 +113,7 @@ class NetexFilterTest {
         val filterConfig = FilterConfig().toBuilder()
             .withPlugins(listOf(plugin))
             .build()
-        val filter = NetexFilter(filterConfig = filterConfig)
+        val filter = NetexProcessor(filterConfig = filterConfig)
         val documents = mapOf("test.xml" to minimalNetexXml.toByteArray())
 
         filter.buildEntityModel(documents)
@@ -126,7 +126,7 @@ class NetexFilterTest {
 
     @Test
     fun `buildEntityModel resets state on repeated calls`() {
-        val filter = NetexFilter()
+        val filter = NetexProcessor()
         val docs1 = mapOf("a.xml" to minimalNetexXml.toByteArray())
 
         filter.buildEntityModel(docs1)
@@ -140,7 +140,7 @@ class NetexFilterTest {
 
     @Test
     fun `exportToByteArrays resets fileIndex on repeated calls`() {
-        val filter = NetexFilter()
+        val filter = NetexProcessor()
         val documents = mapOf("test.xml" to minimalNetexXml.toByteArray())
 
         filter.buildEntityModel(documents)
@@ -159,7 +159,7 @@ class NetexFilterTest {
     @Test
     fun `between-pass export validates report contents`() {
         val documents = mapOf("test.xml" to minimalNetexXml.toByteArray())
-        val filter = NetexFilter()
+        val filter = NetexProcessor()
 
         filter.buildEntityModel(documents)
         val (entitySelection, refSelection) = filter.selectEntities()
@@ -176,7 +176,7 @@ class NetexFilterTest {
         val filterConfig = FilterConfig().toBuilder()
             .withFileNameMap(mapOf("test.xml" to "renamed.xml"))
             .build()
-        val filter = NetexFilter(filterConfig = filterConfig)
+        val filter = NetexProcessor(filterConfig = filterConfig)
         val documents = mapOf("test.xml" to minimalNetexXml.toByteArray())
 
         val result = filter.run(documents)
@@ -191,7 +191,7 @@ class NetexFilterTest {
         val filterConfig = FilterConfig().toBuilder()
             .withPlugins(listOf(plugin))
             .build()
-        val filter = NetexFilter(filterConfig = filterConfig)
+        val filter = NetexProcessor(filterConfig = filterConfig)
         val documents = mapOf("my-file.xml" to minimalNetexXml.toByteArray())
 
         filter.buildEntityModel(documents)
@@ -206,7 +206,7 @@ class NetexFilterTest {
         val filterConfig = FilterConfig().toBuilder()
             .withPlugins(listOf(plugin))
             .build()
-        val filter = NetexFilter(filterConfig = filterConfig)
+        val filter = NetexProcessor(filterConfig = filterConfig)
         File(tempDir, "my-file.xml").writeText(minimalNetexXml)
 
         filter.buildEntityModel(tempDir)
