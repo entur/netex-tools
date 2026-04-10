@@ -12,6 +12,7 @@ class XmlContext(
     val stringWriter: StringWriter = StringWriter(),
     val xmlWriter: ContentHandler = createTransformerHandler(stringWriter)
 ) {
+    constructor(documentName: String) : this(xmlFile = File(documentName))
 
     companion object {
         fun createTransformerHandler(writer: StringWriter): ContentHandler {
