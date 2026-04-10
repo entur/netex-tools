@@ -347,6 +347,24 @@ println("Total ServiceJourneys: ${counter.getCollectedData()}")
 Override whichever variant matches your processing mode. The `String` overload
 defaults to delegating to the `File` overload.
 
+**Scoped element registration:**
+
+Use `"Ancestor/Element"` syntax in `getSupportedElementTypes()` to match elements
+only inside a specific ancestor. This avoids false matches on generic element names
+like `Date` or `Name`:
+
+```kotlin
+override fun getSupportedElementTypes() = setOf(
+    "DayTypeAssignment",               // match DayTypeAssignment anywhere
+    "DayTypeAssignment/Date",           // match Date only inside DayTypeAssignment
+    "DayTypeAssignment/FromDate",       // match FromDate only inside DayTypeAssignment
+    "ScheduledStopPoint/Longitude",     // match Longitude only inside ScheduledStopPoint
+)
+```
+
+Note: SAX parsers may split character data across multiple `characters()` calls,
+so always accumulate with `StringBuilder` rather than overwriting.
+
 ### XMLElementHandler
 
 Custom element handlers let you transform specific XML elements during Phase 3

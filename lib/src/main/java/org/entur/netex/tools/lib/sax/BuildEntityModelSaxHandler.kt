@@ -71,7 +71,7 @@ class BuildEntityModelSaxHandler private constructor(
                 registerRef(type = qName!!, attributes = attributes)
             }
 
-            pluginRegistry.getPluginsForElement(qName!!).forEach { plugin ->
+            matchingPlugins(qName ?: return).forEach { plugin ->
                 plugin.startElement(qName, attributes, currentEntity())
             }
         }
@@ -83,7 +83,7 @@ class BuildEntityModelSaxHandler private constructor(
         if (shouldIncludeCurrentElement()) {
             val currentElementName = currentElement()?.name
             if (currentElementName != null) {
-                pluginRegistry.getPluginsForElement(currentElementName).forEach { plugin ->
+                matchingPlugins(currentElementName).forEach { plugin ->
                     plugin.characters(currentElementName, ch, start, length)
                 }
             }
@@ -94,7 +94,7 @@ class BuildEntityModelSaxHandler private constructor(
         if (shouldIncludeCurrentElement()) {
             val currentElement = currentElement()
             if (currentElement?.name != null) {
-                pluginRegistry.getPluginsForElement(currentElement.name).forEach { plugin ->
+                matchingPlugins(currentElement.name).forEach { plugin ->
                     plugin.endElement(currentElement.name, currentEntity())
                 }
             }
@@ -113,6 +113,14 @@ class BuildEntityModelSaxHandler private constructor(
         } else {
             pluginRegistry.getAllPlugins().forEach { it.endDocument(file) }
         }
+    }
+
+    private fun matchingPlugins(elementName: String): Set<NetexPlugin> {
+        val direct = pluginRegistry.getPluginsForElement(elementName)
+        val scoped = pluginRegistry.getScopedPluginsForElement(elementName)
+            .filter { elementStack.any { el -> el.name == it.requiredAncestor } }
+            .map { it.plugin }
+        return (direct + scoped).toSet()
     }
 
     private fun nn(value : String?) = value ?: EMPTY
