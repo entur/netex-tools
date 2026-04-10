@@ -8,12 +8,7 @@ object NetexIdGenerator {
 
     fun next(codespace: String, type: String): String {
         val prefix = "${codespace.uppercase()}:$type"
-        val newValue = if (counters.containsKey(prefix)) {
-            counters[prefix]!!.incrementAndGet()
-        } else {
-            counters[prefix] = AtomicLong(1L)
-            1L
-        }
+        val newValue = counters.computeIfAbsent(prefix) { AtomicLong(0L) }.incrementAndGet()
         return "$prefix:$newValue"
     }
 }

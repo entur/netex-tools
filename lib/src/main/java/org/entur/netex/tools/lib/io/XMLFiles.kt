@@ -7,7 +7,7 @@ import java.io.File
 
 object XMLFiles {
     fun parseXmlDocuments(input : File, saxHandler : (File) -> NetexToolsSaxHandler) {
-        val sortedListOfFiles = input.listFiles()!!.toList().sorted()
+        val sortedListOfFiles = (input.listFiles() ?: return).toList().sorted()
         for (file in sortedListOfFiles) {
 
             if (file.isFile && file.name.endsWith(".xml")) {

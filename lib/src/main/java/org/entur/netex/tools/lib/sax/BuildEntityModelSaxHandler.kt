@@ -50,14 +50,15 @@ class BuildEntityModelSaxHandler private constructor(
 
     private fun registerRef(type: String, attributes: Attributes) {
         val ref = attributes.getValue("ref")
-        val refObject = Ref(nn(type), currentEntity()!!, ref)
+        val entity = currentEntity() ?: return
+        val refObject = Ref(nn(type), entity, ref)
         entityModel.addRef(refObject)
     }
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         super.startElement(uri, localName, qName, attributes)
 
-        val currentElement = currentElement()!!
+        val currentElement = currentElement() ?: return
 
         val shouldIncludeCurrentElement = inclusionPolicy.shouldInclude(currentElement, inclusionStack)
         inclusionStack.push(Pair(currentElement, shouldIncludeCurrentElement))
@@ -66,9 +67,9 @@ class BuildEntityModelSaxHandler private constructor(
             val isEntity = attributes?.hasAttribute("id") ?: false
             val isRef = attributes?.hasAttribute("ref") ?: false
             if (isEntity) {
-                registerEntity(currentEntity()!!)
+                currentEntity()?.let { registerEntity(it) }
             } else if (isRef) {
-                registerRef(type = qName!!, attributes = attributes)
+                registerRef(type = qName ?: return, attributes = attributes)
             }
 
             matchingPlugins(qName ?: return).forEach { plugin ->

@@ -17,7 +17,8 @@ class DelegatingXMLElementWriter(
     }
 
     fun characters(ch: CharArray?, start: Int, length: Int) {
-        val text = String(ch!!, start, length)
+        ch ?: return
+        val text = String(ch, start, length)
         if (!text.isBlank()) {
             xmlWriter.characters(ch, start, length)
         }
@@ -45,7 +46,8 @@ class DelegatingXMLElementWriter(
     }
 
     fun handleCharacters(ch: CharArray?, start: Int, length: Int, path: String) {
-        val text = String(ch!!, start, length)
+        ch ?: return
+        val text = String(ch, start, length)
         val handler = elementHandler(path)
         if (handler != null) {
             handler.characters(ch, start, length, this)

@@ -20,12 +20,13 @@ abstract class NetexToolsSaxHandler : DefaultHandler() {
     var currentEventRecord: EventRecord? = null
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
-        val currentElement = createCurrentElement(attributes, qName!!)
+        val name = qName ?: return
+        val currentElement = createCurrentElement(attributes, name)
 
         elementStack.push(currentElement)
         currentEventRecord = EventRecord(
             event = StartElement(
-                qName = qName,
+                qName = name,
                 uri = uri,
                 attributes = attributes?.toMap(),
                 localName = localName
@@ -33,35 +34,38 @@ abstract class NetexToolsSaxHandler : DefaultHandler() {
             element = currentElement
         )
 
-        if (currentElement.isEntity()) {
-            entityStack.push(createEntity(qName, attributes!!))
+        if (currentElement.isEntity() && attributes != null) {
+            entityStack.push(createEntity(name, attributes))
         }
     }
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
+        val element = currentElement() ?: return
         currentEventRecord = EventRecord(
             event = Characters(
                 ch = ch?.copyOfRange(start, start + length),
                 start = 0,
                 length = length,
             ),
-            element = currentElement()!!
+            element = element
         )
     }
 
     fun comments(ch: CharArray?, start: Int, length: Int) {
+        val element = currentElement() ?: return
         currentEventRecord = EventRecord(
             event = Comments(
                 ch = ch?.copyOfRange(start, start + length),
                 start = 0,
                 length = length,
             ),
-            element = currentElement()!!
+            element = element
         )
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        if (currentElement()!!.isEntity()) {
+        val element = currentElement() ?: return
+        if (element.isEntity()) {
             entityStack.pop()
         }
 

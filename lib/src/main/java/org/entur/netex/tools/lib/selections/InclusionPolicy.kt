@@ -50,11 +50,13 @@ class InclusionPolicy(
         }
 
         if (element.isRef() && refSelection != null && entitySelection != null) {
-            return refSelection.includes(element.ref()!!)
+            val ref = element.ref() ?: return true
+            return refSelection.includes(ref)
         }
 
         if (element.isEntity() && entitySelection != null) {
-            return entitySelection.includes(element.currentEntityId!!)
+            val entityId = element.currentEntityId ?: return true
+            return entitySelection.includes(entityId)
         }
 
         // In this case, the element should be included because we are dealing with an ordinary element that is:

@@ -22,8 +22,7 @@ class FileIndex {
                 mapOfTypes[type] = 1
                 mapOfTypes
             } else {
-                val entry = mapOfTypes[type]
-                mapOfTypes[type] = entry!! + 1
+                mapOfTypes[type] = (mapOfTypes[type] ?: 0) + 1
                 mapOfTypes
             }
         }

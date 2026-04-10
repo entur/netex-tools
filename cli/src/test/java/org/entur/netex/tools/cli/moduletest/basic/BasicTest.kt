@@ -29,17 +29,14 @@ class BasicTest {
     }
 
     private fun netexInputUri(): File {
-        val netexInput = this.javaClass.getResource("netex")
-        Assertions.assertNotNull(netexInput)
-        return File(netexInput!!.toURI())
+        val netexInput = requireNotNull(this.javaClass.getResource("netex"))
+        return File(netexInput.toURI())
     }
 
     private fun openConfigStream(): CliConfig {
-        val configFile = this.javaClass.getResourceAsStream("netex-cli.json")
-        val jsonConfig = JsonConfig.loadCliConfig(configFile!!)
-        Assertions.assertNotNull(jsonConfig)
+        val configFile = requireNotNull(this.javaClass.getResourceAsStream("netex-cli.json"))
+        val jsonConfig = JsonConfig.loadCliConfig(configFile)
         println(jsonConfig)
-
         return jsonConfig
     }
 }
