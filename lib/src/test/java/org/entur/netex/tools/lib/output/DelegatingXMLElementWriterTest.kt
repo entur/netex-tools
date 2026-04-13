@@ -78,6 +78,19 @@ class DelegatingXMLElementWriterTest {
     }
 
     @Test
+    fun testHandleStartElementInvokesAfterStartElementHook() {
+        writer.handleStartElement(uri, localName, qName, attrs, customPath)
+        assertTrue { customHandler.hasCalledAfterStartElement }
+        assertEquals(listOf("startElement", "afterStartElement"), customHandler.callOrder)
+    }
+
+    @Test
+    fun testHandleStartElementDoesNotInvokeAfterStartElementHookWhenNoHandlerMatches() {
+        writer.handleStartElement(uri, localName, qName, attrs, defaultPath)
+        assertFalse { customHandler.hasCalledAfterStartElement }
+    }
+
+    @Test
     fun testHandleCharactersCallsCustomHandlerWhenPathsMatch() {
         writer.handleCharacters(ch, 0, length, customPath)
         assertTrue { customHandler.hasCalledCharacters }
@@ -89,6 +102,19 @@ class DelegatingXMLElementWriterTest {
         writer.handleEndElement(uri, localName, qName, customPath)
         assertTrue { customHandler.hasCalledEndElement }
         verifyNoInteractions(defaultHandler)
+    }
+
+    @Test
+    fun testHandleEndElementInvokesBeforeEndElementHook() {
+        writer.handleEndElement(uri, localName, qName, customPath)
+        assertTrue { customHandler.hasCalledBeforeEndElement }
+        assertEquals(listOf("beforeEndElement", "endElement"), customHandler.callOrder)
+    }
+
+    @Test
+    fun testHandleEndElementDoesNotInvokeBeforeEndElementHookWhenNoHandlerMatches() {
+        writer.handleEndElement(uri, localName, qName, defaultPath)
+        assertFalse { customHandler.hasCalledBeforeEndElement }
     }
 
     @Test

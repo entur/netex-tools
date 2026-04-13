@@ -4,8 +4,15 @@ import org.xml.sax.Attributes
 
 class TestXMLElementHandler: XMLElementHandler {
     var hasCalledStartElement = false
+    var hasCalledAfterStartElement = false
     var hasCalledCharacters = false
+    var hasCalledBeforeEndElement = false
     var hasCalledEndElement = false
+
+    /**
+     * Order in which callbacks fired, for verifying dispatch ordering.
+     */
+    val callOrder: MutableList<String> = mutableListOf()
 
     override fun startElement(
         uri: String?,
@@ -15,6 +22,17 @@ class TestXMLElementHandler: XMLElementHandler {
         writer: DelegatingXMLElementWriter
     ) {
         hasCalledStartElement = true
+        callOrder += "startElement"
+    }
+
+    override fun afterStartElement(
+        uri: String?,
+        localName: String?,
+        qName: String?,
+        writer: DelegatingXMLElementWriter
+    ) {
+        hasCalledAfterStartElement = true
+        callOrder += "afterStartElement"
     }
 
     override fun characters(
@@ -24,6 +42,17 @@ class TestXMLElementHandler: XMLElementHandler {
         writer: DelegatingXMLElementWriter
     ) {
         hasCalledCharacters = true
+        callOrder += "characters"
+    }
+
+    override fun beforeEndElement(
+        uri: String?,
+        localName: String?,
+        qName: String?,
+        writer: DelegatingXMLElementWriter
+    ) {
+        hasCalledBeforeEndElement = true
+        callOrder += "beforeEndElement"
     }
 
     override fun endElement(
@@ -33,11 +62,15 @@ class TestXMLElementHandler: XMLElementHandler {
         writer: DelegatingXMLElementWriter
     ) {
         hasCalledEndElement = true
+        callOrder += "endElement"
     }
 
     fun reset() {
         hasCalledStartElement = false
+        hasCalledAfterStartElement = false
         hasCalledCharacters = false
+        hasCalledBeforeEndElement = false
         hasCalledEndElement = false
+        callOrder.clear()
     }
 }

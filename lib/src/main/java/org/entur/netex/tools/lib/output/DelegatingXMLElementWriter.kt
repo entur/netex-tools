@@ -40,6 +40,7 @@ class DelegatingXMLElementWriter(
         val handler = elementHandler(path)
         if (handler != null) {
             handler.startElement(uri, localName, qName, attributes, this)
+            handler.afterStartElement(uri, localName, qName, this)
         } else {
             startElement(uri, localName, qName, attributes)
         }
@@ -59,6 +60,7 @@ class DelegatingXMLElementWriter(
     fun handleEndElement(uri: String?, localName: String?, qName: String?, path: String) {
         val handler = elementHandler(path)
         if (handler != null) {
+            handler.beforeEndElement(uri, localName, qName, this)
             handler.endElement(uri, localName, qName, this)
         } else {
             endElement(uri, localName, qName)

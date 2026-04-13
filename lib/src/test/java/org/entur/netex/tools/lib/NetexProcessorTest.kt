@@ -1,11 +1,14 @@
 package org.entur.netex.tools.lib
 
 import org.entur.netex.tools.lib.config.FilterConfig
+import org.entur.netex.tools.lib.output.DelegatingXMLElementWriter
+import org.entur.netex.tools.lib.output.XMLElementHandler
 import org.entur.netex.tools.lib.plugin.AbstractNetexPlugin
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.xml.sax.Attributes
+import org.xml.sax.helpers.AttributesImpl
 import java.io.File
 
 class NetexProcessorTest {
@@ -262,6 +265,154 @@ class NetexProcessorTest {
         assertEquals("11.08" to "60.19", coords["SSP:2"])
     }
 
+
+    @Test
+    fun `beforeEndElement hook injects new sibling elements before container closes`() {
+        val containerPath = "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceFrame/scheduledStopPoints"
+        val injector = PassThroughWithInjectionHandler { writer ->
+            val attrs = AttributesImpl().apply {
+                addAttribute("", "id", "id", "CDATA", "SSP:INJECTED")
+                addAttribute("", "version", "version", "CDATA", "1")
+            }
+            writer.startElement(NETEX_NS, "ScheduledStopPoint", "ScheduledStopPoint", attrs)
+            writer.endElement(NETEX_NS, "ScheduledStopPoint", "ScheduledStopPoint")
+        }
+
+        val filterConfig = FilterConfig().toBuilder()
+            .withCustomElementHandlers(mapOf(containerPath to injector))
+            .build()
+        val processor = NetexProcessor(filterConfig = filterConfig)
+        val documents = mapOf("test.xml" to minimalNetexXml.toByteArray())
+
+        val result = processor.run(documents)
+
+        val outputXml = String(requireNotNull(result.documents["test.xml"]), Charsets.UTF_8)
+        assertTrue(outputXml.contains("SSP:INJECTED"), "Injected element should appear in output: $outputXml")
+        // Injected element should come after the original children and before </scheduledStopPoints>
+        val ssp2Index = outputXml.indexOf("SSP:2")
+        val injectedIndex = outputXml.indexOf("SSP:INJECTED")
+        val closeTagIndex = outputXml.indexOf("</scheduledStopPoints>")
+        assertTrue(ssp2Index in 0 until injectedIndex, "Injected element should follow existing children")
+        assertTrue(injectedIndex < closeTagIndex, "Injected element should precede closing tag")
+    }
+
+    @Test
+    fun `hooks fire in correct order for nested handlers`() {
+        val parentPath = "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceFrame/scheduledStopPoints"
+        val childPath = "$parentPath/ScheduledStopPoint"
+        val trace = mutableListOf<String>()
+        val parent = TracingHandler("scheduledStopPoints", trace)
+        val child = TracingHandler("ScheduledStopPoint", trace)
+
+        val filterConfig = FilterConfig().toBuilder()
+            .withCustomElementHandlers(mapOf(parentPath to parent, childPath to child))
+            .build()
+        val processor = NetexProcessor(filterConfig = filterConfig)
+        val documents = mapOf("test.xml" to minimalNetexXml.toByteArray())
+
+        processor.run(documents)
+
+        // Expected ordering for one parent with two children:
+        //   parent.startElement, parent.afterStartElement,
+        //     child1.startElement, child1.afterStartElement, child1.beforeEndElement, child1.endElement,
+        //     child2.startElement, child2.afterStartElement, child2.beforeEndElement, child2.endElement,
+        //   parent.beforeEndElement, parent.endElement
+        assertEquals(
+            listOf(
+                "scheduledStopPoints:startElement",
+                "scheduledStopPoints:afterStartElement",
+                "ScheduledStopPoint:startElement",
+                "ScheduledStopPoint:afterStartElement",
+                "ScheduledStopPoint:beforeEndElement",
+                "ScheduledStopPoint:endElement",
+                "ScheduledStopPoint:startElement",
+                "ScheduledStopPoint:afterStartElement",
+                "ScheduledStopPoint:beforeEndElement",
+                "ScheduledStopPoint:endElement",
+                "scheduledStopPoints:beforeEndElement",
+                "scheduledStopPoints:endElement",
+            ),
+            trace,
+        )
+    }
+
+    @Test
+    fun `beforeEndElement hook fires for deferred elements when their required children are present`() {
+        // ScheduledStopPoint is deferred until its child Name is seen; when flushed, hooks must fire.
+        val handlerPath = "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceFrame/scheduledStopPoints/ScheduledStopPoint"
+        val injector = PassThroughWithInjectionHandler { writer ->
+            writer.startElement(NETEX_NS, "ShortName", "ShortName", AttributesImpl())
+            val text = "INJECTED".toCharArray()
+            writer.characters(text, 0, text.size)
+            writer.endElement(NETEX_NS, "ShortName", "ShortName")
+        }
+        val filterConfig = FilterConfig().toBuilder()
+            .withCustomElementHandlers(mapOf(handlerPath to injector))
+            .withElementsRequiredChildren(mapOf("ScheduledStopPoint" to listOf("Name")))
+            .build()
+        val processor = NetexProcessor(filterConfig = filterConfig)
+        val documents = mapOf("test.xml" to minimalNetexXml.toByteArray())
+
+        val result = processor.run(documents)
+
+        val outputXml = String(requireNotNull(result.documents["test.xml"]), Charsets.UTF_8)
+        // One <ShortName>INJECTED</ShortName> for each ScheduledStopPoint (two in total).
+        val count = Regex("<ShortName[^>]*>INJECTED</ShortName>").findAll(outputXml).count()
+        assertEquals(2, count, "beforeEndElement should fire once per deferred element on flush: $outputXml")
+    }
+
+    private companion object {
+        const val NETEX_NS = "http://www.netex.org.uk/netex"
+    }
+
+    /** Passes source events through unchanged and runs [inject] in beforeEndElement. */
+    private class PassThroughWithInjectionHandler(
+        private val inject: (DelegatingXMLElementWriter) -> Unit,
+    ) : XMLElementHandler {
+        override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?, writer: DelegatingXMLElementWriter) {
+            writer.startElement(uri, localName, qName, attributes)
+        }
+
+        override fun characters(ch: CharArray?, start: Int, length: Int, writer: DelegatingXMLElementWriter) {
+            writer.characters(ch, start, length)
+        }
+
+        override fun endElement(uri: String?, localName: String?, qName: String?, writer: DelegatingXMLElementWriter) {
+            writer.endElement(uri, localName, qName)
+        }
+
+        override fun beforeEndElement(uri: String?, localName: String?, qName: String?, writer: DelegatingXMLElementWriter) {
+            inject(writer)
+        }
+    }
+
+    /** Records which callbacks fired, tagged with a label, for ordering assertions. */
+    private class TracingHandler(
+        private val label: String,
+        private val trace: MutableList<String>,
+    ) : XMLElementHandler {
+        override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?, writer: DelegatingXMLElementWriter) {
+            trace += "$label:startElement"
+            writer.startElement(uri, localName, qName, attributes)
+        }
+
+        override fun afterStartElement(uri: String?, localName: String?, qName: String?, writer: DelegatingXMLElementWriter) {
+            trace += "$label:afterStartElement"
+        }
+
+        override fun characters(ch: CharArray?, start: Int, length: Int, writer: DelegatingXMLElementWriter) {
+            writer.characters(ch, start, length)
+        }
+
+        override fun beforeEndElement(uri: String?, localName: String?, qName: String?, writer: DelegatingXMLElementWriter) {
+            trace += "$label:beforeEndElement"
+        }
+
+        override fun endElement(uri: String?, localName: String?, qName: String?, writer: DelegatingXMLElementWriter) {
+            trace += "$label:endElement"
+            writer.endElement(uri, localName, qName)
+        }
+    }
 
     /** Uses scoped registration — separate callbacks per element, no descendant mode needed. */
     private class ScopedCoordinateExtractorPlugin : AbstractNetexPlugin() {
