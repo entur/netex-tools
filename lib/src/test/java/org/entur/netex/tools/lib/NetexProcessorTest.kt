@@ -62,8 +62,8 @@ class NetexProcessorTest {
 
         val result = filter.run(documents)
 
-        assertTrue(result.documents.containsKey("test.xml"))
-        val outputXml = String(result.documents["test.xml"]!!, Charsets.UTF_8)
+        val outputBytes = requireNotNull(result.documents["test.xml"])
+        val outputXml = String(outputBytes, Charsets.UTF_8)
         assertTrue(outputXml.contains("ScheduledStopPoint"))
         assertTrue(outputXml.contains("SSP:1"))
     }
@@ -213,6 +213,100 @@ class NetexProcessorTest {
 
         assertEquals("my-file.xml", plugin.lastDocumentName)
         assertTrue(plugin.receivedFile, "File mode should call endDocument(File)")
+    }
+
+    private val netexWithCoordinates = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <PublicationDelivery xmlns="http://www.netex.org.uk/netex" version="1.0">
+          <dataObjects>
+            <CompositeFrame id="CF:1" version="1">
+              <frames>
+                <ServiceFrame id="SF:1" version="1">
+                  <scheduledStopPoints>
+                    <ScheduledStopPoint id="SSP:1" version="1">
+                      <Name>Central Station</Name>
+                      <Location>
+                        <Longitude>10.75</Longitude>
+                        <Latitude>59.91</Latitude>
+                      </Location>
+                    </ScheduledStopPoint>
+                    <ScheduledStopPoint id="SSP:2" version="1">
+                      <Name>Airport</Name>
+                      <Location>
+                        <Longitude>11.08</Longitude>
+                        <Latitude>60.19</Latitude>
+                      </Location>
+                    </ScheduledStopPoint>
+                  </scheduledStopPoints>
+                </ServiceFrame>
+              </frames>
+            </CompositeFrame>
+          </dataObjects>
+        </PublicationDelivery>
+    """.trimIndent()
+
+    @Test
+    fun `scoped plugin extracts nested coordinates`() {
+        val plugin = ScopedCoordinateExtractorPlugin()
+        val filterConfig = FilterConfig().toBuilder()
+            .withPlugins(listOf(plugin))
+            .build()
+        val processor = NetexProcessor(filterConfig = filterConfig)
+
+        processor.buildEntityModel(mapOf("test.xml" to netexWithCoordinates.toByteArray()))
+
+        @Suppress("UNCHECKED_CAST")
+        val coords = plugin.getCollectedData() as Map<String, Pair<String, String>>
+        assertEquals(2, coords.size)
+        assertEquals("10.75" to "59.91", coords["SSP:1"])
+        assertEquals("11.08" to "60.19", coords["SSP:2"])
+    }
+
+
+    /** Uses scoped registration — separate callbacks per element, no descendant mode needed. */
+    private class ScopedCoordinateExtractorPlugin : AbstractNetexPlugin() {
+        private val coordinates = mutableMapOf<String, Pair<String, String>>()
+        private var currentLon = StringBuilder()
+        private var currentLat = StringBuilder()
+        private var activeField: StringBuilder? = null
+        private var currentStopPointId: String? = null
+
+        override fun getName() = "ScopedCoordinateExtractor"
+        override fun getDescription() = "Extracts coordinates via scoped element registration"
+        override fun getSupportedElementTypes() = setOf(
+            "ScheduledStopPoint",
+            "ScheduledStopPoint/Longitude",
+            "ScheduledStopPoint/Latitude",
+        )
+
+        override fun startElement(elementName: String, attributes: Attributes?, currentEntity: org.entur.netex.tools.lib.model.Entity?) {
+            when (elementName) {
+                "ScheduledStopPoint" -> currentStopPointId = currentEntity?.id
+                "Longitude" -> activeField = currentLon
+                "Latitude" -> activeField = currentLat
+            }
+        }
+
+        override fun characters(elementName: String, ch: CharArray?, start: Int, length: Int) {
+            ch?.let { activeField?.append(it, start, length) }
+        }
+
+        override fun endElement(elementName: String, currentEntity: org.entur.netex.tools.lib.model.Entity?) {
+            when (elementName) {
+                "Longitude", "Latitude" -> activeField = null
+                "ScheduledStopPoint" -> {
+                    val id = currentStopPointId
+                    if (id != null && currentLon.isNotEmpty() && currentLat.isNotEmpty()) {
+                        coordinates[id] = currentLon.toString() to currentLat.toString()
+                    }
+                    currentLon.clear()
+                    currentLat.clear()
+                    currentStopPointId = null
+                }
+            }
+        }
+
+        override fun getCollectedData(): Map<String, Pair<String, String>> = coordinates
     }
 
     private class StopPointCollectorPlugin : AbstractNetexPlugin() {
