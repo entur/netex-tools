@@ -556,10 +556,10 @@ Requires **Java 21** and **Maven 3.x**.
 
 ```bash
 # Full build
-mvn clean install
+./mvnw clean install
 
 # Run tests
-mvn test
+./mvnw test
 ```
 
 ### Maven Dependency
