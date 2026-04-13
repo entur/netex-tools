@@ -15,17 +15,7 @@ class FileIndex {
         key: K,
         type: String
     ) {
-        map.compute(key) { _, mapOfTypes ->
-            if (mapOfTypes == null || mapOfTypes.isEmpty()) {
-                mutableMapOf(type to 1)
-            } else if (mapOfTypes[type] == null) {
-                mapOfTypes[type] = 1
-                mapOfTypes
-            } else {
-                mapOfTypes[type] = (mapOfTypes[type] ?: 0) + 1
-                mapOfTypes
-            }
-        }
+        map.getOrPut(key) { mutableMapOf() }.merge(type, 1, Int::plus)
     }
 
     fun add(entity: Entity, file: File) {

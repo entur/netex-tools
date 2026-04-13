@@ -50,12 +50,12 @@ class InclusionPolicy(
         }
 
         if (element.isRef() && refSelection != null && entitySelection != null) {
-            val ref = element.ref() ?: return true
+            val ref = requireNotNull(element.ref()) { "isRef() is true but ref() returned null for $element" }
             return refSelection.includes(ref)
         }
 
         if (element.isEntity() && entitySelection != null) {
-            val entityId = element.currentEntityId ?: return true
+            val entityId = requireNotNull(element.currentEntityId) { "isEntity() is true but currentEntityId is null for $element" }
             return entitySelection.includes(entityId)
         }
 

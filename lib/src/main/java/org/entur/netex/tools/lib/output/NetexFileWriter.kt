@@ -22,8 +22,8 @@ open class NetexFileWriter(
             return
         }
 
-        ch ?: return
-        val commentText = String(ch, start, length)
+        val chars = ch ?: return
+        val commentText = String(chars, start, length)
         xmlContext.stringWriter.write("<!--$commentText-->")
     }
 
