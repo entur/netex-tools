@@ -63,7 +63,8 @@ class OutputNetexSaxHandler private constructor(
     }
 
     fun shouldDeferCurrentEvent(): Boolean {
-        return shouldDefer(currentEventRecord!!)
+        val record = currentEventRecord ?: return false
+        return shouldDefer(record)
     }
 
     fun shouldInclude(element: Element): Boolean {
@@ -75,14 +76,15 @@ class OutputNetexSaxHandler private constructor(
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         super.startElement(uri, localName, qName, attributes)
 
-        val currentElement = currentElement()!!
+        val currentElement = currentElement() ?: return
         val shouldIncludeCurrentElement = shouldInclude(currentElement)
         inclusionStack.push(Pair(currentElement, shouldIncludeCurrentElement))
 
         if (!shouldIncludeCurrentElement) return
 
-        if (shouldDeferCurrentEvent()) {
-            defer(currentEventRecord!!)
+        val eventRecord = currentEventRecord ?: return
+        if (shouldDefer(eventRecord)) {
+            defer(eventRecord)
         } else {
             elementWriter.handleStartElement(
                 uri = uri,
@@ -113,10 +115,12 @@ class OutputNetexSaxHandler private constructor(
 
         if (!shouldIncludeCurrentElement()) return
 
-        if (shouldDeferCurrentEvent()) {
-            defer(currentEventRecord!!)
+        val eventRecord = currentEventRecord ?: return
+        if (shouldDefer(eventRecord)) {
+            defer(eventRecord)
         } else {
-            elementWriter.handleCharacters(ch, start, length, path = currentElement()!!.path())
+            val path = currentElement()?.path() ?: return
+            elementWriter.handleCharacters(ch, start, length, path = path)
         }
     }
 
@@ -151,22 +155,23 @@ class OutputNetexSaxHandler private constructor(
             return
         }
 
-        val currentEventRecord = EventRecord(
+        val element = currentElement() ?: return
+        val endEventRecord = EventRecord(
             event = EndElement(
                 uri = uri,
                 localName = localName,
                 qName = qName,
             ),
-            element = currentElement()!!
+            element = element
         )
 
-        if (shouldDefer(currentEventRecord)) {
-            defer(currentEventRecord)
+        if (shouldDefer(endEventRecord)) {
+            defer(endEventRecord)
             if (eventBuffer.hasReachedEndOfBufferedElement()) {
                 flushDeferredEvents()
             }
         } else {
-            elementWriter.handleEndElement(uri, localName, qName, path = currentElement()!!.path())
+            elementWriter.handleEndElement(uri, localName, qName, path = element.path())
         }
 
         goToNextElement(uri, localName, qName)
@@ -177,10 +182,10 @@ class OutputNetexSaxHandler private constructor(
 
         if (!shouldIncludeCurrentElement()) return
 
-        if (shouldDeferCurrentEvent()) {
-            defer(currentEventRecord!!)
-        }
-        else {
+        val eventRecord = currentEventRecord ?: return
+        if (shouldDefer(eventRecord)) {
+            defer(eventRecord)
+        } else {
             fileWriter.writeComments(ch, start, length)
         }
     }

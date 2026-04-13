@@ -5,7 +5,6 @@ import org.entur.netex.tools.cli.app.FilterNetexApp
 import org.entur.netex.tools.lib.config.CliConfig
 import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.config.JsonConfig
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -29,17 +28,18 @@ class BasicTest {
     }
 
     private fun netexInputUri(): File {
-        val netexInput = this.javaClass.getResource("netex")
-        Assertions.assertNotNull(netexInput)
-        return File(netexInput!!.toURI())
+        val netexInput = requireNotNull(this.javaClass.getResource("netex")) {
+            "Test resource 'netex' not found on classpath"
+        }
+        return File(netexInput.toURI())
     }
 
     private fun openConfigStream(): CliConfig {
-        val configFile = this.javaClass.getResourceAsStream("netex-cli.json")
-        val jsonConfig = JsonConfig.loadCliConfig(configFile!!)
-        Assertions.assertNotNull(jsonConfig)
+        val configFile = requireNotNull(this.javaClass.getResourceAsStream("netex-cli.json")) {
+            "Test resource 'netex-cli.json' not found on classpath"
+        }
+        val jsonConfig = JsonConfig.loadCliConfig(configFile)
         println(jsonConfig)
-
         return jsonConfig
     }
 }
