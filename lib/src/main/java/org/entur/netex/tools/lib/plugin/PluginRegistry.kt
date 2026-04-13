@@ -23,7 +23,7 @@ class PluginRegistry {
         plugin.getSupportedElementTypes().forEach { elementType ->
             if ("/" in elementType) {
                 val parts = elementType.split("/")
-                require(parts.size == 2) {
+                require(parts.size == 2 && parts.all { it.isNotBlank() }) {
                     "Scoped element type must be 'Ancestor/Element', got: $elementType"
                 }
                 val (ancestor, leaf) = parts
