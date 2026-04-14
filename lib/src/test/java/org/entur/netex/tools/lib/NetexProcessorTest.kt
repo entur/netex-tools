@@ -1,12 +1,16 @@
 package org.entur.netex.tools.lib
 
 import org.entur.netex.tools.lib.config.FilterConfig
+import org.entur.netex.tools.lib.output.DelegatingXMLElementWriter
+import org.entur.netex.tools.lib.output.XMLElementHandler
 import org.entur.netex.tools.lib.plugin.AbstractNetexPlugin
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.xml.sax.Attributes
+import java.io.ByteArrayInputStream
 import java.io.File
+import javax.xml.parsers.DocumentBuilderFactory
 
 class NetexProcessorTest {
 
@@ -307,6 +311,72 @@ class NetexProcessorTest {
         }
 
         override fun getCollectedData(): Map<String, Pair<String, String>> = coordinates
+    }
+
+    @Test
+    fun `comments inside handler-registered elements produce well-formed XML`() {
+        val xml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <PublicationDelivery xmlns="http://www.netex.org.uk/netex" version="1.0">
+              <dataObjects>
+                <CompositeFrame id="CF:1" version="1">
+                  <frames>
+                    <ServiceFrame id="SF:1" version="1">
+                      <!-- comment before serviceLinks -->
+                      <serviceLinks><!-- comment inside serviceLinks -->
+                        <ServiceLink id="SL:1" version="1">
+                          <FromPointRef ref="SSP:A" version="1"/>
+                          <ToPointRef ref="SSP:B" version="1"/>
+                        </ServiceLink>
+                      </serviceLinks>
+                    </ServiceFrame>
+                  </frames>
+                </CompositeFrame>
+              </dataObjects>
+            </PublicationDelivery>
+        """.trimIndent()
+
+        // Pass-through handler on serviceLinks — just forwards all events
+        val handler = object : XMLElementHandler {
+            override fun startElement(uri: String?, localName: String?, qName: String?,
+                                      attributes: Attributes?, writer: DelegatingXMLElementWriter) {
+                writer.startElement(uri, localName, qName, attributes)
+            }
+            override fun characters(ch: CharArray?, start: Int, length: Int,
+                                    writer: DelegatingXMLElementWriter) {
+                writer.characters(ch, start, length)
+            }
+            override fun endElement(uri: String?, localName: String?, qName: String?,
+                                    writer: DelegatingXMLElementWriter) {
+                writer.endElement(uri, localName, qName)
+            }
+        }
+
+        val path = "/PublicationDelivery/dataObjects/CompositeFrame/frames/ServiceFrame/serviceLinks"
+        val config = FilterConfig(customElementHandlers = mapOf(path to handler))
+        val processor = NetexProcessor(filterConfig = config)
+        val docs = mapOf("test.xml" to xml.toByteArray())
+
+        processor.buildEntityModel(docs)
+        val (es, rs) = processor.selectEntities()
+        val result = processor.exportToByteArrays(docs, es, rs)
+
+        val output = String(requireNotNull(result.documents["test.xml"]), Charsets.UTF_8)
+
+        // The output must be well-formed XML — this was broken before the fix
+        // because comments were written directly to the StringWriter, landing
+        // inside a buffered start tag: <serviceLinks<!-- comment -->>
+        val factory = DocumentBuilderFactory.newInstance()
+        factory.isNamespaceAware = true
+        val doc = factory.newDocumentBuilder().parse(ByteArrayInputStream(output.toByteArray()))
+        assertNotNull(doc.getElementsByTagName("serviceLinks").item(0),
+            "serviceLinks element should be present in well-formed output")
+
+        // Verify comment text is preserved, not just well-formedness
+        assertTrue(output.contains("comment inside serviceLinks"),
+            "comment text inside handler-registered element should be preserved")
+        assertTrue(output.contains("comment before serviceLinks"),
+            "comment text before handler-registered element should be preserved")
     }
 
     private class StopPointCollectorPlugin : AbstractNetexPlugin() {

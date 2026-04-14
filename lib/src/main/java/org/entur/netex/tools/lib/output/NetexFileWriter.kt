@@ -3,6 +3,7 @@ package org.entur.netex.tools.lib.output
 import org.entur.netex.tools.lib.plugin.AbstractNetexFileWriter
 import org.entur.netex.tools.lib.plugin.NetexFileWriterContext
 import org.entur.netex.tools.lib.sax.NetexUtils
+import org.xml.sax.ext.LexicalHandler
 
 open class NetexFileWriter(
     val netexFileWriterContext: NetexFileWriterContext,
@@ -23,8 +24,13 @@ open class NetexFileWriter(
         }
 
         val chars = ch ?: return
-        val commentText = String(chars, start, length)
-        xmlContext.stringWriter.write("<!--$commentText-->")
+        // Route through the SAX LexicalHandler so the serializer flushes any
+        // pending start tag before writing the comment. Writing directly to
+        // the StringWriter would insert the comment inside a buffered start
+        // tag, producing malformed XML like <element<!-- comment -->>.
+        val lexicalHandler = xmlContext.xmlWriter as? LexicalHandler
+            ?: error("xmlWriter does not implement LexicalHandler — comments would land inside buffered start tags")
+        lexicalHandler.comment(chars, start, length)
     }
 
     override fun endDocument() {
