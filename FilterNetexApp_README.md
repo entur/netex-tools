@@ -213,10 +213,11 @@ val result = filter.exportToByteArrays(documents, entitySelection, refSelection)
 ### FilterNetexApp (CLI wrapper)
 
 `FilterNetexApp` is a thin wrapper around `NetexProcessor` for use with JSON config files
-and directory-based I/O. Available in both `cli` and `pipeline` modules.
+and directory-based I/O. It lives in `netex-tools-lib`, so it is available to the `cli` and
+`pipeline` modules (and any other consumer) via the lib dependency.
 
 ```kotlin
-import org.entur.netex.tools.cli.app.FilterNetexApp
+import org.entur.netex.tools.lib.app.FilterNetexApp
 
 val report = FilterNetexApp(
     filterConfig = filterConfig,
@@ -447,7 +448,8 @@ data class ExportResult(
 
 ### FilterNetexApp
 
-CLI wrapper around `NetexProcessor`. Available in both `cli` and `pipeline` modules.
+CLI wrapper around `NetexProcessor`, defined in `netex-tools-lib` and available to the `cli`
+and `pipeline` modules via the lib dependency.
 
 ```kotlin
 data class FilterNetexApp(

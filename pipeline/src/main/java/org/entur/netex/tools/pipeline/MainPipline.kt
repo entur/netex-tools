@@ -1,7 +1,7 @@
 package org.entur.netex.tools.pipeline
 
 import org.entur.netex.tools.lib.config.JsonConfig
-import org.entur.netex.tools.pipeline.app.FilterNetexApp
+import org.entur.netex.tools.lib.app.FilterNetexApp
 import java.io.File
 
 fun main(args : Array<String>) {

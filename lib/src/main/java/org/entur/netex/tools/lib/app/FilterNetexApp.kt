@@ -1,4 +1,4 @@
-package org.entur.netex.tools.pipeline.app
+package org.entur.netex.tools.lib.app
 
 import org.entur.netex.tools.lib.NetexProcessor
 import org.entur.netex.tools.lib.config.FilterConfig
