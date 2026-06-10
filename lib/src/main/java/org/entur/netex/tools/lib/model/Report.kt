@@ -22,7 +22,7 @@ class Report<T>(
         }
 
         reportString.append("\n\n$title\n")
-        val n = countTotal.listElements().map { it.length }.max()
+        val n = countTotal.listElements().maxOfOrNull { it.length } ?: 0
 
         countTotal.listElements().sorted().forEach { type ->
             val total = countTotal.get(type)
