@@ -4,7 +4,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.file
-import org.entur.netex.tools.cli.app.FilterNetexApp
+import org.entur.netex.tools.lib.app.FilterNetexApp
 import org.entur.netex.tools.lib.config.CliConfig
 import org.entur.netex.tools.lib.config.JsonConfig
 

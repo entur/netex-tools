@@ -3,7 +3,7 @@ package org.entur.netex.tools.pipeline
 import org.entur.netex.tools.lib.config.CliConfigBuilder
 import org.entur.netex.tools.lib.config.FilterConfigBuilder
 import org.entur.netex.tools.lib.utils.Log
-import org.entur.netex.tools.pipeline.app.FilterNetexApp
+import org.entur.netex.tools.lib.app.FilterNetexApp
 import java.io.File
 
 internal fun main(args : Array<String>) {

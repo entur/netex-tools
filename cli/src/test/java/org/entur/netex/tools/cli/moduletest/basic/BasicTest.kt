@@ -1,7 +1,7 @@
 package org.entur.netex.tools.cli.moduletest.basic
 
 
-import org.entur.netex.tools.cli.app.FilterNetexApp
+import org.entur.netex.tools.lib.app.FilterNetexApp
 import org.entur.netex.tools.lib.config.CliConfig
 import org.entur.netex.tools.lib.config.FilterConfig
 import org.entur.netex.tools.lib.config.JsonConfig
