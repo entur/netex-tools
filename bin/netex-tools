@@ -12,7 +12,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CLI_TARGET="$PROJECT_ROOT/cli/target"
 
 CLI_JAR=$(find "$CLI_TARGET" -maxdepth 1 -name "netex-tools-cli-*.jar" \
-    ! -name "*-sources.jar" ! -name "*-javadoc.jar" 2>/dev/null | sort -V | tail -1)
+    ! -name "*-sources.jar" ! -name "*-javadoc.jar" 2>/dev/null | sort -V | tail -1 || true)
 
 if [[ -z "$CLI_JAR" ]]; then
     echo "Error: netex-tools-cli JAR not found in $CLI_TARGET" >&2

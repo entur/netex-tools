@@ -137,8 +137,8 @@ Minimal example:
 
 ### Note on distribution
 
-The CLI is distributed as a thin JAR (published to Maven Central) alongside its
-dependencies. Users build from source with `./mvnw package` to get a runnable
-installation. A fat JAR (standalone executable) is not published; the shell wrapper
-handles classpath assembly.
+The CLI is **not** published to Maven Central (`maven.deploy.skip=true`). Build it
+from source with `./mvnw package -pl cli --also-make` to get a thin JAR in `cli/target/`
+alongside its dependencies in `cli/target/dependency/`. A fat JAR (standalone executable)
+is not produced; the `bin/netex-tools` wrapper assembles the classpath.
 
