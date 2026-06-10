@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+CLI_TARGET="$PROJECT_ROOT/cli/target"
+
+CLI_JAR=$(find "$CLI_TARGET" -maxdepth 1 -name "netex-tools-cli-*.jar" \
+    ! -name "*-sources.jar" ! -name "*-javadoc.jar" 2>/dev/null | sort -V | tail -1)
+
+if [[ -z "$CLI_JAR" ]]; then
+    echo "Error: netex-tools-cli JAR not found in $CLI_TARGET" >&2
+    echo "Build the project first: ./mvnw package -pl cli --also-make" >&2
+    exit 1
+fi
+
+DEPS_DIR="$CLI_TARGET/dependency"
+
+if [[ ! -d "$DEPS_DIR" ]]; then
+    echo "Error: Dependencies not found in $DEPS_DIR" >&2
+    echo "Build the project first: ./mvnw package -pl cli --also-make" >&2
+    exit 1
+fi
+
+exec java -cp "$CLI_JAR:$DEPS_DIR/*" org.entur.netex.tools.cli.MainKt "$@"
