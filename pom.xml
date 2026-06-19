@@ -34,7 +34,6 @@
         <module>lib</module>
         <module>cli</module>
         <module>parent</module>
-        <module>pipeline</module>
     </modules>
     <developers>
         <developer>
