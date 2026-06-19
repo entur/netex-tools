@@ -1,45 +1,89 @@
 # netex-tools
-Tools to parse, filter, validate (?) and transform Netex data files. This tool should not be specific to the "Nordic"
-profile, but we will only implement support for elements/types used by it. If you find this tool incomplete, please
-request an improvement or contribute to it through GitHub.
 
+Tools to parse, filter, and transform NeTEx (Network and Timetable Exchange) XML datasets.
+NeTEx is the EU standard format for exchanging public transport data including
+routes, schedules, stops, and operator information.
 
-This tool is WORK-IN-PROGRESS
+NeTEx datasets are large and highly interconnected — entities reference each other
+extensively. Manually extracting subsets is error-prone because removing elements can
+leave broken references. netex-tools automates this through a three-phase pipeline.
 
-## Filter lib Wishlist / Goals
+The core filtering engine is not profile-specific, but only elements used by the Nordic
+NeTEx profile are currently implemented. Contributions and feature requests are welcome
+via GitHub.
 
- - [x] Filter a data set and output a new dataset
-   - [ ] Filter StopPlaces by coordinates using a polygon (geojson file)
-   - [ ] Filter entities on ids
-     - [x] Lines [Pri 2]
-     - [x] ServiceJournies [Pri 2]
-   - [ ] Filter on time-period
- - [ ] Validating that the data is according to a given NeTEx profile would be useful. [Later]
- - [ ] Saving the result in specific profiles. [Later] 
+---
 
+## Modules
 
-## netex-tools-lib
+| Module | Artifact | Purpose |
+|--------|----------|---------|
+| `lib` | `netex-tools-lib` | Core library — filtering engine, model, selectors, plugins |
+| `cli` | `netex-tools-cli` | Command-line interface for JSON-configured filtering |
+| `pipeline` | `netex-tools-pipeline` | Pre-configured filtering pipelines (e.g. timetable import) |
+| `parent` | `netex-tools-parent` | Shared Maven build configuration |
 
-This is a Kotlin library that can be used in a Java/Kotlin app to filter NeTEx data. The lib can 
-be used to build a model (`EntityModel`) and select entities from this. The model only contains
-entities with id and type(xml element) and relations. This model is build using the Netex naming
-conventions: 
-  - Entities are elements "id" attribute
-  - A relation from an entity exists if a child element has a "ref" attribute. The "ref" value 
-    should be identical to another entity id.
+---
 
-The main entry point is `NetexProcessor`, which supports both file-based and in-memory
-(`Map<String, ByteArray>`) processing. The pipeline can be decomposed into separate
-passes to allow custom logic between entity model building and export.
+## Three-Phase Pipeline
 
-Note! Versioning is not supported. 
+The filtering process consists of three phases:
 
-See `FilterNetexApp_README.md` for full API documentation, or the tests for usage examples.
+```
+INPUT XML FILES
+       |
+       v
+  Phase 1: Build Entity Model
+  (SAX-parse all files, extract entities and references)
+       |
+       v
+  Phase 2: Select Entities & References
+  (Apply filter rules, prune broken refs, remove unreferenced entities)
+       |
+       v
+  Phase 3: Export Filtered XML
+  (Re-parse input, write only selected entities/refs to output)
+       |
+       v
+OUTPUT XML FILES
+```
 
+### Phase 1 — Build Entity Model
 
-## netex-tools-cli
+SAX-parses all input XML files in streaming mode (memory-efficient). Extracts
+**entities** (elements with an `id` attribute) and **references** (elements with
+a `ref` attribute) into a lightweight in-memory graph (`EntityModel`). Only IDs,
+types, and relationships are stored — not the full XML content.
 
-A command-line tool for filtering NeTEx datasets using JSON config files.
+Plugins registered in the config receive SAX events during this phase, allowing
+custom data collection without altering the model.
+
+### Phase 2 — Select Entities and References
+
+Applies filter rules to determine which entities and references to keep:
+
+1. Start with all entities
+2. Optionally remove non-public entities (`removePrivateData`)
+3. Optionally prune unreferenced entities of specified types
+4. Apply custom `EntitySelector`s from config
+5. Iterate steps 3–4 until the selection stabilizes (max 5 iterations), because removing an entity may leave others unreferenced
+6. Select references, optionally pruning those pointing to excluded entities
+7. Apply custom `RefSelector`s from config
+
+### Phase 3 — Export Filtered XML
+
+Re-parses the original input XML, writing only selected entities and references to
+output files. Optional behaviors:
+
+- Convert empty elements to self-closing tags (`<Foo/>` instead of `<Foo></Foo>`)
+- Remove empty collection elements
+- Preserve or strip XML comments
+- Apply custom `XMLElementHandler`s for element transformation
+- Skip parent elements missing required children (`elementsRequiredChildren`)
+
+---
+
+## CLI
 
 ### Prerequisites
 
@@ -67,6 +111,10 @@ Optionally add `bin/` to your `PATH`, or create a symlink:
 ln -s "$(pwd)/bin/netex-tools" /usr/local/bin/netex-tools
 ```
 
+> The CLI is not published to Maven Central. Build it from source to get a thin JAR
+> in `cli/target/` alongside its dependencies in `cli/target/dependency/`. The
+> `bin/netex-tools` wrapper assembles the classpath; no fat JAR is produced.
+
 ### Usage
 
 ```
@@ -89,7 +137,7 @@ netex-tools filter \
   --output path/to/filtered-output/
 ```
 
-**Example — filter with custom CLI settings (log level, report, aliases):**
+**Example — filter with custom CLI settings:**
 
 ```bash
 netex-tools filter \
@@ -99,9 +147,13 @@ netex-tools filter \
   --output path/to/filtered-output/
 ```
 
-### Config files
+---
 
-**cli-config.json** (optional) — controls log level, report, and aliases:
+## Configuration
+
+### CliConfig
+
+Controls CLI behavior and reporting. Loaded from JSON or constructed with `CliConfigBuilder`.
 
 ```json
 {
@@ -114,31 +166,478 @@ netex-tools filter \
     "ServiceFrame": "SF",
     "Network": "NW",
     "TimetableFrame": "TF",
-    "SiteFrame": "SF",
+    "SiteFrame": "SiF",
     "StopPointInJourneyPattern": "SPInJP"
   }
 }
 ```
 
-**filter-config.json** (required) — controls what gets filtered, pruned, and transformed.
-See [FilterNetexApp_README.md](FilterNetexApp_README.md) for the full `FilterConfig` reference.
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `logLevel` | string | `"INFO"` | Log verbosity: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL` |
+| `printReport` | boolean | `true` | Print entity/reference statistics after filtering |
+| `alias` | object | *(see above)* | Short names for entity types in console reports |
 
-Minimal example:
+### FilterConfig
+
+Controls what gets filtered, pruned, and transformed.
 
 ```json
 {
-  "pruneReferences": true,
+  "preserveComments": true,
+  "removePrivateData": true,
+  "skipElements": [
+    "/PublicationDelivery/dataObjects/CompositeFrame/frames/VehicleScheduleFrame",
+    "/PublicationDelivery/dataObjects/CompositeFrame/frames/TimetableFrame/vehicleJourneys/DeadRun"
+  ],
   "unreferencedEntitiesToPrune": [
     "JourneyPattern", "Route", "Network", "Line",
     "Operator", "Notice", "DestinationDisplay", "ServiceLink"
-  ]
+  ],
+  "pruneReferences": true,
+  "referencesToExcludeFromPruning": ["QuayRef"],
+  "useSelfClosingTagsWhereApplicable": true,
+  "elementsRequiredChildren": {
+    "NoticeAssignment": ["NoticeRef", "NoticedObjectRef"]
+  }
 }
 ```
 
-### Note on distribution
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `preserveComments` | boolean | `true` | Keep XML comments in output |
+| `removePrivateData` | boolean | `false` | Remove entities where `publication` is explicitly set to anything other than `"public"` |
+| `skipElements` | list | `[]` | Full XPath-like element paths to exclude (children are also skipped) |
+| `unreferencedEntitiesToPrune` | set | `[]` | Entity types to remove if no other entity references them |
+| `pruneReferences` | boolean | `false` | Remove references pointing to non-existent or excluded entities |
+| `referencesToExcludeFromPruning` | set | `[]` | Reference types to keep even if their target is missing |
+| `useSelfClosingTagsWhereApplicable` | boolean | `true` | Write self-closing tags for empty elements |
+| `fileNameMap` | object | `{}` | Rename output files: `{ "input.xml": "output.xml" }` |
+| `elementsRequiredChildren` | object | `{}` | Only include a parent element if it contains all listed child element types |
+| `plugins` | list | `[]` | `NetexPlugin` instances for custom data collection (programmatic only) |
+| `entitySelectors` | list | `[]` | Custom `EntitySelector` implementations (programmatic only) |
+| `refSelectors` | list | `[]` | Custom `RefSelector` implementations (programmatic only) |
+| `customElementHandlers` | object | `{}` | Map of element path to `XMLElementHandler` (programmatic only) |
 
-The CLI is **not** published to Maven Central (`maven.deploy.skip=true`). Build it
-from source with `./mvnw package -pl cli --also-make` to get a thin JAR in `cli/target/`
-alongside its dependencies in `cli/target/dependency/`. A fat JAR (standalone executable)
-is not produced; the `bin/netex-tools` wrapper assembles the classpath.
+---
 
+## Programmatic Usage
+
+### NetexProcessor (recommended)
+
+`NetexProcessor` is the core API for programmatic use. It supports both file-based and
+in-memory (`Map<String, ByteArray>`) processing, and exposes each pipeline phase
+separately so callers can run custom logic between passes.
+
+#### File-based filtering
+
+```kotlin
+import org.entur.netex.tools.lib.NetexProcessor
+import org.entur.netex.tools.lib.config.FilterConfigBuilder
+import java.io.File
+
+val filterConfig = FilterConfigBuilder()
+    .withPruneReferences(true)
+    .withUnreferencedEntitiesToPrune(setOf("Route", "Network", "Line"))
+    .build()
+
+val report = NetexProcessor(filterConfig = filterConfig)
+    .run(File("input/"), File("output/"))
+```
+
+#### In-memory / byte-array processing
+
+```kotlin
+val documents: Map<String, ByteArray> = loadFromZipOrGcs()
+
+val result = NetexProcessor(filterConfig = filterConfig).run(documents)
+
+result.documents    // Map<String, ByteArray> — filtered XML output
+result.report       // FilterReport
+```
+
+#### Between-pass hooks
+
+The pipeline can be decomposed to run custom logic between passes:
+
+```kotlin
+val filter = NetexProcessor(
+    filterConfig = FilterConfigBuilder()
+        .withPlugins(listOf(myPlugin))
+        .build()
+)
+
+// Pass 1: build entity model and run plugins
+filter.buildEntityModel(documents)
+
+// Between-pass hook: access model and plugin data
+val collectedData = myPlugin.getCollectedData()
+// ... run enrichment, routing, external lookups ...
+
+// Pass 2: select entities and export
+val (entitySelection, refSelection) = filter.selectEntities()
+val result = filter.exportToByteArrays(documents, entitySelection, refSelection)
+```
+
+### FilterNetexApp (CLI wrapper)
+
+`FilterNetexApp` is a thin wrapper around `NetexProcessor` for use with JSON config files
+and directory-based I/O. It lives in `netex-tools-lib`, so it is available to the `cli` and
+`pipeline` modules (and any other consumer) via the lib dependency.
+
+```kotlin
+import org.entur.netex.tools.lib.app.FilterNetexApp
+
+val report = FilterNetexApp(
+    filterConfig = filterConfig,
+    input = File("input/"),
+    target = File("output/")
+).run()
+```
+
+---
+
+## Extension Points
+
+### EntitySelector
+
+Implement `EntitySelector` to create custom logic for which entities to keep.
+The returned `EntitySelection` is intersected with the results of other selectors,
+meaning any entity NOT in the returned selection will be excluded from the output.
+
+```kotlin
+import org.entur.netex.tools.lib.selectors.entities.EntitySelector
+import org.entur.netex.tools.lib.selectors.entities.EntitySelectorContext
+import org.entur.netex.tools.lib.selections.EntitySelection
+
+class KeepOnlyLinesSelector(private val lineIds: Set<String>) : EntitySelector {
+    override fun selectEntities(context: EntitySelectorContext): EntitySelection {
+        val model = context.entityModel
+        val allByType = model.getEntitesByTypeAndId().toMutableMap()
+
+        // Filter Line entities to only keep specified IDs
+        allByType["Line"] = allByType["Line"]
+            ?.filterKeys { it in lineIds }
+            ?.toMutableMap() ?: mutableMapOf()
+
+        return EntitySelection(allByType, model)
+    }
+}
+
+// Usage
+val filterConfig = FilterConfigBuilder()
+    .withEntitySelectors(listOf(
+        KeepOnlyLinesSelector(setOf("ENT:Line:100", "ENT:Line:200"))
+    ))
+    .build()
+```
+
+### RefSelector
+
+Implement `RefSelector` for custom reference filtering. Like entity selectors,
+the returned `RefSelection` is intersected with other selectors' results.
+
+```kotlin
+import org.entur.netex.tools.lib.selectors.refs.RefSelector
+import org.entur.netex.tools.lib.model.EntityModel
+import org.entur.netex.tools.lib.selections.RefSelection
+
+class ExcludeRefTypeSelector(private val excludedTypes: Set<String>) : RefSelector {
+    override fun selectRefs(model: EntityModel): RefSelection {
+        val selected = model.listAllRefs()
+            .filter { it.type !in excludedTypes }
+            .toSet()
+        return RefSelection(selected)
+    }
+}
+
+// Usage
+val filterConfig = FilterConfigBuilder()
+    .withRefSelectors(listOf(
+        ExcludeRefTypeSelector(setOf("NoticeRef", "BrandingRef"))
+    ))
+    .build()
+```
+
+### NetexPlugin
+
+Plugins hook into SAX parsing during Phase 1 (entity model building) to collect
+custom data. They do not alter the filtering logic.
+
+Extend `AbstractNetexPlugin` to get no-op defaults for all methods, then override
+only the callbacks you need:
+
+```kotlin
+import org.entur.netex.tools.lib.plugin.AbstractNetexPlugin
+import org.entur.netex.tools.lib.model.Entity
+import org.xml.sax.Attributes
+import java.io.File
+
+class ServiceJourneyCounter : AbstractNetexPlugin() {
+    private var count = 0
+
+    override fun getName() = "ServiceJourneyCounter"
+    override fun getDescription() = "Counts ServiceJourney elements across all files"
+    override fun getSupportedElementTypes() = setOf("ServiceJourney")
+
+    override fun startElement(
+        elementName: String, attributes: Attributes?, currentEntity: Entity?
+    ) {
+        if (elementName == "ServiceJourney") count++
+    }
+
+    override fun endDocument(file: File) {
+        println("Processed ${file.name}, running total: $count ServiceJourneys")
+    }
+
+    override fun getCollectedData(): Int = count
+}
+
+// Usage
+val filterConfig = FilterConfigBuilder()
+    .withPlugins(listOf(ServiceJourneyCounter()))
+    .build()
+
+val report = FilterNetexApp(
+    filterConfig = filterConfig,
+    input = File("input/"),
+    target = File("output/")
+).run()
+
+// Access collected data after run
+val counter = filterConfig.plugins[0] as ServiceJourneyCounter
+println("Total ServiceJourneys: ${counter.getCollectedData()}")
+```
+
+**Plugin lifecycle per document:**
+1. `startElement()` / `characters()` / `endElement()` — called for each element matching `getSupportedElementTypes()`
+2. `endDocument(file: File)` — called when a file-based document has been fully parsed
+3. `endDocument(documentName: String)` — called when a stream-based document has been fully parsed
+
+Override whichever variant matches your processing mode. The `String` overload
+defaults to delegating to the `File` overload.
+
+**Scoped element registration:**
+
+Use `"Ancestor/Element"` syntax in `getSupportedElementTypes()` to match elements
+only inside a specific ancestor. This avoids false matches on generic element names
+like `Date` or `Name`:
+
+```kotlin
+override fun getSupportedElementTypes() = setOf(
+    "DayTypeAssignment",               // match DayTypeAssignment anywhere
+    "DayTypeAssignment/Date",           // match Date only inside DayTypeAssignment
+    "DayTypeAssignment/FromDate",       // match FromDate only inside DayTypeAssignment
+    "ScheduledStopPoint/Longitude",     // match Longitude only inside ScheduledStopPoint
+)
+```
+
+Note: SAX parsers may split character data across multiple `characters()` calls,
+so always accumulate with `StringBuilder` rather than overwriting.
+
+### XMLElementHandler
+
+Custom element handlers let you transform specific XML elements during Phase 3
+(output writing). Register them by the full path of the element to intercept.
+
+```kotlin
+import org.entur.netex.tools.lib.output.XMLElementHandler
+import org.entur.netex.tools.lib.output.DelegatingXMLElementWriter
+import org.xml.sax.Attributes
+
+class MyElementHandler : XMLElementHandler {
+    override fun startElement(
+        uri: String?, localName: String?, qName: String?,
+        attributes: Attributes?, writer: DelegatingXMLElementWriter
+    ) {
+        writer.defaultStartElement(uri, localName, qName, attributes)
+    }
+
+    override fun characters(
+        ch: CharArray?, start: Int, length: Int,
+        writer: DelegatingXMLElementWriter
+    ) {
+        writer.defaultCharacters(ch, start, length)
+    }
+
+    override fun endElement(
+        uri: String?, localName: String?, qName: String?,
+        writer: DelegatingXMLElementWriter
+    ) {
+        writer.defaultEndElement(uri, localName, qName)
+    }
+}
+
+// Register by full element path
+val filterConfig = FilterConfigBuilder()
+    .withCustomElementHandlers(mapOf(
+        "/PublicationDelivery/dataObjects/CompositeFrame" to MyElementHandler()
+    ))
+    .build()
+```
+
+---
+
+## Core API Reference
+
+### NetexProcessor
+
+The recommended entry point for programmatic use. Supports both file-based
+and in-memory processing.
+
+```kotlin
+class NetexProcessor(
+    val cliConfig: CliConfig = CliConfig(),
+    val filterConfig: FilterConfig = FilterConfig(),
+)
+```
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `buildEntityModel(inputDir: File)` | | Phase 1 from directory |
+| `buildEntityModel(documents: Map<String, ByteArray>)` | | Phase 1 from byte arrays |
+| `selectEntities()` | `Pair<EntitySelection, RefSelection>` | Phase 2 entity/ref selection |
+| `exportToFiles(inputDir, targetDir, entitySelection, refSelection)` | `FilterReport` | Phase 3 to files |
+| `exportToByteArrays(documents, entitySelection, refSelection)` | `ExportResult` | Phase 3 to byte arrays |
+| `run(inputDir: File, targetDir: File)` | `FilterReport` | Full pipeline (files) |
+| `run(documents: Map<String, ByteArray>)` | `ExportResult` | Full pipeline (byte arrays) |
+
+The `model` and `fileIndex` properties are accessible between passes for inspection.
+State is reset automatically when `buildEntityModel()` or `export*()` is called.
+
+### ExportResult
+
+```kotlin
+data class ExportResult(
+    val documents: Map<String, ByteArray>,  // Output documents keyed by name
+    val report: FilterReport,
+)
+```
+
+### FilterNetexApp
+
+CLI wrapper around `NetexProcessor`, defined in `netex-tools-lib` and available to the `cli`
+and `pipeline` modules via the lib dependency.
+
+```kotlin
+data class FilterNetexApp(
+    val cliConfig: CliConfig = CliConfig(),
+    val filterConfig: FilterConfig = FilterConfig(),
+    val input: File,   // Input directory with NeTEx XML files
+    val target: File,  // Output directory for filtered files
+)
+```
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `run()` | `FilterReport` | Execute the full three-phase pipeline |
+
+### FilterReport
+
+Contains entity and element type counts per output file/document.
+
+- `entitiesByFile` / `elementTypesByFile` — keyed by `File` (populated in file mode)
+- `entitiesByDocument` / `elementTypesByDocument` — keyed by `String` (populated in stream mode)
+
+### EntityModel
+
+In-memory graph of entities and their references, built during Phase 1.
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `addEntity(entity)` | `Boolean` | Register an entity |
+| `getEntity(id)` | `Entity?` | Look up entity by ID |
+| `getEntitiesOfType(type)` | `List<Entity>` | All entities of a given type |
+| `getEntitiesReferringTo(entity)` | `Set<Entity>` | Entities that reference the given entity |
+| `getEntitiesReferringTo(id)` | `Set<Entity>` | Entities that reference the given ID |
+| `getRefsOfTypeFrom(sourceId, type)` | `List<Ref>` | References of a type originating from a source |
+| `listAllEntities()` | `Collection<Entity>` | All entities in the model |
+| `listAllRefs()` | `List<Ref>` | All references in the model |
+| `getEntitiesKeptReport(selection)` | `String` | Formatted report of selected vs. total entities |
+| `getRefsKeptReport(selection)` | `String` | Formatted report of selected vs. total references |
+
+### Entity and Ref
+
+```kotlin
+class Entity(
+    val id: String,            // NeTEx entity ID (e.g. "ENT:Line:100")
+    val type: String,          // Element type (e.g. "Line", "ServiceJourney")
+    val publication: String,   // "public", "restricted", or "private"
+    val parent: Entity? = null // Parent entity in the XML hierarchy
+)
+
+class Ref(
+    val type: String,    // Reference element type (e.g. "LineRef")
+    val source: Entity,  // Entity containing this reference
+    val ref: String,     // Target entity ID being referenced
+)
+```
+
+### EntitySelection and RefSelection
+
+Immutable sets representing the result of Phase 2 filtering.
+
+```kotlin
+class EntitySelection(
+    val selection: Map<String, Map<String, Entity>>,  // Type -> (ID -> Entity)
+    val model: EntityModel
+) {
+    fun isSelected(entity: Entity): Boolean
+    fun includes(id: String): Boolean
+    fun intersectWith(other: EntitySelection): EntitySelection
+    fun hasEntitiesReferringTo(entity: Entity): Boolean
+}
+
+class RefSelection(val selection: Set<Ref>) {
+    fun includes(ref: String): Boolean
+    fun intersectWith(other: RefSelection): RefSelection
+}
+```
+
+### FilterConfigBuilder
+
+Fluent builder for constructing `FilterConfig` instances.
+
+```kotlin
+FilterConfigBuilder()
+    .withPreserveComments(false)
+    .withRemovePrivateData(true)
+    .withSkipElements(listOf(...))
+    .withUnreferencedEntitiesToPrune(setOf(...))
+    .withPruneReferences(true)
+    .withReferencesToExcludeFromPruning(setOf(...))
+    .withUseSelfClosingTagsWhereApplicable(true)
+    .withFileNameMap(mapOf(...))
+    .withPlugins(listOf(...))
+    .withEntitySelectors(listOf(...))
+    .withRefSelectors(listOf(...))
+    .withElementsRequiredChildren(mapOf(...))
+    .withCustomElementHandlers(mapOf(...))
+    .build()
+```
+
+Convert an existing config to a builder with `filterConfig.toBuilder()`.
+
+---
+
+## Building
+
+Requires **Java 21** and **Maven 3.x**.
+
+```bash
+# Full build
+./mvnw clean install
+
+# Run tests
+./mvnw test
+```
+
+### Maven Dependency
+
+```xml
+<dependency>
+    <groupId>org.entur.ror</groupId>
+    <artifactId>netex-tools-lib</artifactId>
+    <version>0.0.48</version>
+</dependency>
+```
