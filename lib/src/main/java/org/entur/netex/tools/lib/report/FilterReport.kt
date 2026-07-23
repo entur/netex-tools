@@ -8,6 +8,7 @@ data class FilterReport(
     val entitiesByFile: Map<File, Set<Entity>>,
     val elementTypesByDocument: Map<String, Map<String, Int>> = emptyMap(),
     val entitiesByDocument: Map<String, Set<Entity>> = emptyMap(),
+    val originalElementTypeCount: Map<String, Int> = emptyMap(),
 ) {
     fun getNumberOfElementsByFile(file: File, type: String): Int {
         return elementTypesByFile[file]?.get(type) ?: 0

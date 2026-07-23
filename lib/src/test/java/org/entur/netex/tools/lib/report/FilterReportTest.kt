@@ -77,6 +77,26 @@ class FilterReportTest {
     }
 
     @Test
+    fun originalElementTypeCount_returnsCorrectCounts() {
+        val filterReport = FilterReport(
+            elementTypesByFile = emptyMap(),
+            entitiesByFile = emptyMap(),
+            originalElementTypeCount = mapOf("ScheduledStopPoint" to 3, "ServiceJourney" to 5),
+        )
+        assertEquals(3, filterReport.originalElementTypeCount["ScheduledStopPoint"])
+        assertEquals(5, filterReport.originalElementTypeCount["ServiceJourney"])
+    }
+
+    @Test
+    fun originalElementTypeCount_defaultsToEmptyMap() {
+        val filterReport = FilterReport(
+            elementTypesByFile = emptyMap(),
+            entitiesByFile = emptyMap(),
+        )
+        assertEquals(emptyMap<String, Int>(), filterReport.originalElementTypeCount)
+    }
+
+    @Test
     fun getAllEntityIdsByDocuments() {
         val filterReport = FilterReport(
             elementTypesByFile = emptyMap(),

@@ -39,6 +39,7 @@ data class FilterNetexApp(
         return FilterReport(
             entitiesByFile = fileIndex.entitiesByFile,
             elementTypesByFile = fileIndex.elementTypesByFile,
+            originalElementTypeCount = filter.buildOriginalTypeCount(),
         )
     }
 
