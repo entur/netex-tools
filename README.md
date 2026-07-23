@@ -641,3 +641,9 @@ Requires **Java 21** and **Maven 3.x**.
     <version>0.0.48</version>
 </dependency>
 ```
+
+## Illustration
+
+This diagram might help with filtering relations:
+
+![Netex overview](images/NetexOverview.png)
