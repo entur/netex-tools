@@ -37,16 +37,30 @@ class NetexProcessorTest {
     """.trimIndent()
 
     @Test
-    fun `buildOriginalTypeCount returns counts of all entity types before filtering`() {
+    fun `buildOriginalEntityTypeCount returns counts of all entity types before filtering`() {
         val processor = NetexProcessor()
         val documents = mapOf("test.xml" to minimalNetexXml.toByteArray())
 
         processor.buildEntityModel(documents)
 
-        val counts = processor.buildOriginalTypeCount()
+        val counts = processor.buildOriginalEntityTypeCount()
         assertEquals(2, counts["ScheduledStopPoint"])
         assertEquals(1, counts["ServiceFrame"])
         assertEquals(1, counts["CompositeFrame"])
+    }
+
+    @Test
+    fun `report keeps original entity type counts when entities are filtered out`() {
+        val filterConfig = FilterConfig().toBuilder()
+            .withUnreferencedEntitiesToPrune(setOf("ScheduledStopPoint"))
+            .build()
+        val filter = NetexProcessor(filterConfig = filterConfig)
+        val documents = mapOf("test.xml" to minimalNetexXml.toByteArray())
+
+        val result = filter.run(documents)
+
+        assertEquals(2, result.report.originalEntityTypeCount["ScheduledStopPoint"])
+        assertEquals(0, result.report.getNumberOfElementsByDocument("test.xml", "ScheduledStopPoint"))
     }
 
     @Test

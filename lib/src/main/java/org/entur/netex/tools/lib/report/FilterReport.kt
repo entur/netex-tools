@@ -8,7 +8,12 @@ data class FilterReport(
     val entitiesByFile: Map<File, Set<Entity>>,
     val elementTypesByDocument: Map<String, Map<String, Int>> = emptyMap(),
     val entitiesByDocument: Map<String, Set<Entity>> = emptyMap(),
-    val originalElementTypeCount: Map<String, Int> = emptyMap(),
+    /**
+     * Number of unique entities per type in the model before filtering.
+     * Entities are deduplicated by id across input files, and elements
+     * excluded by skipElements are not counted.
+     */
+    val originalEntityTypeCount: Map<String, Int> = emptyMap(),
 ) {
     fun getNumberOfElementsByFile(file: File, type: String): Int {
         return elementTypesByFile[file]?.get(type) ?: 0

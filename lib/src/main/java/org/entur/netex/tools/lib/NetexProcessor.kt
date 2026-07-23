@@ -232,7 +232,7 @@ class NetexProcessor(
         return factory(fileWriter, elementWriter)
     }
 
-    internal fun buildOriginalTypeCount(): Map<String, Int> =
+    internal fun buildOriginalEntityTypeCount(): Map<String, Int> =
         model.listAllEntities().groupingBy { it.type }.eachCount()
 
     private fun buildReport() = FilterReport(
@@ -240,6 +240,6 @@ class NetexProcessor(
         elementTypesByFile = fileIndex.elementTypesByFile,
         entitiesByDocument = fileIndex.entitiesByDocument,
         elementTypesByDocument = fileIndex.elementTypesByDocument,
-        originalElementTypeCount = buildOriginalTypeCount(),
+        originalEntityTypeCount = buildOriginalEntityTypeCount(),
     )
 }

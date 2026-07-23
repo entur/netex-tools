@@ -27,20 +27,16 @@ data class FilterNetexApp(
         logger.info("Read input from file: $input")
         logger.info("Write output to: ${target.absolutePath}")
 
-        val (entitySelection, seconds) = timedSeconds {
+        val (result, seconds) = timedSeconds {
             filter.buildEntityModel(input)
             val (entitiesToKeep, refsToKeep) = filter.selectEntities()
-            filter.exportToFiles(input, target, entitiesToKeep, refsToKeep)
-            entitiesToKeep
+            filter.exportToFiles(input, target, entitiesToKeep, refsToKeep) to entitiesToKeep
         }
+        val (report, entitySelection) = result
 
         printReport(entitySelection, seconds)
 
-        return FilterReport(
-            entitiesByFile = fileIndex.entitiesByFile,
-            elementTypesByFile = fileIndex.elementTypesByFile,
-            originalElementTypeCount = filter.buildOriginalTypeCount(),
-        )
+        return report
     }
 
     private fun printReport(selection: EntitySelection, secondsSpent: Double) {
