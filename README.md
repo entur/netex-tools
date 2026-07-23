@@ -8,9 +8,8 @@ NeTEx datasets are large and highly interconnected — entities reference each o
 extensively. Manually extracting subsets is error-prone because removing elements can
 leave broken references. netex-tools automates this through a three-phase pipeline.
 
-The core filtering engine is not profile-specific, but only elements used by the Nordic
-NeTEx profile are currently implemented. Contributions and feature requests are welcome
-via GitHub.
+The filtering engine is profile-agnostic — it processes any NeTEx element regardless of
+profile. Contributions and feature requests are welcome via GitHub.
 
 ---
 
