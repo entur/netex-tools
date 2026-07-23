@@ -11,6 +11,8 @@ leave broken references. netex-tools automates this through a three-phase pipeli
 The filtering engine is profile-agnostic — it processes any NeTEx element regardless of
 profile. Contributions and feature requests are welcome via GitHub.
 
+This tool is WORK-IN-PROGRESS.
+
 ---
 
 ## Modules
