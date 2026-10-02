@@ -11,8 +11,6 @@ leave broken references. netex-tools automates this through a three-phase pipeli
 The filtering engine is profile-agnostic — it processes any NeTEx element regardless of
 profile. Contributions and feature requests are welcome via GitHub.
 
-This tool is WORK-IN-PROGRESS.
-
 ---
 
 ## Modules
@@ -74,10 +72,9 @@ Applies filter rules to determine which entities and references to keep:
 ### Phase 3 — Export Filtered XML
 
 Re-parses the original input XML, writing only selected entities and references to
-output files. Optional behaviors:
+output files. Empty collection elements (e.g. `<lines/>`) are always removed. Optional behaviors:
 
 - Convert empty elements to self-closing tags (`<Foo/>` instead of `<Foo></Foo>`)
-- Remove empty collection elements
 - Preserve or strip XML comments
 - Apply custom `XMLElementHandler`s for element transformation
 - Skip parent elements missing required children (`elementsRequiredChildren`)
@@ -175,7 +172,7 @@ Controls CLI behavior and reporting. Loaded from JSON or constructed with `CliCo
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `logLevel` | string | `"INFO"` | Log verbosity: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL` |
+| `logLevel` | string | `"INFO"` | Log verbosity: `INFO`, `WARN`, `ERROR`, `FATAL` |
 | `printReport` | boolean | `true` | Print entity/reference statistics after filtering |
 | `alias` | object | *(see above)* | Short names for entity types in console reports |
 
@@ -563,7 +560,7 @@ In-memory graph of entities and their references, built during Phase 1.
 class Entity(
     val id: String,            // NeTEx entity ID (e.g. "ENT:Line:100")
     val type: String,          // Element type (e.g. "Line", "ServiceJourney")
-    val publication: String,   // "public", "restricted", or "private"
+    val publication: String,   // "public" (default if absent) or "restricted"
     val parent: Entity? = null // Parent entity in the XML hierarchy
 )
 
@@ -639,7 +636,7 @@ Requires **Java 21** and **Maven 3.x**.
 <dependency>
     <groupId>org.entur.ror</groupId>
     <artifactId>netex-tools-lib</artifactId>
-    <version>0.0.48</version>
+    <version>0.0.51</version>
 </dependency>
 ```
 
