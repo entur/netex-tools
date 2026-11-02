@@ -100,6 +100,43 @@ class NetexProcessorTest {
     }
 
     @Test
+    fun `run keeps comments outside the document element when comments are preserved`() {
+        val xml = prologAndEpilogCommentXml()
+        val filterConfig = FilterConfig().toBuilder().withPreserveComments(true).build()
+        val filter = NetexProcessor(filterConfig = filterConfig)
+
+        val result = filter.run(mapOf("test.xml" to xml.toByteArray()))
+
+        val outputXml = String(requireNotNull(result.documents["test.xml"]), Charsets.UTF_8)
+        assertTrue(outputXml.contains("<!-- prolog comment -->"), outputXml)
+        assertTrue(outputXml.contains("<!-- epilog comment -->"), outputXml)
+        assertWellFormed(outputXml)
+    }
+
+    @Test
+    fun `run drops comments outside the document element when comments are not preserved`() {
+        val xml = prologAndEpilogCommentXml()
+        val filterConfig = FilterConfig().toBuilder().withPreserveComments(false).build()
+        val filter = NetexProcessor(filterConfig = filterConfig)
+
+        val result = filter.run(mapOf("test.xml" to xml.toByteArray()))
+
+        val outputXml = String(requireNotNull(result.documents["test.xml"]), Charsets.UTF_8)
+        assertFalse(outputXml.contains("prolog comment"), outputXml)
+        assertFalse(outputXml.contains("epilog comment"), outputXml)
+        assertWellFormed(outputXml)
+    }
+
+    private fun prologAndEpilogCommentXml() =
+        """<?xml version="1.0" encoding="UTF-8"?><!-- prolog comment -->""" +
+            minimalNetexXml.substringAfter("?>") + "<!-- epilog comment -->"
+
+    private fun assertWellFormed(xml: String) {
+        val factory = DocumentBuilderFactory.newInstance().apply { isNamespaceAware = true }
+        factory.newDocumentBuilder().parse(ByteArrayInputStream(xml.toByteArray()))
+    }
+
+    @Test
     fun `run with files produces output`(@TempDir tempDir: File) {
         val inputDir = File(tempDir, "input").also { it.mkdirs() }
         val outputDir = File(tempDir, "output")
