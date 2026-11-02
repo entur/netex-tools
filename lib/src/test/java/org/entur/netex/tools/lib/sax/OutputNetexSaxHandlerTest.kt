@@ -5,11 +5,15 @@ import org.entur.netex.tools.lib.output.DelegatingXMLElementWriter
 import org.entur.netex.tools.lib.output.NetexFileWriter
 import org.entur.netex.tools.lib.report.FileIndex
 import org.entur.netex.tools.lib.selections.InclusionPolicy
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.xml.sax.helpers.AttributesImpl
 import java.io.File
 
@@ -100,6 +104,28 @@ class OutputNetexSaxHandlerTest {
             "PublicationDelivery",
             path = "/PublicationDelivery"
         )
+    }
+
+    @Test
+    fun handlerHandlesCommentsOutsideTheDocumentElement() {
+        // LexicalHandler.comment() also fires in the prolog and the epilog, where no element is open.
+        val xml = """<?xml version="1.0" encoding="UTF-8"?><!-- prolog --><PublicationDelivery""" +
+            """ xmlns="http://www.netex.org.uk/netex"><dataObjects><!-- inner --></dataObjects>""" +
+            """</PublicationDelivery><!-- epilog -->"""
+
+        // SAX hands out a shared, mutable buffer, so the text has to be read as it arrives.
+        val written = mutableListOf<String>()
+        doAnswer { invocation ->
+            val ch = invocation.getArgument<CharArray>(0)
+            val start = invocation.getArgument<Int>(1)
+            val length = invocation.getArgument<Int>(2)
+            written += String(ch, start, length)
+            null
+        }.whenever(fileWriter).writeComments(any(), any(), any())
+
+        XMLFileParser.parseXml(xml.byteInputStream(), outputNetexSaxHandler)
+
+        assertEquals(listOf(" prolog ", " inner ", " epilog "), written)
     }
 
     @Test

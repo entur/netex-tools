@@ -71,7 +71,17 @@ class OutputNetexSaxHandler private constructor(
         return inclusionPolicy.shouldInclude(element, inclusionStack)
     }
 
-    private fun shouldIncludeCurrentElement(): Boolean = inclusionStack.peek().second
+    /**
+     * Note: Only meaningful while an element is open. If it isn't open, e.g. in the case
+     * of a prolog or epilogue comment (a comment before or after any element in the document)
+     * the stack will be empty.
+     */
+    private fun shouldIncludeCurrentElement(): Boolean {
+        check(inclusionStack.isNotEmpty()) {
+            "No element is open - there is no current element to make an inclusion decision for."
+        }
+        return inclusionStack.peek().second
+    }
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         super.startElement(uri, localName, qName, attributes)
@@ -179,6 +189,14 @@ class OutputNetexSaxHandler private constructor(
 
     override fun comment(ch: CharArray?, start: Int, length: Int) {
         super.comments(ch, start, length)
+
+        // handles prolog and the epilog comments, where no element is open. Those comments belong to the
+        // document rather than to an element, so there is no inclusion decision to make and nothing
+        // to defer: hand them straight to the writer, which honors the preserveComments setting.
+        if (inclusionStack.isEmpty()) {
+            fileWriter.writeComments(ch, start, length)
+            return
+        }
 
         if (!shouldIncludeCurrentElement()) return
 
