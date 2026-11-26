@@ -14,7 +14,13 @@ object XMLFileParser {
     }
 
     fun parseXml(inputStream: InputStream, saxHandler: NetexToolsSaxHandler) {
-        val saxFactory = SAXParserFactory.newInstance()
+        val saxFactory = SAXParserFactory.newInstance().apply {
+            // NeTEx is XSD-based and never uses DTDs. Rejecting any DOCTYPE
+            // eliminates XML external entity (XXE) resolution outright, so a
+            // malicious document cannot read local files or trigger outbound
+            // requests during parsing.
+            setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+        }
         val parser = saxFactory.newSAXParser()
         val xmlReader = parser.xmlReader
 
